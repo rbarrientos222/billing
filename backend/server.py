@@ -411,7 +411,139 @@ async def create_mikrotik_pppoe(account: PPPoEAccount, current_user: dict = Depe
             return {"message": "PPPoE account created"}
     raise HTTPException(status_code=500, detail="Failed to create account")
 
-@api_router.post("/mikrotik/sync")
+@api_router.get("/mikrotik/profiles")
+async def get_mikrotik_profiles(current_user: dict = Depends(get_current_user)):
+    if current_user['role'] not in ['admin', 'tech', 'user']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    config = await db.mikrotik_configs.find_one({})
+    if not config:
+        raise HTTPException(status_code=404, detail="Mikrotik not configured")
+    
+    service = MikrotikService(config)
+    if service.connect():
+        profiles = service.get_pppoe_profiles()
+        service.disconnect()
+        return {"profiles": profiles}
+    raise HTTPException(status_code=500, detail="Failed to connect to Mikrotik")
+
+@api_router.post("/subscribers/{account_number}/activate-pppoe")
+async def activate_subscriber_pppoe(account_number: str, current_user: dict = Depends(get_current_user)):
+    if current_user['role'] not in ['admin', 'user']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get subscriber
+    subscriber = await db.subscribers.find_one({"account_number": account_number})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    # Check if PPPoE credentials exist
+    if not subscriber.get('pppoe_username') or not subscriber.get('pppoe_password') or not subscriber.get('pppoe_profile'):
+        raise HTTPException(status_code=400, detail="PPPoE credentials not configured for this subscriber")
+    
+    # Get Mikrotik config
+    mikrotik_config = await db.mikrotik_configs.find_one({})
+    if not mikrotik_config:
+        raise HTTPException(status_code=404, detail="Mikrotik not configured")
+    
+    # Create PPPoE account
+    service = MikrotikService(mikrotik_config)
+    if service.connect():
+        pppoe_account = PPPoEAccount(
+            username=subscriber['pppoe_username'],
+            password=subscriber['pppoe_password'],
+            profile=subscriber['pppoe_profile'],
+            remote_address=subscriber.get('pppoe_remote_address', ''),
+            service="pppoe",
+            disabled=False
+        )
+        success = service.create_pppoe_account(pppoe_account)
+        service.disconnect()
+        
+        if success:
+            return {"message": "PPPoE account activated in Mikrotik", "success": True}
+        raise HTTPException(status_code=500, detail="Failed to create PPPoE account")
+    raise HTTPException(status_code=500, detail="Failed to connect to Mikrotik")
+
+@api_router.get("/subscribers/{account_number}/pppoe-status")
+async def check_pppoe_status(account_number: str, current_user: dict = Depends(get_current_user)):
+    # Get subscriber
+    subscriber = await db.subscribers.find_one({"account_number": account_number})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    if not subscriber.get('pppoe_username'):
+        return {"exists": False, "configured": False}
+    
+    # Check in Mikrotik
+    mikrotik_config = await db.mikrotik_configs.find_one({})
+    if not mikrotik_config:
+        return {"exists": False, "configured": True, "error": "Mikrotik not configured"}
+    
+    service = MikrotikService(mikrotik_config)
+    if service.connect():
+        exists = service.pppoe_account_exists(subscriber['pppoe_username'])
+        service.disconnect()
+        return {"exists": exists, "configured": True}
+    
+    return {"exists": False, "configured": True, "error": "Failed to connect to Mikrotik"}
+
+@api_router.post("/subscribers/bulk-activate-pppoe")
+async def bulk_activate_pppoe(account_numbers: list[str], current_user: dict = Depends(get_current_user)):
+    if current_user['role'] not in ['admin', 'user']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get Mikrotik config
+    mikrotik_config = await db.mikrotik_configs.find_one({})
+    if not mikrotik_config:
+        raise HTTPException(status_code=404, detail="Mikrotik not configured")
+    
+    service = MikrotikService(mikrotik_config)
+    if not service.connect():
+        raise HTTPException(status_code=500, detail="Failed to connect to Mikrotik")
+    
+    results = {
+        "success": [],
+        "failed": [],
+        "skipped": []
+    }
+    
+    for account_number in account_numbers:
+        subscriber = await db.subscribers.find_one({"account_number": account_number})
+        if not subscriber:
+            results["skipped"].append({"account_number": account_number, "reason": "Not found"})
+            continue
+        
+        if not subscriber.get('pppoe_username') or not subscriber.get('pppoe_password') or not subscriber.get('pppoe_profile'):
+            results["skipped"].append({"account_number": account_number, "reason": "PPPoE not configured"})
+            continue
+        
+        # Check if already exists
+        if service.pppoe_account_exists(subscriber['pppoe_username']):
+            results["skipped"].append({"account_number": account_number, "reason": "Already exists"})
+            continue
+        
+        # Create account
+        pppoe_account = PPPoEAccount(
+            username=subscriber['pppoe_username'],
+            password=subscriber['pppoe_password'],
+            profile=subscriber['pppoe_profile'],
+            remote_address=subscriber.get('pppoe_remote_address', ''),
+            service="pppoe",
+            disabled=False
+        )
+        
+        if service.create_pppoe_account(pppoe_account):
+            results["success"].append(account_number)
+        else:
+            results["failed"].append(account_number)
+    
+    service.disconnect()
+    
+    return {
+        "message": f"Activated {len(results['success'])} accounts",
+        "results": results
+    }
 async def sync_mikrotik_accounts(current_user: dict = Depends(get_current_user)):
     if current_user['role'] not in ['admin', 'tech']:
         raise HTTPException(status_code=403, detail="Access denied")
