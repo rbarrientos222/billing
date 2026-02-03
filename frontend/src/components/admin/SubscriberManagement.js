@@ -176,7 +176,61 @@ export default function SubscriberManagement() {
                 <Label>Modem MAC Address</Label>
                 <Input value={formData.modem_mac} onChange={(e) => setFormData({ ...formData, modem_mac: e.target.value })} placeholder="AA:BB:CC:DD:EE:FF" />
               </div>
-              <Button type="submit" className="w-full">Register Subscriber</Button>
+              
+              {/* PPPoE Account Section */}
+              <div className="col-span-2 pt-4 border-t">
+                <h4 className="font-medium mb-3 text-primary">PPPoE Account Configuration</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>PPPoE Username</Label>
+                    <Input 
+                      value={formData.pppoe_username} 
+                      onChange={(e) => setFormData({ ...formData, pppoe_username: e.target.value })} 
+                      placeholder="username@isp"
+                    />
+                  </div>
+                  <div>
+                    <Label>PPPoE Password</Label>
+                    <Input 
+                      type="password"
+                      value={formData.pppoe_password} 
+                      onChange={(e) => setFormData({ ...formData, pppoe_password: e.target.value })} 
+                      placeholder="Enter password"
+                    />
+                  </div>
+                  <div>
+                    <Label>PPPoE Profile</Label>
+                    <Input 
+                      value={formData.pppoe_profile} 
+                      onChange={(e) => setFormData({ ...formData, pppoe_profile: e.target.value })} 
+                      placeholder="e.g., 50mbps, 100mbps"
+                    />
+                  </div>
+                  <div>
+                    <Label>Remote IP Address (Optional)</Label>
+                    <Input 
+                      value={formData.pppoe_remote_address} 
+                      onChange={(e) => setFormData({ ...formData, pppoe_remote_address: e.target.value })} 
+                      placeholder="10.0.0.x or leave empty"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mt-4 flex items-center space-x-2 p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                  <input
+                    type="checkbox"
+                    id="activate_pppoe"
+                    checked={formData.activate_pppoe}
+                    onChange={(e) => setFormData({ ...formData, activate_pppoe: e.target.checked })}
+                    className="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary"
+                  />
+                  <label htmlFor="activate_pppoe" className="text-sm font-medium text-green-900 dark:text-green-100 cursor-pointer">
+                    Activate PPPoE account immediately upon saving (creates account in Mikrotik)
+                  </label>
+                </div>
+              </div>
+              
+              <Button type="submit" className="col-span-2 w-full">Register Subscriber</Button>
             </form>
           </DialogContent>
         </Dialog>
