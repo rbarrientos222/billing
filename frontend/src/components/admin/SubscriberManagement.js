@@ -264,12 +264,12 @@ export default function SubscriberManagement() {
                       placeholder="Enter password"
                     />
                   </div>
-                  <div>
-                    <Label>PPPoE Profile</Label>
+                  <div className="col-span-2">
+                    <Label>PPPoE Profile (from Mikrotik)</Label>
                     {profiles.length > 0 ? (
                       <Select value={formData.pppoe_profile} onValueChange={(value) => setFormData({ ...formData, pppoe_profile: value })}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select profile" />
+                          <SelectValue placeholder="Select profile from Mikrotik" />
                         </SelectTrigger>
                         <SelectContent>
                           {profiles.map((profile) => (
@@ -278,20 +278,17 @@ export default function SubscriberManagement() {
                         </SelectContent>
                       </Select>
                     ) : (
-                      <Input 
-                        value={formData.pppoe_profile} 
-                        onChange={(e) => setFormData({ ...formData, pppoe_profile: e.target.value })} 
-                        placeholder="e.g., 50mbps, 100mbps"
-                      />
+                      <div className="space-y-2">
+                        <Input 
+                          value={formData.pppoe_profile} 
+                          onChange={(e) => setFormData({ ...formData, pppoe_profile: e.target.value })} 
+                          placeholder="e.g., 50mbps, 100mbps"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Configure Mikrotik in settings to see available profiles
+                        </p>
+                      </div>
                     )}
-                  </div>
-                  <div>
-                    <Label>Remote IP Address (Optional)</Label>
-                    <Input 
-                      value={formData.pppoe_remote_address} 
-                      onChange={(e) => setFormData({ ...formData, pppoe_remote_address: e.target.value })} 
-                      placeholder="10.0.0.x or leave empty"
-                    />
                   </div>
                 </div>
                 
