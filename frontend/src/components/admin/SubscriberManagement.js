@@ -24,7 +24,12 @@ export default function SubscriberManagement() {
     address: '',
     plan_id: '',
     billing_period: '30th',
-    modem_mac: ''
+    modem_mac: '',
+    pppoe_username: '',
+    pppoe_password: '',
+    pppoe_profile: '',
+    pppoe_remote_address: '',
+    activate_pppoe: false
   });
 
   useEffect(() => {
