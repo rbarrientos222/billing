@@ -1,0 +1,197 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "Eco-Fintech Billing",
+      "description": "A minimalist, high-performance billing system that blends financial precision with organic calm. Green is not just a color; it's a signal of growth and stability.",
+      "principles": [
+        "Fusion: Fintech Precision x Botanical Calm",
+        "Density with Breath: High data density for admins, open space for subscribers",
+        "Role-Based Atmosphere: Distinct visual modes for Admin (Command), Cashier (Speed), and Subscriber (Ease)"
+      ]
+    },
+    "typography": {
+      "font_family": {
+        "headings": "Outfit, sans-serif",
+        "body": "Manrope, sans-serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "weights": {
+        "light": 300,
+        "regular": 400,
+        "medium": 500,
+        "bold": 700,
+        "black": 900
+      },
+      "usage": {
+        "h1": "text-4xl md:text-5xl font-bold tracking-tight leading-none font-heading",
+        "h2": "text-3xl md:text-4xl font-semibold tracking-tight font-heading",
+        "h3": "text-2xl font-medium tracking-normal font-heading",
+        "body": "text-base leading-relaxed text-muted-foreground font-body",
+        "caption": "text-xs uppercase tracking-widest text-muted-foreground/70 font-mono",
+        "data": "font-mono text-sm tracking-tight"
+      }
+    },
+    "colors": {
+      "palette": {
+        "primary": {
+          "DEFAULT": "#059669",
+          "foreground": "#FFFFFF",
+          "hover": "#047857",
+          "active": "#065F46"
+        },
+        "secondary": {
+          "DEFAULT": "#ECFCCB",
+          "foreground": "#365314"
+        },
+        "accent": {
+          "DEFAULT": "#84CC16",
+          "foreground": "#1A2E05"
+        },
+        "background": {
+          "light": "#FFFFFF",
+          "dark": "#022C22",
+          "subtle_light": "#F0FDF4",
+          "subtle_dark": "#064E3B"
+        },
+        "surface": {
+          "light": "#FFFFFF",
+          "dark": "#065F46"
+        },
+        "muted": {
+          "DEFAULT": "#F1F5F9",
+          "foreground": "#64748B"
+        },
+        "destructive": {
+          "DEFAULT": "#EF4444",
+          "foreground": "#FFFFFF"
+        },
+        "border": {
+          "light": "#E2E8F0",
+          "dark": "#1E293B"
+        }
+      },
+      "role_themes": {
+        "admin": "Theme: 'Command Center'. Dark sidebars, high contrast data, 'Grid Borders' surface style.",
+        "cashier": "Theme: 'Speed & Focus'. High contrast buttons, large touch targets, 'Neumorphism' for keypads.",
+        "technician": "Theme: 'Field Utility'. High legibility, card-based (mobile friendly), 'Tactile' surfaces.",
+        "subscriber": "Theme: 'Organic Ease'. Soft gradients, 'Glassmorphism', friendly illustrations."
+      }
+    },
+    "layout": {
+      "spacing": {
+        "container_padding": "p-6 md:p-12",
+        "section_gap": "gap-8 md:gap-12",
+        "component_gap": "gap-4"
+      },
+      "grids": {
+        "dashboard": "grid grid-cols-1 md:grid-cols-12 gap-6",
+        "cards_row": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6",
+        "detail_view": "grid grid-cols-1 lg:grid-cols-3 gap-8"
+      },
+      "modes": {
+        "admin_dashboard": "Mode B: High Density. 100% width utilization. No jagged bottoms.",
+        "subscriber_portal": "Mode A: Tetris Grid. Asymmetrical layout with 'Hero' and 'Filler' blocks."
+      }
+    },
+    "components": {
+      "buttons": {
+        "primary": "bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 rounded-md shadow-sm transition-all active:scale-95",
+        "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-6 rounded-md",
+        "ghost": "hover:bg-accent hover:text-accent-foreground h-10 px-4 rounded-md",
+        "destructive": "bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 px-6 rounded-md"
+      },
+      "cards": {
+        "default": "bg-card text-card-foreground rounded-xl border shadow-sm",
+        "glass": "bg-white/70 dark:bg-black/60 backdrop-blur-xl border border-white/20 shadow-lg",
+        "interactive": "hover:shadow-md transition-shadow cursor-pointer border-transparent hover:border-primary/20"
+      },
+      "inputs": {
+        "default": "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      },
+      "tables": {
+        "wrapper": "relative w-full overflow-auto rounded-md border",
+        "header": "bg-muted/50 font-medium text-muted-foreground",
+        "row": "hover:bg-muted/50 transition-colors data-[state=selected]:bg-muted",
+        "cell": "p-4 align-middle [&:has([role=checkbox])]:pr-0"
+      }
+    },
+    "visual_enhancers": {
+      "shadows": {
+        "soft": "0 4px 20px -2px rgba(0, 0, 0, 0.05)",
+        "glow": "0 0 15px rgba(16, 185, 129, 0.3)"
+      },
+      "borders": {
+        "subtle": "1px solid rgba(0,0,0,0.08)",
+        "highlight": "1px solid rgba(16, 185, 129, 0.5)"
+      },
+      "textures": {
+        "noise": "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E\")"
+      }
+    },
+    "motion": {
+      "transitions": {
+        "default": "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        "smooth": "all 0.5s cubic-bezier(0.16, 1, 0.3, 1)"
+      },
+      "animations": {
+        "fade_in": {
+          "initial": { "opacity": 0, "y": 10 },
+          "animate": { "opacity": 1, "y": 0 },
+          "transition": { "duration": 0.4 }
+        },
+        "stagger_children": {
+          "animate": { "transition": { "staggerChildren": 0.1 } }
+        }
+      }
+    },
+    "assets": {
+      "images": {
+        "logo_main": "https://images.unsplash.com/photo-1741454570884-e93057f8ee8d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHw0fHxtb2Rlcm4lMjB0ZWNoJTIwY29tcGFueSUyMGxvZ28lMjBncmVlbnxlbnwwfHx8fDE3NzAxMjQyODZ8MA&ixlib=rb-4.1.0&q=85",
+        "technician_hero": "https://images.unsplash.com/photo-1599949104055-2d04026aee1e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwxfHx0ZWNobmljaWFuJTIwd29ya2luZyUyMHNlcnZlcnxlbnwwfHx8fDE3NzAxMjQyODl8MA&ixlib=rb-4.1.0&q=85",
+        "subscriber_happy_1": "https://images.unsplash.com/photo-1634552516330-ab1ccc0f605e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwxfHxoYXBweSUyMGRpdmVyc2UlMjBwZW9wbGUlMjBwb3J0cmFpdHN8ZW58MHx8fHwxNzcwMTI0Mjk0fDA&ixlib=rb-4.1.0&q=85",
+        "subscriber_happy_2": "https://images.unsplash.com/photo-1671718648167-6b209c182480?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwyfHxoYXBweSUyMGRpdmVyc2UlMjBwZW9wbGUlMjBwb3J0cmFpdHN8ZW58MHx8fHwxNzcwMTI0Mjk0fDA&ixlib=rb-4.1.0&q=85",
+        "server_bg": "https://images.unsplash.com/photo-1489436969537-cf0c1dc69cba?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHw0fHx0ZWNobmljaWFuJTIwd29ya2luZyUyMHNlcnZlcnxlbnwwfHx8fDE3NzAxMjQyODl8MA&ixlib=rb-4.1.0&q=85"
+      },
+      "icons": {
+        "library": "lucide-react",
+        "style": "Stroke width 1.5px, rounded caps"
+      }
+    },
+    "instructions_to_main_agent": {
+      "general": [
+        "Use 'Outfit' for all headings and 'Manrope' for body text. Import them via Google Fonts in index.css.",
+        "Implement a 'Theme Toggle' but default to the role-specific theme (e.g., Admin = Dark Mode preference, Subscriber = Light Mode preference).",
+        "Use 'Sonner' for all toast notifications.",
+        "For the Cashier module, ensure buttons are LARGE and touch-friendly.",
+        "For the Technician module, ensure the UI is mobile-responsive first.",
+        "Use 'Recharts' for all data visualization (Sales, Bandwidth usage).",
+        "CRITICAL: Do not use default Shadcn colors. Override them with the 'Eco-Fintech' palette defined above."
+      ],
+      "pages": {
+        "login": "Split screen. Left: Branding/Art (Green abstract). Right: Clean form.",
+        "admin_dashboard": "Use 'Grid Borders' style. Dense data. Top row: 4 Key Metrics (Gross Sales, Net Sales, Active Subs, Expenses).",
+        "subscriber_portal": "Use 'Glassmorphism'. Friendly greeting. Big 'Pay Now' button. Usage chart prominent."
+      }
+    },
+    "universal_guidelines": [
+      "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+      "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+      "Create depth through layered design elements with z-index hierarchy",
+      "Use glass-morphism effects with backdrop filters (12-24px blur)",
+      "You MUST NOT apply universal transition. Eg: `transition: all`. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
+      "You MUST NOT center align the app container, ie do not add `.App { text-align: center; }` in the css file. This disrupts the human natural reading flow of text",
+      "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+      "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯📚🎭🎬🎪🎉🎊🎁🎀🎂🍰🎈🎨🎰💰💵💳🏦💎🪙💸🤑📊📈📉💹🔢🏆🥇 etc for icons.",
+      "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+      "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+      "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+      "Main agent relies on these image URLs. Missing categories (especially sponsor logos) = main agent will use placeholder text which is FORBIDDEN",
+      "Prioritize using pre-existing components from src/components/ui when applicable",
+      "Create new components that match the style and conventions of existing components when needed",
+      "Examine existing components to understand the project's component patterns before creating new ones",
+      "Components MUST use named exports (export const ComponentName = ...)",
+      "Pages MUST use default exports (export default function PageName() {...})",
+      "Use `sonner` for toasts. Sonner component are located in `/app/src/components/ui/sonner.tsx`"
+    ]
+  }
+}
