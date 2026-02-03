@@ -452,7 +452,7 @@ async def activate_subscriber_pppoe(account_number: str, current_user: dict = De
             username=subscriber['pppoe_username'],
             password=subscriber['pppoe_password'],
             profile=subscriber['pppoe_profile'],
-            remote_address=subscriber.get('pppoe_remote_address', ''),
+            remote_address='',
             service="pppoe",
             disabled=False
         )
@@ -527,7 +527,7 @@ async def bulk_activate_pppoe(account_numbers: list[str], current_user: dict = D
             username=subscriber['pppoe_username'],
             password=subscriber['pppoe_password'],
             profile=subscriber['pppoe_profile'],
-            remote_address=subscriber.get('pppoe_remote_address', ''),
+            remote_address='',
             service="pppoe",
             disabled=False
         )
