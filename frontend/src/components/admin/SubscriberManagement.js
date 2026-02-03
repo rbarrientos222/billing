@@ -38,6 +38,7 @@ export default function SubscriberManagement() {
   useEffect(() => {
     fetchSubscribers();
     fetchPlans();
+    fetchProfiles();
   }, []);
 
   const fetchSubscribers = async () => {
