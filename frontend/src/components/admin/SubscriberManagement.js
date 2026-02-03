@@ -62,6 +62,15 @@ export default function SubscriberManagement() {
     }
   };
 
+  const fetchProfiles = async () => {
+    try {
+      const response = await axios.get('/mikrotik/profiles');
+      setProfiles(response.data.profiles || []);
+    } catch (error) {
+      console.error('Failed to fetch Mikrotik profiles');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
