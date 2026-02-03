@@ -125,6 +125,7 @@ export default function SubscriberManagement() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
+                <div>
                   <Label>First Name</Label>
                   <Input value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value })} required />
                 </div>
@@ -177,7 +178,7 @@ export default function SubscriberManagement() {
               </div>
               
               {/* PPPoE Account Section */}
-              <div className="col-span-2 pt-4 border-t">
+              <div className="pt-4 border-t">
                 <h4 className="font-medium mb-3 text-primary">PPPoE Account Configuration</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -229,7 +230,7 @@ export default function SubscriberManagement() {
                 </div>
               </div>
               
-              <Button type="submit" className="col-span-2 w-full">Register Subscriber</Button>
+              <Button type="submit" className="w-full">Register Subscriber</Button>
             </form>
           </DialogContent>
         </Dialog>
