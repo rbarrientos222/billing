@@ -118,6 +118,61 @@ export default function SubscriberManagement() {
     sub.account_number?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleSelectSubscriber = (accountNumber) => {
+    setSelectedSubscribers(prev => 
+      prev.includes(accountNumber) 
+        ? prev.filter(id => id !== accountNumber)
+        : [...prev, accountNumber]
+    );
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedSubscribers(filteredSubscribers.map(sub => sub.account_number));
+    } else {
+      setSelectedSubscribers([]);
+    }
+  };
+
+  const handleBulkActivate = async () => {
+    if (selectedSubscribers.length === 0) {
+      toast.error('No subscribers selected');
+      return;
+    }
+
+    setActivating(true);
+    try {
+      const response = await axios.post('/subscribers/bulk-activate-pppoe', selectedSubscribers);
+      const { results } = response.data;
+      
+      let message = `✓ Activated ${results.success.length} accounts`;
+      if (results.failed.length > 0) {
+        message += ` | ${results.failed.length} failed`;
+      }
+      if (results.skipped.length > 0) {
+        message += ` | ${results.skipped.length} skipped`;
+      }
+      
+      toast.success(message);
+      setSelectedSubscribers([]);
+      fetchSubscribers();
+    } catch (error) {
+      toast.error('Bulk activation failed');
+    } finally {
+      setActivating(false);
+    }
+  };
+
+  const handleActivateSingle = async (accountNumber) => {
+    try {
+      await axios.post(`/subscribers/${accountNumber}/activate-pppoe`);
+      toast.success('PPPoE account activated in Mikrotik');
+      fetchSubscribers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to activate PPPoE');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
