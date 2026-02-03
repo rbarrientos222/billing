@@ -31,7 +31,6 @@ export default function SubscriberManagement() {
     pppoe_username: '',
     pppoe_password: '',
     pppoe_profile: '',
-    pppoe_remote_address: '',
     activate_pppoe: false
   });
 
