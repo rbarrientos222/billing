@@ -13,9 +13,12 @@ import { Plus, Search, Loader2 } from 'lucide-react';
 export default function SubscriberManagement() {
   const [subscribers, setSubscribers] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSubscribers, setSelectedSubscribers] = useState([]);
+  const [activating, setActivating] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
