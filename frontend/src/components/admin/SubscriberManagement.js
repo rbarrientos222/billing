@@ -67,9 +67,32 @@ export default function SubscriberManagement() {
         is_active: true,
         installation_date: new Date().toISOString()
       });
-      toast.success(`Subscriber created with account number: ${response.data.account_number}`);
+      
+      let successMessage = `Subscriber created with account number: ${response.data.account_number}`;
+      
+      if (response.data.pppoe_created) {
+        successMessage += ' | PPPoE account created in Mikrotik ✓';
+      } else if (response.data.pppoe_error) {
+        successMessage += ` | PPPoE creation failed: ${response.data.pppoe_error}`;
+      }
+      
+      toast.success(successMessage);
       setDialogOpen(false);
-      setFormData({ first_name: '', last_name: '', email: '', phone: '', address: '', plan_id: '', billing_period: '30th', modem_mac: '' });
+      setFormData({ 
+        first_name: '', 
+        last_name: '', 
+        email: '', 
+        phone: '', 
+        address: '', 
+        plan_id: '', 
+        billing_period: '30th', 
+        modem_mac: '',
+        pppoe_username: '',
+        pppoe_password: '',
+        pppoe_profile: '',
+        pppoe_remote_address: '',
+        activate_pppoe: false
+      });
       fetchSubscribers();
     } catch (error) {
       toast.error('Failed to create subscriber');
