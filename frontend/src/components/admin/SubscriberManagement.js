@@ -324,15 +324,28 @@ export default function SubscriberManagement() {
               <CardTitle>All Subscribers</CardTitle>
               <CardDescription>{filteredSubscribers.length} total subscribers</CardDescription>
             </div>
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search subscribers..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-                data-testid="search-input"
-              />
+            <div className="flex items-center gap-3">
+              {selectedSubscribers.length > 0 && (
+                <Button 
+                  onClick={handleBulkActivate} 
+                  disabled={activating}
+                  data-testid="bulk-activate-button"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {activating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Activate Selected ({selectedSubscribers.length})
+                </Button>
+              )}
+              <div className="relative w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search subscribers..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                  data-testid="search-input"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -346,35 +359,75 @@ export default function SubscriberManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <input
+                        type="checkbox"
+                        checked={selectedSubscribers.length === filteredSubscribers.length && filteredSubscribers.length > 0}
+                        onChange={handleSelectAll}
+                        className="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary"
+                      />
+                    </TableHead>
                     <TableHead>Account #</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Plan</TableHead>
-                    <TableHead>Billing</TableHead>
+                    <TableHead>PPPoE</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredSubscribers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                         No subscribers found
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredSubscribers.map((sub) => (
                       <TableRow key={sub.account_number}>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={selectedSubscribers.includes(sub.account_number)}
+                            onChange={() => handleSelectSubscriber(sub.account_number)}
+                            className="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary"
+                          />
+                        </TableCell>
                         <TableCell className="font-mono text-xs">{sub.account_number}</TableCell>
                         <TableCell className="font-medium">{sub.first_name} {sub.last_name}</TableCell>
                         <TableCell>{sub.phone}</TableCell>
                         <TableCell>{sub.plan_id}</TableCell>
-                        <TableCell>{sub.billing_period}</TableCell>
+                        <TableCell>
+                          {sub.pppoe_username ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              Configured
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                              Not Set
+                            </span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                             sub.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                           }`}>
                             {sub.is_active ? 'Active' : 'Inactive'}
                           </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {sub.pppoe_username && sub.pppoe_password && sub.pppoe_profile && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleActivateSingle(sub.account_number)}
+                              data-testid={`activate-${sub.account_number}`}
+                              className="text-green-600 border-green-600 hover:bg-green-50"
+                            >
+                              Activate PPPoE
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
