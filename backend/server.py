@@ -96,7 +96,6 @@ class Subscriber(BaseModel):
     pppoe_username: Optional[str] = None
     pppoe_password: Optional[str] = None
     pppoe_profile: Optional[str] = None
-    pppoe_remote_address: Optional[str] = None
     activate_pppoe: bool = False
     plan_id: Optional[str] = None
     billing_period: str = "30th"
