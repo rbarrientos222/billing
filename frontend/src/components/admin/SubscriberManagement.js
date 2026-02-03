@@ -268,11 +268,24 @@ export default function SubscriberManagement() {
                   </div>
                   <div>
                     <Label>PPPoE Profile</Label>
-                    <Input 
-                      value={formData.pppoe_profile} 
-                      onChange={(e) => setFormData({ ...formData, pppoe_profile: e.target.value })} 
-                      placeholder="e.g., 50mbps, 100mbps"
-                    />
+                    {profiles.length > 0 ? (
+                      <Select value={formData.pppoe_profile} onValueChange={(value) => setFormData({ ...formData, pppoe_profile: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select profile" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {profiles.map((profile) => (
+                            <SelectItem key={profile} value={profile}>{profile}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input 
+                        value={formData.pppoe_profile} 
+                        onChange={(e) => setFormData({ ...formData, pppoe_profile: e.target.value })} 
+                        placeholder="e.g., 50mbps, 100mbps"
+                      />
+                    )}
                   </div>
                   <div>
                     <Label>Remote IP Address (Optional)</Label>
