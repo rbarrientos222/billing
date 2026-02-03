@@ -615,7 +615,7 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
                         username=subscriber.pppoe_username,
                         password=subscriber.pppoe_password,
                         profile=subscriber.pppoe_profile,
-                        remote_address=subscriber.pppoe_remote_address or "",
+                        remote_address="",
                         service="pppoe",
                         disabled=False
                     )
