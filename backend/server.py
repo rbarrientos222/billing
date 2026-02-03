@@ -449,7 +449,43 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     if not subscriber.account_number:
         subscriber.account_number = generate_account_number()
     
+    # Check if PPPoE activation is requested
+    pppoe_created = False
+    pppoe_error = None
+    
+    if subscriber.activate_pppoe and subscriber.pppoe_username and subscriber.pppoe_password and subscriber.pppoe_profile:
+        # Get Mikrotik config
+        mikrotik_config = await db.mikrotik_configs.find_one({})
+        
+        if mikrotik_config:
+            try:
+                # Create PPPoE account in Mikrotik
+                service = MikrotikService(mikrotik_config)
+                if service.connect():
+                    pppoe_account = PPPoEAccount(
+                        username=subscriber.pppoe_username,
+                        password=subscriber.pppoe_password,
+                        profile=subscriber.pppoe_profile,
+                        remote_address=subscriber.pppoe_remote_address or "",
+                        service="pppoe",
+                        disabled=False
+                    )
+                    pppoe_created = service.create_pppoe_account(pppoe_account)
+                    service.disconnect()
+                    
+                    if not pppoe_created:
+                        pppoe_error = "Failed to create PPPoE account in Mikrotik"
+                else:
+                    pppoe_error = "Failed to connect to Mikrotik"
+            except Exception as e:
+                pppoe_error = f"Mikrotik error: {str(e)}"
+                logger.error(f"Mikrotik PPPoE creation failed: {e}")
+        else:
+            pppoe_error = "Mikrotik not configured"
+    
+    # Save subscriber to database
     sub_dict = subscriber.model_dump()
+    sub_dict.pop('activate_pppoe', None)  # Don't store this field
     result = await db.subscribers.insert_one(sub_dict)
     sub_id = str(result.inserted_id)
     
@@ -464,7 +500,17 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     }
     await db.job_orders.insert_one(job)
     
-    return {"message": "Subscriber created", "account_number": subscriber.account_number, "id": sub_id}
+    response_data = {
+        "message": "Subscriber created successfully",
+        "account_number": subscriber.account_number,
+        "id": sub_id,
+        "pppoe_created": pppoe_created
+    }
+    
+    if pppoe_error:
+        response_data["pppoe_error"] = pppoe_error
+    
+    return response_data
 
 @api_router.get("/subscribers/{account_number}")
 async def get_subscriber(account_number: str, current_user: dict = Depends(get_current_user)):
