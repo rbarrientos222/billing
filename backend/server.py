@@ -254,6 +254,24 @@ class MikrotikService:
         except Exception as e:
             logger.error(f"Failed to get secrets: {e}")
             return []
+    
+    def get_pppoe_profiles(self) -> list:
+        try:
+            resource = self.api.get_resource('/ppp/profile')
+            profiles = resource.get()
+            return [p.get('name') for p in profiles if p.get('name')]
+        except Exception as e:
+            logger.error(f"Failed to get profiles: {e}")
+            return []
+    
+    def pppoe_account_exists(self, username: str) -> bool:
+        try:
+            resource = self.api.get_resource('/ppp/secret')
+            secrets = resource.get()
+            return any(s.get('name') == username for s in secrets)
+        except Exception as e:
+            logger.error(f"Failed to check account: {e}")
+            return False
 
     def create_pppoe_account(self, account: PPPoEAccount) -> bool:
         try:
