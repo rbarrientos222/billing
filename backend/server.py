@@ -829,6 +829,7 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     # Save subscriber to database
     sub_dict = subscriber.model_dump()
     sub_dict.pop('activate_pppoe', None)  # Don't store this field
+    sub_dict.pop('generate_prorated_bill', None)  # Don't store this field, just use for invoice decision
     result = await db.subscribers.insert_one(sub_dict)
     sub_id = str(result.inserted_id)
     
@@ -843,27 +844,28 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     }
     await db.job_orders.insert_one(job)
     
-    # Generate prorated invoice if plan is assigned
+    # Generate prorated invoice if plan is assigned AND generate_prorated_bill is True
     prorated_invoice = None
-    if subscriber.plan_id:
+    prorated_details = None
+    
+    if subscriber.plan_id and subscriber.generate_prorated_bill:
         plan = await db.subscription_plans.find_one({"name": subscriber.plan_id})
         if plan:
             installation_date = subscriber.installation_date or datetime.now(timezone.utc)
-            prorated_amount = calculate_prorated_amount(
+            prorate_calc = calculate_prorated_amount(
                 plan['price'], 
                 subscriber.billing_period, 
                 installation_date
             )
+            prorated_amount = prorate_calc['amount']
+            prorated_details = prorate_calc
             
             if prorated_amount > 0:
                 # Determine due date based on billing period
                 if subscriber.billing_period == "15th":
                     due_day = 15
-                elif subscriber.billing_period == "30th":
-                    import calendar
-                    due_day = calendar.monthrange(installation_date.year, installation_date.month)[1]
-                else:
-                    due_day = 30
+                else:  # "30th"
+                    due_day = min(30, calendar.monthrange(installation_date.year, installation_date.month)[1])
                 
                 due_date = installation_date.replace(day=due_day)
                 if due_date <= installation_date:
@@ -876,10 +878,14 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
                 prorated_invoice = {
                     "invoice_number": generate_invoice_number(),
                     "subscriber_id": subscriber.account_number,
+                    "subscriber_name": f"{subscriber.first_name} {subscriber.last_name}",
+                    "plan_name": plan['name'],
                     "amount": prorated_amount,
                     "due_date": due_date,
                     "paid": False,
                     "is_prorated": True,
+                    "billing_period": subscriber.billing_period,
+                    "calculation_details": prorate_calc['calculation'],
                     "created_at": datetime.now(timezone.utc)
                 }
                 await db.invoices.insert_one(prorated_invoice)
