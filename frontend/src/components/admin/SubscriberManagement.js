@@ -398,10 +398,76 @@ export default function SubscriberManagement() {
                   <SelectContent>
                     <SelectItem value="15th">15th of Month</SelectItem>
                     <SelectItem value="30th">30th of Month</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Prorated Billing Section */}
+              <div className="col-span-2 mt-2">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Checkbox 
+                    id="generate_prorated_bill" 
+                    checked={formData.generate_prorated_bill}
+                    onCheckedChange={(checked) => setFormData({ ...formData, generate_prorated_bill: checked })}
+                  />
+                  <Label htmlFor="generate_prorated_bill" className="text-sm cursor-pointer">
+                    Generate prorated bill (charge from today until billing date)
+                  </Label>
+                </div>
+                
+                {formData.generate_prorated_bill && formData.plan_id && (
+                  <div className="bg-muted/50 rounded-lg p-3 border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calculator className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Prorated Bill Preview</span>
+                    </div>
+                    {loadingPreview ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Calculating...
+                      </div>
+                    ) : proratedPreview ? (
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Plan:</span>
+                          <span className="font-medium">{proratedPreview.plan_name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Monthly Rate:</span>
+                          <span>₱{proratedPreview.monthly_rate?.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Days Covered:</span>
+                          <span>{proratedPreview.days_covered} days (until {formData.billing_period})</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Daily Rate:</span>
+                          <span>₱{proratedPreview.daily_rate}</span>
+                        </div>
+                        <div className="flex justify-between pt-2 border-t mt-2">
+                          <span className="font-medium">Prorated Amount:</span>
+                          <span className="font-bold text-primary text-lg">₱{proratedPreview.prorated_amount?.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                          <Calendar className="h-3 w-3" />
+                          Due: {proratedPreview.due_date}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Select a plan to see prorated calculation</p>
+                    )}
+                  </div>
+                )}
+                
+                {!formData.generate_prorated_bill && (
+                  <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      <strong>No prorated bill:</strong> First invoice will be generated on the {formData.billing_period} of the month during the regular billing cycle.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <Label>Modem MAC Address</Label>
                 <Input value={formData.modem_mac} onChange={(e) => setFormData({ ...formData, modem_mac: e.target.value })} placeholder="AA:BB:CC:DD:EE:FF" />
