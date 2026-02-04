@@ -258,10 +258,69 @@ export default function SubscriberManagement() {
                 <Label>Phone</Label>
                 <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
               </div>
-              <div>
-                <Label>Address</Label>
-                <Input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+              
+              {/* Address Section */}
+              <div className="col-span-2 pt-4 border-t">
+                <h4 className="font-medium mb-3">Address Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Province</Label>
+                    <Select value={formData.province} onValueChange={handleProvinceChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select province" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {provinces.map((prov) => (
+                          <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Municipality/City</Label>
+                    <Select 
+                      value={formData.municipality} 
+                      onValueChange={handleMunicipalityChange}
+                      disabled={!formData.province}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select municipality" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {municipalities.map((muni) => (
+                          <SelectItem key={muni} value={muni}>{muni}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Barangay</Label>
+                    <Select 
+                      value={formData.barangay} 
+                      onValueChange={(value) => setFormData({ ...formData, barangay: value })}
+                      disabled={!formData.municipality}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select barangay" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {barangays.map((brgy) => (
+                          <SelectItem key={brgy} value={brgy}>{brgy}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Street/House No.</Label>
+                    <Input 
+                      value={formData.street} 
+                      onChange={(e) => setFormData({ ...formData, street: e.target.value })} 
+                      placeholder="e.g., 123 Main Street"
+                    />
+                  </div>
+                </div>
               </div>
+              
               <div>
                 <Label>Subscription Plan</Label>
                 <Select value={formData.plan_id} onValueChange={(value) => setFormData({ ...formData, plan_id: value })}>
