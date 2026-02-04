@@ -152,6 +152,35 @@ export default function CashierDashboard({ user, onLogout }) {
                   </div>
                 </div>
               )}
+
+              {/* Payment History */}
+              {selectedSubscriber && paymentHistory.length > 0 && (
+                <div className="mt-6 space-y-2">
+                  <h4 className="font-medium">Payment History</h4>
+                  <div className="rounded-md border max-h-60 overflow-y-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted sticky top-0">
+                        <tr>
+                          <th className="text-left p-2">OR Number</th>
+                          <th className="text-left p-2">Amount</th>
+                          <th className="text-left p-2">Mode</th>
+                          <th className="text-left p-2">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paymentHistory.map((payment) => (
+                          <tr key={payment.or_number} className="border-t">
+                            <td className="p-2 font-mono text-xs">{payment.or_number}</td>
+                            <td className="p-2 font-bold text-green-600">₱{payment.amount.toLocaleString()}</td>
+                            <td className="p-2 capitalize">{payment.mode}</td>
+                            <td className="p-2 text-xs">{new Date(payment.payment_date).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
