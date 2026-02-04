@@ -54,6 +54,33 @@ export default function SubscriberManagement() {
     fetchProvinces();
   }, []);
 
+  // Fetch prorated preview when plan or billing period changes
+  useEffect(() => {
+    if (formData.plan_id && formData.billing_period && formData.generate_prorated_bill) {
+      fetchProratedPreview();
+    } else {
+      setProratedPreview(null);
+    }
+  }, [formData.plan_id, formData.billing_period, formData.generate_prorated_bill]);
+
+  const fetchProratedPreview = async () => {
+    if (!formData.plan_id) return;
+    
+    setLoadingPreview(true);
+    try {
+      const response = await axios.post('/billing/preview-prorated', {
+        plan_id: formData.plan_id,
+        billing_period: formData.billing_period
+      });
+      setProratedPreview(response.data);
+    } catch (error) {
+      console.error('Failed to fetch prorated preview');
+      setProratedPreview(null);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
   const fetchSubscribers = async () => {
     setLoading(true);
     try {
