@@ -54,7 +54,15 @@ Build a billing system with the following features:
 
 #### Frontend (React)
 - [x] Login page with role-based routing
-- [x] Admin Dashboard with sales metrics and charts
+- [x] Admin Dashboard with:
+  - Sales metrics and charts
+  - **Billing Calendar View** (NEW)
+    - Visual calendar showing billing dates (15th, 30th)
+    - Subscriber counts per billing period
+    - Days until next billing
+    - Auto-billing scheduler status
+    - Pending invoices indicator
+  - Billing Quick Actions panel
 - [x] Subscriber Management with:
   - Cascading address dropdowns (Province > Municipality > Barangay)
   - PPPoE configuration fields
@@ -100,7 +108,7 @@ Build a billing system with the following features:
 ## Technical Stack
 
 - **Backend:** FastAPI, Pydantic, MongoDB (motor), APScheduler
-- **Frontend:** React, React Router, Axios, TailwindCSS, Shadcn/UI
+- **Frontend:** React, React Router, Axios, TailwindCSS, Shadcn/UI, Recharts
 - **Integrations:** routeros-api (Mikrotik), ReportLab (PDF)
 
 ---
