@@ -186,8 +186,8 @@ class Subscriber(BaseModel):
     pppoe_profile: Optional[str] = None
     activate_pppoe: bool = False
     plan_id: Optional[str] = None
-    billing_period: str = "30th"
-    installation_date: Optional[datetime] = None
+    billing_day: int = 30  # Day of month (1-31)
+    installation_date: Optional[str] = None  # ISO date string
     is_active: bool = True
     modem_mac: Optional[str] = None
     generate_prorated_bill: bool = True  # If False, wait for next billing cycle
