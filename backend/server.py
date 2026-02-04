@@ -1806,7 +1806,10 @@ async def list_invoices(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/invoices/subscriber/{account_number}")
 async def get_subscriber_invoices(account_number: str):
-    invoices = await db.invoices.find({"subscriber_id": account_number}, {"_id": 0}).to_list(1000)
+    invoices = await db.invoices.find({"subscriber_id": account_number}, {"_id": 0}).sort("created_at", 1).to_list(1000)
+    # Add remaining balance for each invoice
+    for inv in invoices:
+        inv['remaining_balance'] = inv.get('amount', 0) - inv.get('paid_amount', 0)
     return invoices
 
 # ========== PAYMENTS & CASHIER ==========
