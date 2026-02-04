@@ -85,14 +85,14 @@ export default function SubscriberManagement() {
     }
   }, [formData.first_name, formData.last_name]);
 
-  // Fetch prorated preview when plan or billing period changes
+  // Fetch prorated preview when plan or billing day or installation date changes
   useEffect(() => {
-    if (formData.plan_id && formData.billing_period && formData.generate_prorated_bill) {
+    if (formData.plan_id && formData.billing_day && formData.generate_prorated_bill && formData.installation_date) {
       fetchProratedPreview();
     } else {
       setProratedPreview(null);
     }
-  }, [formData.plan_id, formData.billing_period, formData.generate_prorated_bill]);
+  }, [formData.plan_id, formData.billing_day, formData.generate_prorated_bill, formData.installation_date]);
 
   const fetchProratedPreview = async () => {
     if (!formData.plan_id) return;
@@ -101,7 +101,8 @@ export default function SubscriberManagement() {
     try {
       const response = await axios.post('/billing/preview-prorated', {
         plan_id: formData.plan_id,
-        billing_period: formData.billing_period
+        billing_day: formData.billing_day,
+        installation_date: formData.installation_date
       });
       setProratedPreview(response.data);
     } catch (error) {
