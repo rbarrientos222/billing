@@ -728,6 +728,14 @@ export default function SubscriberManagement() {
                     Activate PPPoE account immediately upon saving (creates account in Mikrotik)
                   </label>
                 </div>
+                {!formData.activate_pppoe && formData.pppoe_username && (
+                  <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                      <strong>Note:</strong> PPPoE credentials will be saved but not activated in Mikrotik. 
+                      You can activate later using "Activate Selected" button.
+                    </p>
+                  </div>
+                )}
               </div>
               
               <Button type="submit" className="w-full">Register Subscriber</Button>
