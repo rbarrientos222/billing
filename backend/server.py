@@ -1001,6 +1001,43 @@ async def create_plan(plan: SubscriptionPlan, current_user: dict = Depends(get_c
     await db.subscription_plans.insert_one(plan.model_dump())
     return {"message": "Plan created successfully"}
 
+@api_router.put("/plans/{plan_name}")
+async def update_plan(plan_name: str, updates: dict, current_user: dict = Depends(get_current_user)):
+    """Update an existing subscription plan"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    existing = await db.subscription_plans.find_one({"name": plan_name})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    
+    # Don't allow changing the plan name
+    if 'name' in updates:
+        del updates['name']
+    
+    await db.subscription_plans.update_one({"name": plan_name}, {"$set": updates})
+    return {"message": "Plan updated successfully"}
+
+@api_router.delete("/plans/{plan_name}")
+async def delete_plan(plan_name: str, current_user: dict = Depends(get_current_user)):
+    """Delete a subscription plan"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Check if any subscribers are using this plan
+    subscriber_count = await db.subscribers.count_documents({"plan_id": plan_name})
+    if subscriber_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete plan. {subscriber_count} subscriber(s) are using this plan."
+        )
+    
+    result = await db.subscription_plans.delete_one({"name": plan_name})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    
+    return {"message": "Plan deleted successfully"}
+
 # ========== SUBSCRIBER MANAGEMENT ==========
 @api_router.get("/subscribers")
 async def list_subscribers(current_user: dict = Depends(get_current_user)):
