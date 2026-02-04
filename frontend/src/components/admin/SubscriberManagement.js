@@ -14,6 +14,9 @@ export default function SubscriberManagement() {
   const [subscribers, setSubscribers] = useState([]);
   const [plans, setPlans] = useState([]);
   const [profiles, setProfiles] = useState([]);
+  const [provinces, setProvinces] = useState([]);
+  const [municipalities, setMunicipalities] = useState([]);
+  const [barangays, setBarangays] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,7 +27,10 @@ export default function SubscriberManagement() {
     last_name: '',
     email: '',
     phone: '',
-    address: '',
+    street: '',
+    barangay: '',
+    municipality: '',
+    province: '',
     plan_id: '',
     billing_period: '30th',
     modem_mac: '',
