@@ -461,7 +461,7 @@ export default function CashierDashboard({ user, onLogout }) {
                         {paymentHistory.map((payment) => (
                           <tr key={payment.or_number} className="border-t">
                             <td className="p-2 font-mono text-xs">{payment.or_number}</td>
-                            <td className="p-2 font-bold text-green-600">₱{(payment.amount || 0).toLocaleString()}</td>
+                            <td className="p-2 font-bold text-green-600">₱{(payment.total_amount || payment.amount || 0).toLocaleString()}</td>
                             <td className="p-2 capitalize">{payment.mode}</td>
                             <td className="p-2 text-xs">{new Date(payment.payment_date).toLocaleDateString()}</td>
                           </tr>
