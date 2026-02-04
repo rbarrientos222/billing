@@ -148,11 +148,30 @@ export default function CashierDashboard({ user, onLogout }) {
                   className="flex-1"
                   data-testid="search-input"
                 />
-                <Button onClick={handleSearch} data-testid="search-button">
+                <Button onClick={handleSearch} disabled={searching} data-testid="search-button">
                   <Search className="h-4 w-4 mr-2" />
-                  Search
+                  {searching ? 'Searching...' : 'Search'}
                 </Button>
               </div>
+
+              {/* Search Results List */}
+              {searchResults.length > 0 && (
+                <div className="border rounded-lg divide-y">
+                  <p className="text-sm text-muted-foreground px-4 py-2 bg-muted">
+                    Found {searchResults.length} subscribers - Click to select
+                  </p>
+                  {searchResults.map((sub) => (
+                    <div 
+                      key={sub.account_number}
+                      className="p-3 hover:bg-muted cursor-pointer transition-colors"
+                      onClick={() => selectSubscriber(sub)}
+                    >
+                      <p className="font-medium">{sub.first_name} {sub.last_name}</p>
+                      <p className="text-sm text-muted-foreground font-mono">{sub.account_number}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {selectedSubscriber && (
                 <div className="space-y-4">
@@ -167,13 +186,31 @@ export default function CashierDashboard({ user, onLogout }) {
                       </div>
                       <div>
                         <span className="text-muted-foreground">Phone:</span>
-                        <p>{selectedSubscriber.phone}</p>
+                        <p>{selectedSubscriber.phone || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Plan:</span>
+                        <p>{selectedSubscriber.plan_id || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Status:</span>
+                        <Badge variant={selectedSubscriber.is_active ? "default" : "secondary"} className={selectedSubscriber.is_active ? "bg-green-600" : ""}>
+                          {selectedSubscriber.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <h4 className="font-medium">Unpaid Invoices</h4>
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-medium">Unpaid Invoices</h4>
+                      {totalUnpaid > 0 && (
+                        <div className="text-right">
+                          <span className="text-sm text-muted-foreground">Total Balance:</span>
+                          <p className="text-xl font-bold text-red-600">₱{totalUnpaid.toLocaleString()}</p>
+                        </div>
+                      )}
+                    </div>
                     {invoices.filter(inv => !inv.paid).map((invoice) => (
                       <div key={invoice.invoice_number} className="border rounded-lg p-4">
                         <div className="flex justify-between items-start mb-2">
