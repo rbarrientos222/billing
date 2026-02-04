@@ -115,16 +115,26 @@ export default function CashierDashboard({ user, onLogout }) {
                     <h4 className="font-medium">Unpaid Invoices</h4>
                     {invoices.filter(inv => !inv.paid).map((invoice) => (
                       <div key={invoice.invoice_number} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-center mb-3">
-                          <div>
-                            <p className="font-mono text-sm">{invoice.invoice_number}</p>
-                            <p className="text-2xl font-bold text-primary">₱{invoice.amount}</p>
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <p className="font-mono text-sm text-muted-foreground">{invoice.invoice_number}</p>
+                            <p className="text-sm mt-1" title={invoice.description}>
+                              {invoice.description || `${invoice.plan_name || 'Monthly'} Bill`}
+                            </p>
+                            {invoice.type && (
+                              <Badge variant="outline" className="text-xs mt-1">
+                                {invoice.type}
+                              </Badge>
+                            )}
                           </div>
-                          <span className="text-sm text-muted-foreground">
-                            Due: {new Date(invoice.due_date).toLocaleDateString()}
-                          </span>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-primary">₱{invoice.amount?.toLocaleString()}</p>
+                            <span className="text-xs text-muted-foreground">
+                              Due: {new Date(invoice.due_date).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 mt-3">
                           <Input 
                             type="number" 
                             placeholder="Amount"
