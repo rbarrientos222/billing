@@ -19,6 +19,10 @@ export default function SubscriberManagement() {
   const [barangays, setBarangays] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [selectedSubscriberHistory, setSelectedSubscriberHistory] = useState(null);
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [invoiceHistory, setInvoiceHistory] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubscribers, setSelectedSubscribers] = useState([]);
   const [activating, setActivating] = useState(false);
