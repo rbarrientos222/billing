@@ -1289,13 +1289,21 @@ async def change_subscriber_plan(account_number: str, data: dict, current_user: 
         
         if prorate_calc['amount'] != 0:
             invoice_type = "Plan Upgrade" if prorate_calc['amount'] > 0 else "Plan Downgrade Credit"
+            
+            # Generate description for plan change
+            period_info = get_billing_period_description(billing_period, now)
+            description = f"{invoice_type}: {old_plan_id} to {new_plan_id} - {period_info['description']}"
+            
             invoice = {
                 "invoice_number": generate_invoice_number(),
                 "subscriber_id": account_number,
                 "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
                 "plan_name": f"{old_plan_id} → {new_plan_id}",
                 "amount": abs(prorate_calc['amount']),
+                "description": description,
                 "type": invoice_type,
+                "billing_start": period_info['start_date'],
+                "billing_end": period_info['end_date'],
                 "due_date": now + timedelta(days=15),
                 "paid": False,
                 "is_prorated": True,
