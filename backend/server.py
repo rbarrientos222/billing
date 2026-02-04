@@ -1077,7 +1077,13 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     if subscriber.plan_id and subscriber.generate_prorated_bill:
         plan = await db.subscription_plans.find_one({"name": subscriber.plan_id})
         if plan:
-            installation_date = subscriber.installation_date or datetime.now(timezone.utc)
+            installation_date = datetime.now(timezone.utc)
+            if subscriber.installation_date:
+                try:
+                    installation_date = datetime.fromisoformat(subscriber.installation_date.replace('Z', '+00:00'))
+                except:
+                    pass
+            
             prorate_calc = calculate_prorated_amount(
                 plan['price'], 
                 subscriber.billing_day, 
@@ -1087,11 +1093,8 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
             prorated_details = prorate_calc
             
             if prorated_amount > 0:
-                # Determine due date based on billing period
-                if subscriber.billing_period == "15th":
-                    due_day = 15
-                else:  # "30th"
-                    due_day = min(30, calendar.monthrange(installation_date.year, installation_date.month)[1])
+                # Determine due date based on billing day
+                due_day = min(subscriber.billing_day, calendar.monthrange(installation_date.year, installation_date.month)[1])
                 
                 due_date = installation_date.replace(day=due_day)
                 if due_date <= installation_date:
@@ -1118,7 +1121,7 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
                     "due_date": due_date,
                     "paid": False,
                     "is_prorated": True,
-                    "billing_period": subscriber.billing_period,
+                    "billing_day": subscriber.billing_day,
                     "calculation_details": prorate_calc['calculation'],
                     "created_at": datetime.now(timezone.utc)
                 }
@@ -1141,7 +1144,10 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
             "days_covered": prorated_details['days_remaining'] if prorated_details else None
         }
     elif not subscriber.generate_prorated_bill:
-        response_data["billing_note"] = f"No prorated bill generated. First invoice will be on the {subscriber.billing_period}."
+        billing_suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(subscriber.billing_day % 10, 'th')
+        if subscriber.billing_day in [11, 12, 13]:
+            billing_suffix = 'th'
+        response_data["billing_note"] = f"No prorated bill generated. First invoice will be on the {subscriber.billing_day}{billing_suffix}."
     
     if pppoe_error:
         response_data["pppoe_error"] = pppoe_error
