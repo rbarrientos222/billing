@@ -1563,7 +1563,6 @@ async def reactivate_subscriber(account_number: str, data: dict, current_user: d
             
             if prorate_calc['amount'] > 0:
                 # Generate description for reactivation bill
-                billing_period = subscriber.get('billing_period', '30th')
                 period_info = get_billing_period_description(billing_day, now)
                 start_str = now.strftime("%B %d, %Y")
                 end_str = period_info['end_date'].strftime("%B %d, %Y")
