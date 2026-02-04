@@ -56,6 +56,21 @@ export default function BillingCalendar() {
   const isCurrentMonth = currentDate.getMonth() === today.getMonth() && 
                          currentDate.getFullYear() === today.getFullYear();
 
+  // Get all billing days from the data
+  const getBillingDays = () => {
+    if (!billingData) return {};
+    const billingDays = {};
+    Object.keys(billingData).forEach(key => {
+      const group = billingData[key];
+      if (group?.billing_day) {
+        billingDays[group.billing_day] = group.count || 0;
+      }
+    });
+    return billingDays;
+  };
+
+  const billingDays = getBillingDays();
+
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
@@ -69,18 +84,29 @@ export default function BillingCalendar() {
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const isToday = isCurrentMonth && day === today.getDate();
-      const isBillingDay = day === 15 || day === 30 || (day === daysInMonth && daysInMonth < 30);
-      const isPast = isCurrentMonth && day < today.getDate();
       
-      // Count subscribers for this billing day
+      // Check if this day is a billing day (check actual day or adjusted for short months)
+      let isBillingDay = false;
       let subscriberCount = 0;
-      if (billingData) {
-        if (day === 15) {
-          subscriberCount = billingData.billing_15th?.count || 0;
-        } else if (day === 30 || (day === daysInMonth && daysInMonth < 30)) {
-          subscriberCount = billingData.billing_30th?.count || 0;
-        }
+      
+      // Check direct match
+      if (billingDays[day]) {
+        isBillingDay = true;
+        subscriberCount = billingDays[day];
       }
+      
+      // For months with fewer days, check if any billing day > daysInMonth should fall on last day
+      if (day === daysInMonth) {
+        Object.keys(billingDays).forEach(billingDay => {
+          const bd = parseInt(billingDay);
+          if (bd > daysInMonth) {
+            isBillingDay = true;
+            subscriberCount += billingDays[bd] || 0;
+          }
+        });
+      }
+
+      const isPast = isCurrentMonth && day < today.getDate();
 
       days.push(
         <div
@@ -105,6 +131,40 @@ export default function BillingCalendar() {
     }
 
     return days;
+  };
+
+  // Get sorted billing groups for display
+  const getBillingGroups = () => {
+    if (!billingData) return [];
+    return Object.keys(billingData)
+      .map(key => billingData[key])
+      .filter(group => group?.billing_day)
+      .sort((a, b) => a.billing_day - b.billing_day);
+  };
+
+  const billingGroups = getBillingGroups();
+
+  // Color palette for different billing days
+  const getColorForIndex = (index) => {
+    const colors = [
+      { bg: 'from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900', text: 'text-blue-600', title: 'text-blue-700 dark:text-blue-300', value: 'text-blue-900 dark:text-blue-100', sub: 'text-blue-600 dark:text-blue-400' },
+      { bg: 'from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900', text: 'text-purple-600', title: 'text-purple-700 dark:text-purple-300', value: 'text-purple-900 dark:text-purple-100', sub: 'text-purple-600 dark:text-purple-400' },
+      { bg: 'from-green-50 to-green-100 dark:from-green-950 dark:to-green-900', text: 'text-green-600', title: 'text-green-700 dark:text-green-300', value: 'text-green-900 dark:text-green-100', sub: 'text-green-600 dark:text-green-400' },
+      { bg: 'from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900', text: 'text-orange-600', title: 'text-orange-700 dark:text-orange-300', value: 'text-orange-900 dark:text-orange-100', sub: 'text-orange-600 dark:text-orange-400' },
+      { bg: 'from-pink-50 to-pink-100 dark:from-pink-950 dark:to-pink-900', text: 'text-pink-600', title: 'text-pink-700 dark:text-pink-300', value: 'text-pink-900 dark:text-pink-100', sub: 'text-pink-600 dark:text-pink-400' },
+      { bg: 'from-cyan-50 to-cyan-100 dark:from-cyan-950 dark:to-cyan-900', text: 'text-cyan-600', title: 'text-cyan-700 dark:text-cyan-300', value: 'text-cyan-900 dark:text-cyan-100', sub: 'text-cyan-600 dark:text-cyan-400' },
+    ];
+    return colors[index % colors.length];
+  };
+
+  const getOrdinalSuffix = (day) => {
+    if (day >= 11 && day <= 13) return 'th';
+    switch (day % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
   };
 
   if (loading) {
@@ -164,33 +224,36 @@ export default function BillingCalendar() {
           </div>
         </div>
 
-        {/* Billing Summary */}
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Users className="h-4 w-4 text-blue-600" />
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">15th Billing</span>
-            </div>
-            <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-              {billingData?.billing_15th?.count || 0}
-            </p>
-            <p className="text-xs text-blue-600 dark:text-blue-400">
-              {billingData?.billing_15th?.days_until || 0} days until next
-            </p>
+        {/* Billing Summary - Dynamic based on actual billing days */}
+        {billingGroups.length > 0 && (
+          <div className={`grid gap-3 pt-2 ${billingGroups.length === 1 ? 'grid-cols-1' : billingGroups.length === 2 ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3'}`}>
+            {billingGroups.map((group, index) => {
+              const color = getColorForIndex(index);
+              return (
+                <div key={group.billing_day} className={`bg-gradient-to-br ${color.bg} rounded-lg p-3`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Users className={`h-4 w-4 ${color.text}`} />
+                    <span className={`text-xs font-medium ${color.title}`}>
+                      {group.billing_day}{getOrdinalSuffix(group.billing_day)} Billing
+                    </span>
+                  </div>
+                  <p className={`text-2xl font-bold ${color.value}`}>
+                    {group.count || 0}
+                  </p>
+                  <p className={`text-xs ${color.sub}`}>
+                    {group.days_until || 0} days until next
+                  </p>
+                </div>
+              );
+            })}
           </div>
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <Users className="h-4 w-4 text-purple-600" />
-              <span className="text-xs font-medium text-purple-700 dark:text-purple-300">30th Billing</span>
-            </div>
-            <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-              {billingData?.billing_30th?.count || 0}
-            </p>
-            <p className="text-xs text-purple-600 dark:text-purple-400">
-              {billingData?.billing_30th?.days_until || 0} days until next
-            </p>
+        )}
+
+        {billingGroups.length === 0 && (
+          <div className="text-center py-4 text-muted-foreground text-sm">
+            No billing schedules configured yet.
           </div>
-        </div>
+        )}
 
         {/* Scheduler Status */}
         <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
