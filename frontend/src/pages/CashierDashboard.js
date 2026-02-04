@@ -12,6 +12,7 @@ export default function CashierDashboard({ user, onLogout }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubscriber, setSelectedSubscriber] = useState(null);
   const [invoices, setInvoices] = useState([]);
+  const [paymentHistory, setPaymentHistory] = useState([]);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMode, setPaymentMode] = useState('cash');
 
