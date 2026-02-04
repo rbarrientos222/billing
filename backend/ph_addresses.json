@@ -1,126 +1,746 @@
 {
   "provinces": [
     {
-      "name": "Metro Manila",
+      "name": "Abra",
+      "region": "CAR",
       "municipalities": [
-        {
-          "name": "Manila",
-          "barangays": ["Ermita", "Intramuros", "Malate", "Paco", "Pandacan", "Port Area", "Quiapo", "Sampaloc", "San Miguel", "Santa Ana"]
-        },
-        {
-          "name": "Quezon City",
-          "barangays": ["Bagong Pag-asa", "Bahay Toro", "Balingasa", "Batasan Hills", "Commonwealth", "Cubao", "Diliman", "Fairview", "Kamuning", "Loyola Heights"]
-        },
-        {
-          "name": "Caloocan",
-          "barangays": ["Bagong Silang", "Camarin", "Grace Park", "Sangandaan", "Tala", "Bagumbayan", "Maypajo"]
-        },
-        {
-          "name": "Makati",
-          "barangays": ["Bel-Air", "Forbes Park", "Guadalupe Nuevo", "Guadalupe Viejo", "Magallanes", "Poblacion", "San Lorenzo", "Urdaneta"]
-        },
-        {
-          "name": "Pasig",
-          "barangays": ["Kapitolyo", "Manggahan", "Maybunga", "Oranbo", "Pinagbuhatan", "Rosario", "Santolan", "Ugong"]
-        }
+        {"name": "Bangued", "barangays": ["Agtangao", "Angad", "Bangbangar", "Cabuloan", "Calaba", "Cosili East", "Cosili West", "Dangdangla", "Lingtan", "Macarcarmay"]},
+        {"name": "Bucay", "barangays": ["Abang", "Bangbangcag", "Bangcagan", "Bugbog", "Calao", "Dugong", "Layugan", "Nalbuan", "Pagala", "Quimloong"]},
+        {"name": "Dolores", "barangays": ["Bayabas", "Cabaroan", "Calumbaya", "Cardona", "Isit", "Kimmalaba", "Libtec", "Mudiit", "Namit-ingan", "Pacac"]}
       ]
     },
     {
-      "name": "Cavite",
+      "name": "Agusan del Norte",
+      "region": "Region XIII",
       "municipalities": [
-        {
-          "name": "Bacoor",
-          "barangays": ["Alima", "Aniban", "Banalo", "Dulong Bayan", "Habay", "Ligas", "Molino", "Panapaan", "Queens Row", "Tabing Dagat"]
-        },
-        {
-          "name": "Dasmariñas",
-          "barangays": ["Burol", "Langkaan", "Paliparan", "Sabang", "Salawag", "Sampaloc", "San Agustin", "Victoria Reyes"]
-        },
-        {
-          "name": "Imus",
-          "barangays": ["Alapan", "Anabu", "Bayan Luma", "Bucandala", "Malagasang", "Pag-asa", "Tanzang Luma"]
-        }
+        {"name": "Butuan City", "barangays": ["Agao", "Ambago", "Ampayon", "Anticala", "Baan", "Bancasi", "Banza", "Basag", "Bayanihan", "Bit-os"]},
+        {"name": "Cabadbaran", "barangays": ["Bay-ang", "Bayabas", "Caasinan", "Cabinet", "Calamba", "Calibunan", "Campus", "Comagascas", "Concepcion", "Del Pilar"]},
+        {"name": "Las Nieves", "barangays": ["Ambacon", "Consuelo", "Langkila-an", "Lingayao", "Lubilan", "Mahayahay", "Poblacion", "San Isidro", "Santo Rosario", "Tinigbasan"]}
       ]
     },
     {
-      "name": "Laguna",
+      "name": "Agusan del Sur",
+      "region": "Region XIII",
       "municipalities": [
-        {
-          "name": "Biñan",
-          "barangays": ["Biñan", "Bungahan", "Canlalay", "Casile", "De La Paz", "Ganado", "Langkiwa", "Loma", "Malaban", "Malamig"]
-        },
-        {
-          "name": "Calamba",
-          "barangays": ["Bagong Kalsada", "Banlic", "Barandal", "Burol", "Halang", "Kay-Anlog", "Milagrosa", "Parian", "Real", "Saimsim"]
-        },
-        {
-          "name": "San Pedro",
-          "barangays": ["Bagong Silang", "Calendola", "Chrysanthemum", "Estrella", "Landayan", "Langgam", "Magsaysay", "Nueva", "Poblacion", "Riverside"]
-        }
+        {"name": "Bayugan", "barangays": ["Anahaw", "Berseba", "Bucac", "Cagbas", "Charito", "Claro Cortez", "Collado", "Grace Estate", "Getsemane", "Hamogaway"]},
+        {"name": "Bunawan", "barangays": ["Bunawan Brook", "Consuelo", "Imelda", "Libertad", "Mambalili", "Poblacion", "San Andres", "San Marcos", "Santa Ana", "Tabon-tabon"]},
+        {"name": "Prosperidad", "barangays": ["Aurora", "Azpetia", "La Caridad", "Las Navas", "Lucod", "Mabuhay", "Magsaysay", "Poblacion", "San Jose", "San Martin"]}
+      ]
+    },
+    {
+      "name": "Aklan",
+      "region": "Region VI",
+      "municipalities": [
+        {"name": "Kalibo", "barangays": ["Andagao", "Bachaw Norte", "Bachaw Sur", "Briones", "Caano", "Estancia", "Linabuan Norte", "Linabuan Sur", "Mabilo", "Nalook"]},
+        {"name": "Boracay (Malay)", "barangays": ["Argao", "Balabag", "Caticlan", "Cogon", "Dumlog", "Manoc-Manoc", "Motag", "Naasug", "Nabaoy", "Yapak"]},
+        {"name": "Banga", "barangays": ["Bacan", "Cupang", "Daguitan", "Dingle", "Ginictan", "Lapnag", "Libacao", "Linayasan", "Mangan", "Poblacion"]}
+      ]
+    },
+    {
+      "name": "Albay",
+      "region": "Region V",
+      "municipalities": [
+        {"name": "Legazpi City", "barangays": ["Bagumbayan", "Banquerohan", "Bitano", "Bogtong", "Bonot", "Buyuan", "Cabagñan", "Cruzada", "Dinagaan", "Dita"]},
+        {"name": "Ligao", "barangays": ["Allang", "Amtic", "Bacong", "Bagumbayan", "Baligang", "Batang", "Binatagan", "Cullat", "Dunao", "Francia"]},
+        {"name": "Tabaco", "barangays": ["Bacolod", "Bangkilingan", "Bonot", "Buang", "Cobo", "Comon", "Cormidal", "Divino Rostro", "Fatima", "Guinobat"]}
+      ]
+    },
+    {
+      "name": "Antique",
+      "region": "Region VI",
+      "municipalities": [
+        {"name": "San Jose de Buenavista", "barangays": ["Adobo", "Agcabugao", "Aguingay", "Bagacay", "Barangay I (Poblacion)", "Barangay II (Poblacion)", "Barangay III (Poblacion)", "Canjusa", "Dapdapan", "Dawis"]},
+        {"name": "Culasi", "barangays": ["Bagacay", "Barangay Zone I (Poblacion)", "Barangay Zone II (Poblacion)", "Barangay Zone III (Poblacion)", "Barangay Zone IV (Poblacion)", "Flores", "Guia", "Lipata", "Malara-anat", "Panlagangan"]},
+        {"name": "Tibiao", "barangays": ["Alegre", "Anilawan", "Balate", "Bandoja", "Barangay 1 (Poblacion)", "Barangay 2 (Poblacion)", "Barangay 3 (Poblacion)", "Barangay 4 (Poblacion)", "Barangay 5 (Poblacion)", "Bugas"]}
+      ]
+    },
+    {
+      "name": "Apayao",
+      "region": "CAR",
+      "municipalities": [
+        {"name": "Kabugao", "barangays": ["Badduat", "Bukig", "Dagara", "Dibagat", "Lenneng", "Lower Maton", "Lusod", "Poblacion", "San Mariano", "Upper Maton"]},
+        {"name": "Calanasan", "barangays": ["Cadaclan", "Eleazar", "Kabugawan", "Langnao", "Luna", "Poblacion", "Sabangan", "Santa Marcela", "Santa Filomena", "Tanglagan"]},
+        {"name": "Conner", "barangays": ["Buluan", "Cabetayan", "Calafug", "Karikitan", "Katablangan", "Malibang", "Manag", "Nabuangan", "Poblacion", "San Francisco"]}
+      ]
+    },
+    {
+      "name": "Aurora",
+      "region": "Region III",
+      "municipalities": [
+        {"name": "Baler", "barangays": ["Barangay 1 (Poblacion)", "Barangay 2 (Poblacion)", "Barangay 3 (Poblacion)", "Barangay 4 (Poblacion)", "Barangay 5 (Poblacion)", "Buhangin", "Calabuanan", "Obligacion", "Pingit", "Reserva"]},
+        {"name": "Casiguran", "barangays": ["Barangay 1 (Poblacion)", "Barangay 2 (Poblacion)", "Barangay 3 (Poblacion)", "Barangay 4 (Poblacion)", "Bianuan", "Cabayu", "Calabgan", "Calangcuasan", "Cozo", "Culat"]},
+        {"name": "Dingalan", "barangays": ["Aplaya", "Butas Na Bato", "Cabog (Matawe)", "Caragsacan", "Davildavilan", "Dikapanikian", "Ibona", "Paltic", "Poblacion", "Tanawan"]}
+      ]
+    },
+    {
+      "name": "Basilan",
+      "region": "BARMM",
+      "municipalities": [
+        {"name": "Isabela City", "barangays": ["Aguada", "Baluno", "Binuangan", "Cabunbata", "Calvario", "Carbon", "Isabela Proper", "Kapatagan Grande", "Kumalarang", "La Piedad"]},
+        {"name": "Lamitan", "barangays": ["Arco", "Ba-as", "Baimbing", "Balagtasan", "Balas", "Balobo", "Bato", "Bohebaca", "Bulanting", "Bulingan"]},
+        {"name": "Maluso", "barangays": ["Abong-abong", "Calang Canas", "Gubat Dugaan", "Luukbongsod", "Mahayahay", "Poblacion", "Tubigan"]}
+      ]
+    },
+    {
+      "name": "Bataan",
+      "region": "Region III",
+      "municipalities": [
+        {"name": "Balanga", "barangays": ["Bagong Silang", "Bagumbayan", "Cabog-Cabog", "Camacho", "Cataning", "Central", "Cupang North", "Cupang Proper", "Cupang West", "Dangcol"]},
+        {"name": "Mariveles", "barangays": ["Alas-asin", "Alion", "Alon-Anito", "Batangas I", "Batangas II", "Biaan", "Cabcaben", "Camaya", "Ipag", "Lucanin"]},
+        {"name": "Orani", "barangays": ["Apollo", "Bagong Paraiso", "Balut", "Bayan", "Calero", "Centro I", "Centro II", "Dona", "Kabalutan", "Kaparangan"]}
+      ]
+    },
+    {
+      "name": "Batanes",
+      "region": "Region II",
+      "municipalities": [
+        {"name": "Basco", "barangays": ["Ihubok I (Kayvaluganan)", "Ihubok II (Kaychanarianan)", "Chanarian", "San Antonio", "San Joaquin"]},
+        {"name": "Itbayat", "barangays": ["Raele", "San Rafael", "Santa Lucia", "Santa Maria", "Santa Rosa"]},
+        {"name": "Sabtang", "barangays": ["Chavayan", "Malakdang", "Nakanmuan", "Savidug", "Sinakan", "Sumnanga"]}
+      ]
+    },
+    {
+      "name": "Batangas",
+      "region": "Region IV-A",
+      "municipalities": [
+        {"name": "Batangas City", "barangays": ["Alangilan", "Balagtas", "Balete", "Banaba Center", "Banaba Kanluran", "Banaba Silangan", "Bilogo", "Bolbok", "Bukal", "Calicanto"]},
+        {"name": "Lipa", "barangays": ["Adya", "Anilao", "Anilao-Labac", "Antipolo del Norte", "Antipolo del Sur", "Bagong Pook", "Balintawak", "Banaybanay", "Bolbok", "Bugtong na Pulo"]},
+        {"name": "Tanauan", "barangays": ["Altura Bata", "Altura Matanda", "Altura-South", "Ambulong", "Bagbag", "Bagumbayan", "Balele", "Banjo East", "Banjo Laurel", "Banjo West"]}
+      ]
+    },
+    {
+      "name": "Benguet",
+      "region": "CAR",
+      "municipalities": [
+        {"name": "Baguio City", "barangays": ["A. Bonifacio-Caguioa-Rimando (ABCR)", "Abanao-Zandueta-Kayong-Chugum-Otek (AZKCO)", "Alfonso Tabora", "Ambiong", "Andres Bonifacio (Lower Bokawkan)", "Apugan-Loakan", "Asin Road", "Atok Trail", "Aurora Hill Proper (Malvar-Sgt. Floresca)", "Aurora Hill, North Central"]},
+        {"name": "La Trinidad", "barangays": ["Alapang", "Alno", "Ambiong", "Balili", "Beckel", "Bineng", "Cruz", "Lubas", "Pico", "Poblacion"]},
+        {"name": "Tuba", "barangays": ["Ansagan", "Camp 1", "Camp 3", "Camp 4", "Nangalisan", "Poblacion", "San Pascual", "Tabaan Norte", "Tabaan Sur", "Taloy Norte"]}
+      ]
+    },
+    {
+      "name": "Biliran",
+      "region": "Region VIII",
+      "municipalities": [
+        {"name": "Naval", "barangays": ["Agpangi", "Anislagan", "Atipolo", "Cabucgayan", "Calumpang", "Catmon", "Haguimit", "Larrazabal", "Libtong", "Lucsoon"]},
+        {"name": "Almeria", "barangays": ["Iyosan", "Jamorawon", "Pili", "Poblacion", "Pulang Bato", "Salangi", "Sampao", "Talahid", "Tamarindo", "Tabunan"]},
+        {"name": "Biliran", "barangays": ["Banlas", "Bato", "Burabod", "Canila", "Caraycaray", "Hugpa", "Julita", "Pinangumhan", "Poblacion", "San Isidro"]}
+      ]
+    },
+    {
+      "name": "Bohol",
+      "region": "Region VII",
+      "municipalities": [
+        {"name": "Tagbilaran City", "barangays": ["Booy", "Bool", "Cabawan", "Cogon", "Dampas", "Manga", "Mansasa", "Poblacion I", "Poblacion II", "Poblacion III"]},
+        {"name": "Panglao", "barangays": ["Bingag", "Bil-isan", "Bolod", "Danao", "Doljo", "Libaong", "Looc", "Lourdes", "Poblacion", "Tangnan"]},
+        {"name": "Dauis", "barangays": ["Biking", "Bingag", "Catarman", "Dao", "Mayacabac", "Poblacion", "San Isidro (Canlongon)", "Songculan", "Tabalong", "Totolan"]}
+      ]
+    },
+    {
+      "name": "Bukidnon",
+      "region": "Region X",
+      "municipalities": [
+        {"name": "Malaybalay City", "barangays": ["Aglayan", "Bangcud", "Busdi", "Casisang", "Dalwangan", "Imbayao", "Kalasungay", "Laguitas", "Managok", "Magsaysay"]},
+        {"name": "Valencia", "barangays": ["Bagontaas", "Banlag", "Catumbalon", "Colonia", "Concepcion", "Dagat-kidavao", "Guinoyuran", "Kahapunan", "Laligan", "Lilingayon"]},
+        {"name": "Manolo Fortich", "barangays": ["Alae", "Dahilayan", "Dalirig", "Damilag", "Guilang-guilang", "Lingion", "Lunocan", "Maluko", "Minsuro", "Poblacion"]}
       ]
     },
     {
       "name": "Bulacan",
+      "region": "Region III",
       "municipalities": [
-        {
-          "name": "Malolos",
-          "barangays": ["Anilao", "Atlag", "Barasoain", "Bulihan", "Caingin", "Calero", "Canalate", "Dakila", "Longos", "Mojon"]
-        },
-        {
-          "name": "Meycauayan",
-          "barangays": ["Bagbaguin", "Bahay Pare", "Bancal", "Banga", "Camalig", "Hulo", "Langka", "Liputan", "Malhacan", "Pajo"]
-        },
-        {
-          "name": "San Jose del Monte",
-          "barangays": ["Assumption", "Bagong Buhay", "Citrus", "Ciudad Real", "Dulong Bayan", "Graceville", "Gumaoc", "Kaybanban", "Minuyan", "Muzon"]
-        }
+        {"name": "Malolos", "barangays": ["Anilao", "Atlag", "Barasoain", "Bulihan", "Caingin", "Calero", "Canalate", "Dakila", "Longos", "Mojon"]},
+        {"name": "Meycauayan", "barangays": ["Bagbaguin", "Bahay Pare", "Bancal", "Banga", "Camalig", "Hulo", "Langka", "Liputan", "Malhacan", "Pajo"]},
+        {"name": "San Jose del Monte", "barangays": ["Assumption", "Bagong Buhay", "Citrus", "Ciudad Real", "Dulong Bayan", "Graceville", "Gumaoc", "Kaybanban", "Minuyan", "Muzon"]}
       ]
     },
     {
-      "name": "Rizal",
+      "name": "Cagayan",
+      "region": "Region II",
       "municipalities": [
-        {
-          "name": "Antipolo",
-          "barangays": ["Bagong Nayon", "Beverly Hills", "Cupang", "Dalig", "Dela Paz", "Inarawan", "Mambugan", "Mayamot", "San Jose", "San Roque"]
-        },
-        {
-          "name": "Cainta",
-          "barangays": ["San Andres", "San Isidro", "San Juan", "San Roque", "Santa Rosa"]
-        },
-        {
-          "name": "Taytay",
-          "barangays": ["Dolores", "Muzon", "San Isidro", "San Juan", "Santa Ana"]
-        }
+        {"name": "Tuguegarao City", "barangays": ["Annafunan East", "Annafunan West", "Atulayan Norte", "Atulayan Sur", "Bagay", "Buntun", "Caggay", "Capatan", "Carig", "Caritan Norte"]},
+        {"name": "Aparri", "barangays": ["Backiling", "Bangag", "Binalan", "Bisagu", "Bukig", "Bulala Norte", "Bulala Sur", "Caagaman", "Centro 1 (Poblacion)", "Centro 2 (Poblacion)"]},
+        {"name": "Lal-lo", "barangays": ["Bagumbayan", "Bangag", "Bicok", "Cabaritan East", "Cabaritan West", "Centro I (Poblacion)", "Centro II (Poblacion)", "Fabrica", "Fusina", "Jurisdiction"]}
       ]
     },
     {
-      "name": "Pampanga",
+      "name": "Camarines Norte",
+      "region": "Region V",
       "municipalities": [
-        {
-          "name": "Angeles City",
-          "barangays": ["Balibago", "Cutcut", "Lourdes", "Pampang", "Pulung Maragul", "Sapangbato", "Santo Rosario", "Timog"]
-        },
-        {
-          "name": "San Fernando",
-          "barangays": ["Baliti", "Calulut", "Del Carmen", "Del Pilar", "Dolores", "Juliana", "Lara", "Magliman", "Telabastagan"]
-        }
+        {"name": "Daet", "barangays": ["Alawihao", "Awitan", "Bagasbas", "Barangay I (Poblacion)", "Barangay II (Poblacion)", "Barangay III (Poblacion)", "Barangay IV (Poblacion)", "Barangay V (Poblacion)", "Barangay VI (Poblacion)", "Barangay VII (Poblacion)"]},
+        {"name": "Mercedes", "barangays": ["Apuao", "Barangay I (Poblacion)", "Barangay II (Poblacion)", "Barangay III (Poblacion)", "Barangay IV (Poblacion)", "Cabanbanan", "Catandunganon", "Cayucyucan", "Gaboc", "Guinacutan"]},
+        {"name": "Vinzons", "barangays": ["Activo", "Banocboc", "Calangcawan Norte", "Calangcawan Sur", "Handong", "Laniton", "Mangcawayan", "Mancruz", "Napaod", "Poblacion"]}
+      ]
+    },
+    {
+      "name": "Camarines Sur",
+      "region": "Region V",
+      "municipalities": [
+        {"name": "Naga City", "barangays": ["Abella", "Bagumbayan Norte", "Bagumbayan Sur", "Balatas", "Calauag", "Carolina", "Concepcion Grande", "Concepcion Pequeña", "Dayangdang", "Del Rosario"]},
+        {"name": "Iriga City", "barangays": ["Cristo Rey", "La Anunciacion", "La Medalla", "La Purisima", "Perpetual Help", "Sagrada", "Salvacion", "San Agustin", "San Antonio", "San Francisco"]},
+        {"name": "Pili", "barangays": ["Anayan", "Bagong Sirang", "Binanuaanan", "Cadlan", "Caroyroyan", "Del Rosario", "Himaao", "La Purisima", "New Moriones", "Old Moriones"]}
+      ]
+    },
+    {
+      "name": "Camiguin",
+      "region": "Region X",
+      "municipalities": [
+        {"name": "Mambajao", "barangays": ["Agoho", "Anito", "Balbagon", "Baylao", "Benhaan", "Bugong", "Kuguita", "Magting", "Naasag", "Poblacion"]},
+        {"name": "Catarman", "barangays": ["Alga", "Baylao", "Binunsaran", "Bonbon", "Catibac", "Compol", "General Viamonte (Cabuan)", "Hinubaan", "Lawigan", "Poblacion"]},
+        {"name": "Guinsiliban", "barangays": ["Butay", "Cabuan", "Cantaan", "Liong", "Maac", "North Poblacion", "North Valley", "South Poblacion", "Tuasan", "Tupsan Pequeño"]}
+      ]
+    },
+    {
+      "name": "Capiz",
+      "region": "Region VI",
+      "municipalities": [
+        {"name": "Roxas City", "barangays": ["Adlawan", "Balijuagan", "Baybay", "Bolo", "Cabugao", "Cagay", "Cogon", "Culasi", "Dayao", "Dumolog"]},
+        {"name": "Panay", "barangays": ["Agbabadiang", "Agbatuan", "Amhihis", "Anhawan", "Bago Chiquito", "Bago Grande", "Bahit", "Balatucan", "Balidio", "Bantuan"]},
+        {"name": "Dumalag", "barangays": ["Adiangao", "Aganan", "Astorga", "Balucuan", "Belen", "Consolacion", "Dacuton", "Dolores", "Gibato", "Guintas"]}
+      ]
+    },
+    {
+      "name": "Catanduanes",
+      "region": "Region V",
+      "municipalities": [
+        {"name": "Virac", "barangays": ["Antipolo", "Balite", "Bato", "Calabnigan", "Calatagan Proper", "Calatagan Tibang", "Calabnigan", "Gogon", "Marilima", "Palnab"]},
+        {"name": "Bato", "barangays": ["Bahao", "Bato Nuevo", "Bote", "Cabadiangan", "Hinipaan", "Libjo", "Poblacion", "Rosary Heights I", "Rosary Heights II", "Sipi"]},
+        {"name": "Baras", "barangays": ["Abihao", "Agban", "Bagong Sirang", "Bato", "Caragumihan", "Catanagan", "Ginitligan", "Panay", "Poblacion", "San Miguel"]}
+      ]
+    },
+    {
+      "name": "Cavite",
+      "region": "Region IV-A",
+      "municipalities": [
+        {"name": "Bacoor", "barangays": ["Alima", "Aniban", "Banalo", "Dulong Bayan", "Habay", "Ligas", "Molino", "Panapaan", "Queens Row", "Tabing Dagat"]},
+        {"name": "Dasmariñas", "barangays": ["Burol", "Langkaan", "Paliparan", "Sabang", "Salawag", "Sampaloc", "San Agustin", "Victoria Reyes"]},
+        {"name": "Imus", "barangays": ["Alapan", "Anabu", "Bayan Luma", "Bucandala", "Malagasang", "Pag-asa", "Tanzang Luma"]}
       ]
     },
     {
       "name": "Cebu",
+      "region": "Region VII",
       "municipalities": [
-        {
-          "name": "Cebu City",
-          "barangays": ["Apas", "Banilad", "Basak", "Busay", "Camputhaw", "Capitol Site", "Lahug", "Mabolo", "Talamban", "Tisa"]
-        },
-        {
-          "name": "Mandaue",
-          "barangays": ["Alang-alang", "Bakilid", "Banilad", "Basak", "Cabancalan", "Centro", "Looc", "Mantuyong", "Subangdaku", "Tabok"]
-        },
-        {
-          "name": "Lapu-Lapu",
-          "barangays": ["Agus", "Babag", "Basak", "Buaya", "Caubian", "Ibo", "Looc", "Mactan", "Marigondon", "Pajac"]
-        }
+        {"name": "Cebu City", "barangays": ["Apas", "Banilad", "Basak", "Busay", "Camputhaw", "Capitol Site", "Lahug", "Mabolo", "Talamban", "Tisa"]},
+        {"name": "Mandaue", "barangays": ["Alang-alang", "Bakilid", "Banilad", "Basak", "Cabancalan", "Centro", "Looc", "Mantuyong", "Subangdaku", "Tabok"]},
+        {"name": "Lapu-Lapu", "barangays": ["Agus", "Babag", "Basak", "Buaya", "Caubian", "Ibo", "Looc", "Mactan", "Marigondon", "Pajac"]}
+      ]
+    },
+    {
+      "name": "Compostela Valley (Davao de Oro)",
+      "region": "Region XI",
+      "municipalities": [
+        {"name": "Nabunturan", "barangays": ["Anislagan", "Antequera", "Basak", "Bayabas", "Bukal", "Cabacungan", "Cabidianan", "Katipunan", "Libasan", "Magsaysay"]},
+        {"name": "Monkayo", "barangays": ["Awao", "Babag", "Banlag", "Baylo", "Casoon", "Haguimitan", "Macopa", "Mamunga", "Naboc", "Olaycon"]},
+        {"name": "Pantukan", "barangays": ["Araibo", "Bongabong", "Bongbong", "Fuentes", "Kingking", "Las Arenas", "Magnaga", "Matiao", "Napnapan", "Poblacion"]}
+      ]
+    },
+    {
+      "name": "Cotabato",
+      "region": "BARMM",
+      "municipalities": [
+        {"name": "Kidapawan City", "barangays": ["Amas", "Amazion", "Balabag", "Balindog", "Birada", "Gayola", "Junction", "Kalaisan", "Lanao", "Linangkob"]},
+        {"name": "Midsayap", "barangays": ["Baguer", "Baliki", "Bitoka", "Bual Norte", "Bual Sur", "Bulanan", "Damatulan", "Kadingilan", "Kudarangan", "Macasendeg"]},
+        {"name": "Kabacan", "barangays": ["Bangilan", "Bannawag", "Buluan", "Cuyapon", "Kayaga", "Lower Glad", "Magatos", "Nangka", "Osias", "Pedtad"]}
+      ]
+    },
+    {
+      "name": "Davao del Norte",
+      "region": "Region XI",
+      "municipalities": [
+        {"name": "Tagum City", "barangays": ["Apokon", "Bincungan", "Canocotan", "Cuambogan", "La Filipina", "Liboganon", "Madaum", "Magdum", "Mankilam", "New Balamban"]},
+        {"name": "Panabo", "barangays": ["A. O. Floirendo", "Buenavista", "Cacao", "Consolacion", "Dapco", "Gredu (Poblacion)", "J.P. Laurel", "Kasilak", "Kauswagan", "Little Panay"]},
+        {"name": "Samal (Island Garden City)", "barangays": ["Adecor", "Anonang", "Aumbay", "Balet", "Bandera", "Cawag", "Cogon", "Dadatan", "Del Monte", "Guilon"]}
+      ]
+    },
+    {
+      "name": "Davao del Sur",
+      "region": "Region XI",
+      "municipalities": [
+        {"name": "Digos City", "barangays": ["Aplaya", "Balabag", "Goma", "Kiagot", "Lungag", "Matti", "San Jose (Poblacion)", "San Miguel (Poblacion)", "Sinawilan", "Tres de Mayo"]},
+        {"name": "Bansalan", "barangays": ["Alegre", "Alta Vista", "Anonang", "Bitaug", "Bonifacio", "Buenavista", "Darapuay", "Dolo", "Eman", "Kinuskusan"]},
+        {"name": "Magsaysay", "barangays": ["Bagumbayan", "Balasinon", "Barayong", "Daliao", "Datu Davao", "Kanapulo", "Lower Bala", "Mabini", "New Ilocos", "Poblacion"]}
+      ]
+    },
+    {
+      "name": "Davao Oriental",
+      "region": "Region XI",
+      "municipalities": [
+        {"name": "Mati City", "barangays": ["Badas", "Bobon", "Buso", "Cabuaya", "Central (Poblacion)", "Culian", "Dahican", "Danao", "Dawan", "Don Enrique Lopez"]},
+        {"name": "Baganga", "barangays": ["Baculin", "Batawan", "Batiano", "Bobonao", "Banglasan", "Campawan", "Central (Poblacion)", "Dapnan", "Kinablangan", "Lambajon"]},
+        {"name": "Cateel", "barangays": ["Aliwagwag", "Baybay", "Baculin", "Cabuaya", "Cagtutuli", "Central (Poblacion)", "Hermogenes", "Mainit", "Malibago", "Taytayan"]}
+      ]
+    },
+    {
+      "name": "Dinagat Islands",
+      "region": "Region XIII",
+      "municipalities": [
+        {"name": "San Jose", "barangays": ["Austra", "Aurelio", "Cuarenta", "Don Ruben Ecleo", "Magsaysay", "Maria Rosario", "San Jose (Poblacion)", "San Juan", "Santa Cruz", "Wilson"]},
+        {"name": "Basilisa", "barangays": ["Benglen", "Catadman", "Coring", "Consolacion", "Diegas", "Edera", "Geotina", "Honrado", "Imee", "Navarro"]},
+        {"name": "Dinagat", "barangays": ["Bagumbayan", "Cabunga-an", "Doña Helene", "Justiniana Edera", "Magsaysay", "New Nazareth", "Poblacion", "San Jose", "San Juan", "Santa Monica"]}
+      ]
+    },
+    {
+      "name": "Eastern Samar",
+      "region": "Region VIII",
+      "municipalities": [
+        {"name": "Borongan", "barangays": ["Alang-alang", "Amantacop", "Balud", "Banuyo", "Bato", "Cabong", "Calicoan", "Canjaway", "Canlaray", "Divinubo"]},
+        {"name": "Guiuan", "barangays": ["Alingarog", "Bagua", "Baras", "Baquil", "Bucao", "Bungtod", "Cagusu-an", "Camparang", "Campoyong", "Cantahay"]},
+        {"name": "Oras", "barangays": ["Agsam", "Alang-alang", "Balingasag", "Baon", "Batang", "Dao", "Gamot", "Mabuhay", "Naga", "Pangudtan"]}
+      ]
+    },
+    {
+      "name": "Guimaras",
+      "region": "Region VI",
+      "municipalities": [
+        {"name": "Jordan", "barangays": ["Alaguisoc", "Balcon Maravilla", "Balcon Melliza", "Bugnay", "Espinosa", "Lawi", "Morobuan", "Poblacion", "Rizal", "Santa Teresa"]},
+        {"name": "Buenavista", "barangays": ["Agsanayan", "Avila", "Bacjao", "Banban", "Cansilayan", "Dagsa-an", "Daragan", "East Valencia", "Getulio", "Liwanag"]},
+        {"name": "Nueva Valencia", "barangays": ["Calaya", "Canhawan", "Dolores", "Igang", "Igdarapdap", "Lanipe", "Magamay", "Napandong", "Oracon", "Panobolon"]}
+      ]
+    },
+    {
+      "name": "Ifugao",
+      "region": "CAR",
+      "municipalities": [
+        {"name": "Lagawe", "barangays": ["Abinuan", "Banga", "Burnay", "Caba", "Cudog", "Dulao", "Jucbong", "Kinakin", "Montabiong", "Olilicon"]},
+        {"name": "Banaue", "barangays": ["Balawis", "Bangaan", "Batad", "Bocos", "Gohang", "Poblacion", "Poitan", "Pula", "Viewpoint", "Banao"]},
+        {"name": "Mayoyao", "barangays": ["Alimit", "Ayangan", "Balangbang", "Banhal", "Bato-Alatbang", "Bongan", "Buninan", "Chaya", "Epeng", "Guinihon"]}
+      ]
+    },
+    {
+      "name": "Ilocos Norte",
+      "region": "Region I",
+      "municipalities": [
+        {"name": "Laoag City", "barangays": ["Barangay No. 1, San Lorenzo", "Barangay No. 2, Santa Joaquina", "Barangay No. 3, Nstra. Sra. del Rosario", "Barangay No. 4, San Guillermo", "Barangay No. 5, San Pedro", "Dibua", "Nalbo", "Nangalisan", "Suyo", "Vira"]},
+        {"name": "Batac", "barangays": ["Acosta", "Aglipay", "Baay", "Baligat", "Baoa East", "Baoa West", "Ben-agan", "Bungon", "Callaguip", "Capacuan"]},
+        {"name": "Paoay", "barangays": ["Bacsil", "Cabagoan", "Callaguip", "Cayubog", "Dolores", "Masintoc", "Monte", "Nagbacalan", "Nalasin", "Nanguyudan"]}
+      ]
+    },
+    {
+      "name": "Ilocos Sur",
+      "region": "Region I",
+      "municipalities": [
+        {"name": "Vigan City", "barangays": ["Ayusan Norte", "Ayusan Sur", "Barangay I (Poblacion)", "Barangay II (Poblacion)", "Barangay III (Poblacion)", "Barangay IV (Poblacion)", "Barangay V (Poblacion)", "Barraca", "Beddeng Daya", "Beddeng Laud"]},
+        {"name": "Candon", "barangays": ["Allangigan Primero", "Allangigan Segundo", "Amguid", "Ayudante", "Bagani Campo", "Bagani Gabor", "Bagani Tocgo", "Bagani Ubbog", "Bugnay", "Calongbuyan"]},
+        {"name": "Santa Maria", "barangays": ["Ab-abut", "Amilongan", "Barangay I (Poblacion)", "Barangay II (Poblacion)", "Barangay III (Poblacion)", "Barangay IV (Poblacion)", "Barongcong Norte", "Barongcong Sur", "Bulbulala", "Cabaroan"]}
+      ]
+    },
+    {
+      "name": "Iloilo",
+      "region": "Region VI",
+      "municipalities": [
+        {"name": "Iloilo City", "barangays": ["Arevalo", "Bo. Obrero", "Brgy. Captain Claudio", "Caingin", "City Proper", "Jaro", "La Paz", "Lapuz", "Mandurriao", "Molo"]},
+        {"name": "Passi", "barangays": ["Agdahon", "Aglalana", "Agtambo", "Alimono", "Arac", "Ayuyan", "Bacuranan", "Bagacay", "Batu", "Buhang"]},
+        {"name": "Oton", "barangays": ["Abilay Norte", "Abilay Sur", "Alegre", "Ambarihon", "Batuan Ilaud", "Batuan Ilaya", "Bita", "Bo-ot", "Botong", "Caboloan Norte"]}
+      ]
+    },
+    {
+      "name": "Isabela",
+      "region": "Region II",
+      "municipalities": [
+        {"name": "Ilagan City", "barangays": ["Alibagu", "Alinguigan Second", "Aplaya", "Bagong Bayan", "Baligatan", "Batal", "Batong-Labang", "Binahian", "Buneg", "Cabeseria I"]},
+        {"name": "Santiago City", "barangays": ["Abra", "Ambalatungan", "Balintocatoc", "Baluarte", "Bannawag Norte", "Batal", "Buenavista", "Calao East (Niño Jesus)", "Calao West (San Isidro)", "Centro East (Poblacion)"]},
+        {"name": "Cauayan", "barangays": ["Alicaocao", "Alinam", "Amobocan", "Baringin Norte", "Baringin Sur", "Buena Suerte", "Bugallon Proper", "Cabaruan", "Cabugao", "Cassap Fuera"]}
+      ]
+    },
+    {
+      "name": "Kalinga",
+      "region": "CAR",
+      "municipalities": [
+        {"name": "Tabuk City", "barangays": ["Agbannawag", "Amlao", "Appas", "Bagumbayan", "Balawag", "Balong", "Bantay", "Bulanao Centro", "Bulanao Norte", "Calaccad"]},
+        {"name": "Balbalan", "barangays": ["Ababa-an", "Balbalasang", "Buaya", "Dao-angan", "Gawa-an", "Mabaca", "Maling", "Pantikian", "Poblacion", "Poswoy"]},
+        {"name": "Pinukpuk", "barangays": ["Aciga", "Allaguia", "Apatan", "Ballayangon", "Bayao", "Ca-aniwan", "Cawagayan", "Dugpa", "Limos", "Pinococ"]}
+      ]
+    },
+    {
+      "name": "La Union",
+      "region": "Region I",
+      "municipalities": [
+        {"name": "San Fernando City", "barangays": ["Abut", "Apaleng", "Bacsil", "Bangaoilan", "Bangbangolan", "Baraoas", "Biday", "Birunget", "Bungro", "Cabaroan"]},
+        {"name": "Bauang", "barangays": ["Acao", "Bagbag", "Ballay", "Bawanta", "Bucayab", "Boy-utan", "Cabalayangan", "Cabisilan", "Calumbaya", "Central West (Poblacion)"]},
+        {"name": "Agoo", "barangays": ["Ambitacay", "Balawarte", "Capas", "Consolacion", "Macalva Central", "Macalva Norte", "Macalva Sur", "Nazareno", "Poblacion East", "Poblacion West"]}
+      ]
+    },
+    {
+      "name": "Laguna",
+      "region": "Region IV-A",
+      "municipalities": [
+        {"name": "Biñan", "barangays": ["Biñan", "Bungahan", "Canlalay", "Casile", "De La Paz", "Ganado", "Langkiwa", "Loma", "Malaban", "Malamig"]},
+        {"name": "Calamba", "barangays": ["Bagong Kalsada", "Banlic", "Barandal", "Burol", "Halang", "Kay-Anlog", "Milagrosa", "Parian", "Real", "Saimsim"]},
+        {"name": "San Pedro", "barangays": ["Bagong Silang", "Calendola", "Chrysanthemum", "Estrella", "Landayan", "Langgam", "Magsaysay", "Nueva", "Poblacion", "Riverside"]}
+      ]
+    },
+    {
+      "name": "Lanao del Norte",
+      "region": "Region X",
+      "municipalities": [
+        {"name": "Iligan City", "barangays": ["Abuno", "Acmac", "Bagong Silang", "Bonbonon", "Buruun", "Dalipuga", "Del Carmen", "Digkilaan", "Ditucalan", "Dulag"]},
+        {"name": "Tubod", "barangays": ["Baroy", "Bongabong", "Bulod", "Buntawan", "Caril", "Garamay", "Kakai Renabor", "Lala Proper", "Lumbayao", "Malingao"]},
+        {"name": "Kapatagan", "barangays": ["Bagumbayan", "Bangcal", "Balagatasa", "Concepcion", "Inudaran", "Karomatan", "Kilala", "Kirapan", "Kolambog", "Kauswagan"]}
+      ]
+    },
+    {
+      "name": "Lanao del Sur",
+      "region": "BARMM",
+      "municipalities": [
+        {"name": "Marawi City", "barangays": ["Ambolong", "Bangco", "Basak Malutlut", "Daguduban", "Dansalan", "Datu sa Dansalan", "Dulay", "Emie Punud", "Fort", "Gadongan"]},
+        {"name": "Malabang", "barangays": ["Bagoaingud", "Balut", "Basak", "Cormatan", "Lumbac", "Pagalongan", "Pantar", "Poblacion", "Pualas", "Tambo"]},
+        {"name": "Marantao", "barangays": ["Balut", "Batal", "Cabasaran", "Dansalan", "Guimba", "Ingud", "Pagayawan", "Panggao", "Poblacion (Matampay)", "Poona Marantao"]}
+      ]
+    },
+    {
+      "name": "Leyte",
+      "region": "Region VIII",
+      "municipalities": [
+        {"name": "Tacloban City", "barangays": ["Abucay", "Apitong", "Bagacay", "Barangay 1", "Barangay 2", "Barangay 3", "Barangay 4", "Barangay 5", "Barangay 6", "Barangay 7"]},
+        {"name": "Ormoc", "barangays": ["Airport", "Alta Vista", "Bagong", "Bantigue", "Barangay 1 (Poblacion)", "Barangay 2 (Poblacion)", "Barangay 3 (Poblacion)", "Barangay 4 (Poblacion)", "Barangay 5 (Poblacion)", "Barangay 6 (Poblacion)"]},
+        {"name": "Baybay", "barangays": ["Ambacan", "Amguhan", "Balao", "Bitanhuan", "Gabas", "Kabalasan", "Kilim", "Magsaysay", "Makinhas", "Poblacion Zone 1"]}
+      ]
+    },
+    {
+      "name": "Maguindanao",
+      "region": "BARMM",
+      "municipalities": [
+        {"name": "Cotabato City", "barangays": ["Bagua", "Bubong", "Kalanganan I", "Kalanganan II", "Poblacion I", "Poblacion II", "Poblacion III", "Poblacion IV", "Poblacion V", "Poblacion VI"]},
+        {"name": "Datu Odin Sinsuat", "barangays": ["Awang", "Bagan", "Dalican", "Kihan", "Kurintem", "Lambayong", "Madia", "Simuay", "Sifaren", "Timbangan"]},
+        {"name": "Sultan Kudarat", "barangays": ["Balabag", "Bulod", "Dalumangcob", "Kakar", "Kalipapa", "Kulimpang", "Malingao", "Midpapan", "Midtungok", "Nuyo"]}
+      ]
+    },
+    {
+      "name": "Marinduque",
+      "region": "Region IV-B",
+      "municipalities": [
+        {"name": "Boac", "barangays": ["Agot", "Amoingon", "Apitong", "Balaring", "Balimbing", "Bangbangalon", "Bantad", "Bantay", "Bayuti", "Binunga"]},
+        {"name": "Gasan", "barangays": ["Bachao Ibaba", "Bachao Ilaya", "Bahi", "Bangbang", "Banot", "Banuyo", "Barangay I (Poblacion)", "Barangay II (Poblacion)", "Barangay III (Poblacion)", "Bognuyan"]},
+        {"name": "Santa Cruz", "barangays": ["Alobo", "Angas", "Aturan", "Bagong Silang Poblacion", "Banahaw Poblacion", "Barahan", "Botilao", "Buyabod", "Dating Bayan", "Devilla"]}
+      ]
+    },
+    {
+      "name": "Masbate",
+      "region": "Region V",
+      "municipalities": [
+        {"name": "Masbate City", "barangays": ["Anas", "Asid", "B. Titong", "Bagalayag", "Bantigue", "Bapor", "Batuhan", "Bayombon", "Centro Poblacion", "Espinosa"]},
+        {"name": "Cataingan", "barangays": ["Aguada", "Dacu", "Divisoria", "Gabi", "Libas", "Mabuhay", "Poblacion District I", "Poblacion District II", "Poblacion District III", "Poblacion District IV"]},
+        {"name": "Mobo", "barangays": ["Baang", "Bagacay", "Balatucan", "Baybay", "Cabanoyoan", "Cayabon", "Dacu", "Fabrica", "Guintorelan", "Mabini"]}
+      ]
+    },
+    {
+      "name": "Metro Manila",
+      "region": "NCR",
+      "municipalities": [
+        {"name": "Manila", "barangays": ["Ermita", "Intramuros", "Malate", "Paco", "Pandacan", "Port Area", "Quiapo", "Sampaloc", "San Miguel", "Santa Ana"]},
+        {"name": "Quezon City", "barangays": ["Bagong Pag-asa", "Bahay Toro", "Balingasa", "Batasan Hills", "Commonwealth", "Cubao", "Diliman", "Fairview", "Kamuning", "Loyola Heights"]},
+        {"name": "Caloocan", "barangays": ["Bagong Silang", "Camarin", "Grace Park", "Sangandaan", "Tala", "Bagumbayan", "Maypajo"]},
+        {"name": "Makati", "barangays": ["Bel-Air", "Forbes Park", "Guadalupe Nuevo", "Guadalupe Viejo", "Magallanes", "Poblacion", "San Lorenzo", "Urdaneta"]},
+        {"name": "Pasig", "barangays": ["Kapitolyo", "Manggahan", "Maybunga", "Oranbo", "Pinagbuhatan", "Rosario", "Santolan", "Ugong"]},
+        {"name": "Taguig", "barangays": ["Bagumbayan", "Bambang", "Calzada", "Central Bicutan", "Central Signal Village", "Fort Bonifacio", "Hagonoy", "Ibayo-Tipas", "Katuparan", "Ligid-Tipas"]},
+        {"name": "Parañaque", "barangays": ["Baclaran", "BF Homes", "Don Bosco", "Don Galo", "La Huerta", "Marcelo Green", "Merville", "Moonwalk", "San Antonio", "San Dionisio"]},
+        {"name": "Las Piñas", "barangays": ["Almanza Uno", "Almanza Dos", "B.F. International", "Daniel Fajardo", "Elias Aldana", "Ilaya", "Manuyo Uno", "Manuyo Dos", "Pamplona Uno", "Pamplona Dos"]},
+        {"name": "Muntinlupa", "barangays": ["Alabang", "Buli", "Cupang", "Poblacion", "Putatan", "Sucat", "Tunasan"]},
+        {"name": "Pasay", "barangays": ["Barangay 1", "Barangay 2", "Barangay 3", "F.B. Harrison", "Malibay", "Maricaban", "San Isidro", "San Rafael", "San Roque", "Santo Niño"]},
+        {"name": "Marikina", "barangays": ["Barangka", "Concepcion Uno", "Concepcion Dos", "Fortune", "Industrial Valley", "Jesus Dela Peña", "Malanday", "Nangka", "Parang", "Santa Elena"]},
+        {"name": "Mandaluyong", "barangays": ["Addition Hills", "Bagong Silang", "Barangka Drive", "Buayang Bato", "Burol", "Daang Bakal", "Hagdang Bato Itaas", "Hagdang Bato Libis", "Harapin Ang Bukas", "Highway Hills"]},
+        {"name": "San Juan", "barangays": ["Addition Hills", "Balong-Bato", "Batis", "Corazon de Jesus", "Ermitaño", "Greenhills", "Isabelita", "Kabayanan", "Little Baguio", "Maytunas"]},
+        {"name": "Valenzuela", "barangays": ["Arkong Bato", "Bagbaguin", "Balangkas", "Bignay", "Bisig", "Canumay East", "Canumay West", "Coloong", "Dalandanan", "Gen. T. de Leon"]},
+        {"name": "Malabon", "barangays": ["Acacia", "Baritan", "Bayan-bayanan", "Catmon", "Concepcion", "Dampalit", "Flores", "Hulong Duhat", "Ibaba", "Longos"]},
+        {"name": "Navotas", "barangays": ["Bagumbayan North", "Bagumbayan South", "Bangculasi", "Daanghari", "Navotas East", "Navotas West", "North Bay Boulevard North", "North Bay Boulevard South", "San Jose", "San Rafael Village"]},
+        {"name": "Pateros", "barangays": ["Aguho", "Magtanggol", "Martires del 96", "Poblacion", "San Pedro", "San Roque", "Santa Ana", "Santo Rosario-Kanluran", "Santo Rosario-Silangan", "Tabacalera"]}
+      ]
+    },
+    {
+      "name": "Misamis Occidental",
+      "region": "Region X",
+      "municipalities": [
+        {"name": "Oroquieta City", "barangays": ["Apil", "Bolibol", "Buenavista", "Buenavista Upper", "Bunga", "Canubay", "Clarin Settlement", "Dolipos Alto", "Dolipos Bajo", "Dulapo"]},
+        {"name": "Ozamiz City", "barangays": ["Aguada", "Bacolod", "Bagakay", "Banadero", "Baybay San Roque", "Baybay Santa Cruz", "Bongbong", "Calabayan", "Carmen", "Catadman"]},
+        {"name": "Tangub", "barangays": ["Aquino", "Balatacan", "Baluk", "Bara-as", "Bubonga-Laya", "Capalaran", "Catagan", "Garang", "Guinicolalay", "Isidro D. Tan"]}
+      ]
+    },
+    {
+      "name": "Misamis Oriental",
+      "region": "Region X",
+      "municipalities": [
+        {"name": "Cagayan de Oro City", "barangays": ["Agusan", "Balulang", "Baluarte", "Bayabas", "Bonbon", "Bugo", "Bulua", "Camaman-an", "Carmen", "Consolacion"]},
+        {"name": "Gingoog", "barangays": ["Agay-ayan", "Alagatan", "Anakan", "Bakidbakid", "Bal-ason", "Binakalan", "Kamansi", "Lunao", "Magsaysay", "Odiongan"]},
+        {"name": "El Salvador", "barangays": ["Baybay", "Bolobolo", "Cabulohan", "Camalig", "Hinaplanan", "Lukatan", "Lumbo", "Monterico", "Poblacion", "San Isidro"]}
+      ]
+    },
+    {
+      "name": "Mountain Province",
+      "region": "CAR",
+      "municipalities": [
+        {"name": "Bontoc", "barangays": ["Alab Oriente", "Alab Proper", "Balili", "Bontoc Ili", "Caneo", "Caluttit", "Dalican", "Gonogon", "Guinaang", "Mainit"]},
+        {"name": "Sagada", "barangays": ["Ambassing", "Angkileng", "Antadao", "Balugan", "Dagdag", "Demang", "Fidelisan", "Madongo", "Patay", "Poblacion"]},
+        {"name": "Tadian", "barangays": ["Batayan", "Bunga", "Cagubatan", "Duagan", "Kayan East", "Kayan West", "Lumiang", "Masla", "Pandayan", "Poblacion"]}
+      ]
+    },
+    {
+      "name": "Negros Occidental",
+      "region": "Region VI",
+      "municipalities": [
+        {"name": "Bacolod City", "barangays": ["Alangilan", "Alijis", "Banago", "Barangay 1", "Barangay 2", "Barangay 3", "Bata", "Estefania", "Felisa", "Granada"]},
+        {"name": "Silay", "barangays": ["Bagtic", "Balaring", "Barangay I (Poblacion)", "Barangay II (Poblacion)", "Barangay III (Poblacion)", "Barangay IV (Poblacion)", "Barangay V (Poblacion)", "Barangay VI (Poblacion)", "Briones", "Cabudburan"]},
+        {"name": "Talisay", "barangays": ["Cabatangan", "Concepcion", "Dos Hermanas", "Efigenio Lizares", "Katilingban", "Matab-ang", "Poblacion", "San Fernando", "Santa Teresa", "Zone 1"]}
+      ]
+    },
+    {
+      "name": "Negros Oriental",
+      "region": "Region VII",
+      "municipalities": [
+        {"name": "Dumaguete City", "barangays": ["Bagacay", "Bajumpandan", "Balugo", "Banilad", "Bantayan", "Batinguel", "Bunao", "Cadawinonan", "Calindagan", "Camanjac"]},
+        {"name": "Bayawan", "barangays": ["Ali-is", "Banga", "Banogbanog", "Boyco", "Bugay", "Cansumalig", "Dawis", "Kalamtukan", "Kalumboyan", "Malabugas"]},
+        {"name": "Bais", "barangays": ["Barangay I (Poblacion)", "Barangay II (Poblacion)", "Binakayan", "Calasga-an", "Cambagahan", "Consolacion", "Hangyad", "Kabangkalan", "Manlipac", "Okiot"]}
+      ]
+    },
+    {
+      "name": "Northern Samar",
+      "region": "Region VIII",
+      "municipalities": [
+        {"name": "Catarman", "barangays": ["Acacia", "Aguinaldo", "Airport Village", "Bangkerohan", "Baybay", "Bocsol", "Calachuchi", "Cawayan", "Daganas", "Dalakit"]},
+        {"name": "Laoang", "barangays": ["Aguadahan", "Alang-alang", "Balugo", "Batang", "Bulao", "Cahagwayan", "Calingnan", "Cahayag", "Calundan", "Camparanga"]},
+        {"name": "Pambujan", "barangays": ["Antagan", "Cababtoan", "Cagbigajo", "Cahagsa-an", "Calanyugan", "Cangcahipos", "Capacujan", "Esperanza", "Lumaybay", "Maybocog"]}
+      ]
+    },
+    {
+      "name": "Nueva Ecija",
+      "region": "Region III",
+      "municipalities": [
+        {"name": "Cabanatuan City", "barangays": ["Aduas Centro", "Aduas Norte", "Aduas Sur", "Bagong Buhay", "Bagong Sikat", "Bakero", "Bakod Bayan", "Balite", "Bangad", "Bantug Bulalo"]},
+        {"name": "Gapan", "barangays": ["Balante", "Bantug", "Bayanihan", "Bungo", "Kapalangan", "Macabaclay", "Mahipon", "Malimba", "Mangino", "Pambuan"]},
+        {"name": "Palayan City", "barangays": ["Atate", "Bagong Buhay", "Bantugan", "Caballero", "Ganaderia", "Marcos Village", "Maligaya", "Mapalad", "Singalat", "Imelda Valley"]}
+      ]
+    },
+    {
+      "name": "Nueva Vizcaya",
+      "region": "Region II",
+      "municipalities": [
+        {"name": "Bayombong", "barangays": ["Bansing", "Bonfal East", "Bonfal West", "Busilac", "Casat", "Don Domingo Maddela", "La Torre Norte", "La Torre Sur", "Luyang", "Magapuy"]},
+        {"name": "Bambang", "barangays": ["Abian", "Abinganan", "Aliaga", "Almaguer North", "Almaguer South", "Banggot", "Buag", "Homestead", "Macate", "Mabuslo"]},
+        {"name": "Solano", "barangays": ["Aggub", "Bangaan", "Bantugan", "Bascaran", "Communal", "Curifang", "Dadap", "Lactawan", "Osmeña", "Poblacion North"]}
+      ]
+    },
+    {
+      "name": "Occidental Mindoro",
+      "region": "Region IV-B",
+      "municipalities": [
+        {"name": "San Jose", "barangays": ["Ansiray", "Bagong Sikat", "Bangkal", "Batasan", "Bayotbot", "Buri", "Cabalwa", "Camburay", "Caminawit", "Central"]},
+        {"name": "Mamburao", "barangays": ["Balansay", "Balogo", "Fatima", "Payompon", "Poblacion 1", "Poblacion 2", "Poblacion 3", "Poblacion 4", "Poblacion 5", "Talabaan"]},
+        {"name": "Sablayan", "barangays": ["Buenavista", "Burgos", "Clarendon", "General Emilio Aguinaldo", "Ibud", "Ilvita", "Ligaya", "Paetan", "Poblacion", "San Agustin"]}
+      ]
+    },
+    {
+      "name": "Oriental Mindoro",
+      "region": "Region IV-B",
+      "municipalities": [
+        {"name": "Calapan City", "barangays": ["Balite", "Baruyan", "Bayanan I", "Bayanan II", "Biga", "Buhuan", "Bulusan", "Calero", "Camansihan", "Camilmil"]},
+        {"name": "Puerto Galera", "barangays": ["Aninuan", "Baclayan", "Dulangan", "Palangan", "Sabang", "San Antonio", "San Isidro", "Sinandigan", "Tabinay", "Villaflor"]},
+        {"name": "Bongabong", "barangays": ["Anilao", "Bagumbayan", "Batangan", "Bukal", "Camantigue", "Carmundo", "Celso", "Dayhagan", "Escribano", "Formon"]}
+      ]
+    },
+    {
+      "name": "Palawan",
+      "region": "Region IV-B",
+      "municipalities": [
+        {"name": "Puerto Princesa", "barangays": ["Bagong Bayan", "Bagong Pag-asa", "Bahile", "Barangay Poblacion", "Binduyan", "Irawan", "Iwahig", "Kalipay", "Kamuning", "Langogan"]},
+        {"name": "Coron", "barangays": ["Banuang Daan", "Barangay I (Poblacion)", "Barangay II (Poblacion)", "Barangay III (Poblacion)", "Barangay IV (Poblacion)", "Barangay V (Poblacion)", "Barangay VI (Poblacion)", "Bintuan", "Borac", "Buenavista"]},
+        {"name": "El Nido", "barangays": ["Aberawan", "Bagong Bayan", "Barangay Poblacion Zone I", "Barangay Poblacion Zone II", "Barotuan", "Bebeladan", "Buena Suerte", "Corong-Corong", "Manlag", "Marimegmeg"]}
+      ]
+    },
+    {
+      "name": "Pampanga",
+      "region": "Region III",
+      "municipalities": [
+        {"name": "Angeles City", "barangays": ["Balibago", "Cutcut", "Lourdes", "Pampang", "Pulung Maragul", "Sapangbato", "Santo Rosario", "Timog"]},
+        {"name": "San Fernando", "barangays": ["Baliti", "Calulut", "Del Carmen", "Del Pilar", "Dolores", "Juliana", "Lara", "Magliman", "Telabastagan"]},
+        {"name": "Mabalacat", "barangays": ["Atlu Bola", "Bical", "Bundagul", "Cacutud", "Calumpang", "Dapdap", "Dau", "Dolores", "Duquit", "Lakandula"]}
+      ]
+    },
+    {
+      "name": "Pangasinan",
+      "region": "Region I",
+      "municipalities": [
+        {"name": "Dagupan City", "barangays": ["Bacayao Norte", "Bacayao Sur", "Barangay I (T. Bugallon)", "Barangay II", "Barangay III", "Barangay IV", "Bolosan", "Bonuan Binloc", "Bonuan Boquig", "Bonuan Gueset"]},
+        {"name": "Urdaneta", "barangays": ["Anonas", "Bactad East", "Bayaoas", "Bolaoen", "Cabaruan", "Cabuloan", "Camanang", "Camantiles", "Casantaan", "Casanfernandoan"]},
+        {"name": "Alaminos", "barangays": ["Alos", "Amandiego", "Amangbangan", "Balangobong", "Balayang", "Bisocol", "Bolaney", "Bued", "Cabatuan", "Cayucay"]}
+      ]
+    },
+    {
+      "name": "Quezon",
+      "region": "Region IV-A",
+      "municipalities": [
+        {"name": "Lucena City", "barangays": ["Barangay 1", "Barangay 2", "Barangay 3", "Cotta", "Dalahican", "Gulang-Gulang", "Ibabang Dupay", "Ibabang Iyam", "Ilayang Dupay", "Ilayang Iyam"]},
+        {"name": "Tayabas", "barangays": ["Alitao", "Alsam Ibaba", "Alsam Ilaya", "Angeles Zone I", "Angeles Zone II", "Angeles Zone III", "Angeles Zone IV", "Ayaas", "Baguio", "Banilad"]},
+        {"name": "Sariaya", "barangays": ["Barangay Zone I (Poblacion)", "Barangay Zone II (Poblacion)", "Barangay Zone III (Poblacion)", "Barangay Zone IV (Poblacion)", "Barangay Zone V (Poblacion)", "Bignay 1", "Bignay 2", "Canda", "Castañas", "Gibanga"]}
+      ]
+    },
+    {
+      "name": "Quirino",
+      "region": "Region II",
+      "municipalities": [
+        {"name": "Cabarroguis", "barangays": ["Balagbag", "Banuar", "Burgos", "Calaocan", "Del Pilar", "Diffun", "Gundaway", "Mangandingay", "Rizal", "San Marcos"]},
+        {"name": "Diffun", "barangays": ["Alicia", "Aglipay", "Andres Bonifacio", "Bannawag Norte", "Bannawag Sur", "Barang", "District I (Poblacion)", "District II (Poblacion)", "District III (Poblacion)", "Don Mariano Marcos"]},
+        {"name": "Maddela", "barangays": ["Abbag", "Divisoria", "Maddela Proper", "Rang-ayan", "Rizal", "San Bernardo", "San Marcos", "San Pedro", "Santo Tomas", "Villa Paz"]}
+      ]
+    },
+    {
+      "name": "Rizal",
+      "region": "Region IV-A",
+      "municipalities": [
+        {"name": "Antipolo", "barangays": ["Bagong Nayon", "Beverly Hills", "Cupang", "Dalig", "Dela Paz", "Inarawan", "Mambugan", "Mayamot", "San Jose", "San Roque"]},
+        {"name": "Cainta", "barangays": ["San Andres", "San Isidro", "San Juan", "San Roque", "Santa Rosa"]},
+        {"name": "Taytay", "barangays": ["Dolores", "Muzon", "San Isidro", "San Juan", "Santa Ana"]}
+      ]
+    },
+    {
+      "name": "Romblon",
+      "region": "Region IV-B",
+      "municipalities": [
+        {"name": "Romblon", "barangays": ["Agbaluto", "Agpanabat", "Agbudia", "Agtongo", "Balogo", "Cajimos", "Capaclan", "Ginablan", "Guimpingan", "Ilauran"]},
+        {"name": "Odiongan", "barangays": ["Anahao", "Bangon", "Batiano", "Budiong", "Buhay na Tubig", "Bunsoran", "Canduyong", "Dapawan", "Gabawan", "Libertad"]},
+        {"name": "San Agustin", "barangays": ["Bachawan", "Binongahan", "Buli", "Cabolutan", "Cagbo-aya", "Cagboaya", "Doña Trinidad", "Juncarlo", "Hinunduang", "Poblacion"]}
+      ]
+    },
+    {
+      "name": "Samar (Western Samar)",
+      "region": "Region VIII",
+      "municipalities": [
+        {"name": "Catbalogan", "barangays": ["Alameda", "Bagongon", "Basiao", "Bunuanan", "Cagudalo", "Cagutian", "Can-avid", "Guindaponan", "Guinsorongan", "Iguid"]},
+        {"name": "Calbayog", "barangays": ["Acedillo", "Aguit-itan", "Awang", "Baculod", "Bagacay", "Balud", "Basiao", "Beri", "Cabarasan", "Cagnipa"]},
+        {"name": "Basey", "barangays": ["Amandayehan", "Bacubac", "Baloog", "Banat-e", "Basiao", "Baybay", "Buenavista", "Burgos", "Can-ilay", "Cancaiyas"]}
+      ]
+    },
+    {
+      "name": "Sarangani",
+      "region": "Region XII",
+      "municipalities": [
+        {"name": "Alabel", "barangays": ["Alegria", "Bagacay", "Baluntay", "Datal Anggas", "Domolok", "Kawas", "Ladol", "Maribulan", "Pag-asa", "Poblacion (Alabel)"]},
+        {"name": "Glan", "barangays": ["Batotuling", "Big Margus", "Bungaybungay", "Burias", "Cablalan", "Calabanit", "Cross", "Datalbukay", "E. Alegado", "Glan Padidu"]},
+        {"name": "Malapatan", "barangays": ["Blenvill", "Datal Bila", "Kihan", "Kinam", "Lauban", "Little Baguio", "Lumasal", "Poblacion", "Sapu Masla", "Tuyan"]}
+      ]
+    },
+    {
+      "name": "Siquijor",
+      "region": "Region VII",
+      "municipalities": [
+        {"name": "Siquijor", "barangays": ["Bolos", "Caipilan", "Calalinan", "Can-olin", "Candaping", "Cang-alwang", "Cangmangki", "Canlamay", "Catamboan", "Dumanjug"]},
+        {"name": "Larena", "barangays": ["Bagacay", "Bontod", "Cabulihan", "Camugao", "Canrikay", "Catamboan", "Ilaya (Poblacion)", "Nonoc", "Ponong", "Sandugan"]},
+        {"name": "Maria", "barangays": ["Bogo", "Calunasan Norte", "Calunasan Sur", "Candaping", "Candura", "Capalasanan", "Catamboan", "Libo", "Looc", "Olang"]}
+      ]
+    },
+    {
+      "name": "Sorsogon",
+      "region": "Region V",
+      "municipalities": [
+        {"name": "Sorsogon City", "barangays": ["Abuyog", "Bacon", "Barayong", "Basud", "Bibincahan", "Bitan-o Norte", "Bitan-o Sur", "Bogña", "Buenavista", "Bucalbucalan"]},
+        {"name": "Bulan", "barangays": ["A. Bonifacio", "Abad Santos", "Antipolo", "Bagacay", "Bagatao Island", "Bagumbayan", "Benigno S. Aquino", "Cadandanan", "Calomagon", "Catamlangan"]},
+        {"name": "Gubat", "barangays": ["Ariman", "Bagacay", "Balud Del Norte (Poblacion)", "Balud Del Sur (Poblacion)", "Benguet", "Bentuco", "Beriran", "Buenavista", "Bulacao", "Cabigaan"]}
+      ]
+    },
+    {
+      "name": "South Cotabato",
+      "region": "Region XII",
+      "municipalities": [
+        {"name": "General Santos City", "barangays": ["Apopong", "Baluan", "Batomelong", "Buayan", "Bula", "Calumpang", "City Heights", "Conel", "Dadiangas East", "Dadiangas North"]},
+        {"name": "Koronadal City", "barangay": ["Assumption (Bulol)", "Avanceña (Bo. 3)", "Cacub", "Caloocan", "Carpenter Hill", "Concepcion (Bo. 6)", "General Paulino Santos (Bo. 1)", "Magsaysay", "Mambucal", "Morales"]},
+        {"name": "Surallah", "barangays": ["Buenavista", "Canahay (Molave)", "Centrala", "Colongulo", "Dajay", "Duengas", "Lambontong", "Lamian", "Lamsugod", "Libertad"]}
+      ]
+    },
+    {
+      "name": "Southern Leyte",
+      "region": "Region VIII",
+      "municipalities": [
+        {"name": "Maasin City", "barangays": ["Abgao", "Acasia", "Asuncion", "Bactul", "Bagtican", "Batuan", "Baugo", "Bilibol", "Cabadiangan", "Cabarasan"]},
+        {"name": "Sogod", "barangays": ["Bagatayam", "Bagumbayan", "Benit", "Buenavista", "Concepcion", "Hipantag", "Javier", "Kahupian", "Kapatagan", "Kauswagan"]},
+        {"name": "Hinunangan", "barangays": ["Amaga", "Ambao", "Bagong Lipunan", "Bugho", "Cagangon", "Catig-bawan", "Himay", "Hinunangan Proper", "Libas", "Sabang"]}
+      ]
+    },
+    {
+      "name": "Sultan Kudarat",
+      "region": "Region XII",
+      "municipalities": [
+        {"name": "Isulan", "barangays": ["Bambad", "Bual", "Comawas", "Dansuli", "Impao", "Kalawag I", "Kalawag II", "Kenram", "Kudanding", "Lagandang"]},
+        {"name": "Tacurong City", "barangays": ["Baras", "Buenaflor", "Calean", "Carmen", "D. Montilla", "Griño", "Kalandagan", "Lower Katungal", "New Isabela", "New Lagao"]},
+        {"name": "Bagumbayan", "barangays": ["Bagumbayan Proper", "Buenaflores", "Daguma", "Dumaguil", "Jose Rizal", "Kabulakan", "Kapinpilan", "New Pangasinan", "Pag-asa", "Poblacion"]}
+      ]
+    },
+    {
+      "name": "Sulu",
+      "region": "BARMM",
+      "municipalities": [
+        {"name": "Jolo", "barangays": ["Alat", "Asturias", "Bus-Bus", "Chinese Pier", "Kanague", "Parang", "Poblacion (Tulay)", "San Raymundo", "Takut-Takut", "Walled City"]},
+        {"name": "Patikul", "barangays": ["Alu-bus", "Bangkaw-Bangkaw", "Gata-Gata", "Kabbon Takas", "Kan Ague", "Langhub", "Latih", "Pangdanon", "Tambun-bun", "Tandu-Bato"]},
+        {"name": "Indanan", "barangays": ["Adjid", "Bual", "Kajatian", "Kan Mindus", "Kuhaw Pula", "Mauboh", "Poblacion (Indanan)", "Sapah Malaum", "Sawaki", "Sionogan"]}
+      ]
+    },
+    {
+      "name": "Surigao del Norte",
+      "region": "Region XIII",
+      "municipalities": [
+        {"name": "Surigao City", "barangays": ["Alang-alang", "Anomar", "Aurora", "Balibayon", "Bilabid", "Bitaugan", "Bonifacio", "Canlanipa", "Cantiasay", "Capalayan"]},
+        {"name": "Siargao", "barangays": ["Amoslog", "Anajawan", "Bagakay", "Cabugao", "Caub", "Cawa-cawa", "Dayaohay", "Del Carmen", "Magsaysay", "Pacifico"]},
+        {"name": "Dapa", "barangays": ["Bagakay", "Barangay Zone I (Poblacion)", "Barangay Zone II (Poblacion)", "Buenavista", "Cabawa", "Cambas-ac", "Catadman", "Consolacion", "Corregidor", "Cumawas"]}
+      ]
+    },
+    {
+      "name": "Surigao del Sur",
+      "region": "Region XIII",
+      "municipalities": [
+        {"name": "Tandag", "barangays": ["Awasian", "Bah-Bah", "Bagnan", "Bioto", "Bongtud", "Buntalid", "Dagocdoc", "Mabua", "Mabuhay", "Maitum"]},
+        {"name": "Bislig", "barangays": ["Bucto", "Burboanan", "Coleto", "Kahayag", "Labisma", "Maharlika", "Mangagoy", "Mone", "Pamaypayan", "Panamoren"]},
+        {"name": "Hinatuan", "barangays": ["Agao", "Badiang", "Bangonay", "Bao", "Cambatong", "Campa", "Harip", "Port Lamon", "Roxas", "Tago"]}
+      ]
+    },
+    {
+      "name": "Tarlac",
+      "region": "Region III",
+      "municipalities": [
+        {"name": "Tarlac City", "barangays": ["Aguso", "Alvindia Segundo", "Amucao", "Armenia", "Asturias", "Atioc", "Balanti", "Balete", "Balibago I", "Balibago II"]},
+        {"name": "Capas", "barangays": ["Aranguren", "Balete", "Bueno", "Cristo Rey", "Cubcub", "Dolores", "Estrada", "Jesus", "Lawy", "Manlapig"]},
+        {"name": "Concepcion", "barangays": ["Alua", "Anonang", "Babasaen", "Bantog", "Barete", "Cabugbugan", "Caluluan", "Camangaan", "Cangcuanag", "Caramutan"]}
+      ]
+    },
+    {
+      "name": "Tawi-Tawi",
+      "region": "BARMM",
+      "municipalities": [
+        {"name": "Bongao", "barangays": ["Ipil", "Kamagong", "Lamion", "Larap", "Lato-Lato", "Luuk Pandan", "Malassa", "Mandulan", "Masantong", "Pababag"]},
+        {"name": "Simunul", "barangays": ["Bagid", "Duhol Kabbon", "Kamaasan", "Likud Tabawan", "Manuk Mangkaw", "Nunukan", "Poblacion", "Tandu Banak", "Tonggosong", "Umus Mataha"]},
+        {"name": "Sitangkai", "barangays": ["Datu Balong", "Imam Sapie", "North Sallangan", "Panglima Alari", "Poblacion (Sitangkai)", "South Sallangan", "Tanyak-tanyak", "Tongehat", "Tongmageng"]}
+      ]
+    },
+    {
+      "name": "Zambales",
+      "region": "Region III",
+      "municipalities": [
+        {"name": "Olongapo City", "barangays": ["Asinan", "Banicain", "Barretto", "East Tapinac", "Gordon Heights", "Kalaklan", "Mabayuan", "New Cabalan", "New Ilalim", "New Kababae"]},
+        {"name": "Iba", "barangays": ["Amungan", "Bangantalinga", "Dirita-Baloguen", "Lipay-Dingin-Panibuatan", "Palanginan (Iba)", "San Agustin", "Santa Barbara", "Santo Rosario", "Pangolingan", "Zone I (Poblacion)"]},
+        {"name": "Subic", "barangays": ["Aningway Sacatihan", "Asinan Proper", "Asinan Poblacion", "Baraca-Camachile", "Batiawan", "Calapacuan", "Cawag", "Ilwas", "Mangan-Vaca", "Matain"]}
+      ]
+    },
+    {
+      "name": "Zamboanga del Norte",
+      "region": "Region IX",
+      "municipalities": [
+        {"name": "Dipolog City", "barangays": ["Barra", "Biasong", "Cogon", "Dicayas", "Estaka", "Galas", "Gulayon", "Lugdungan", "Miputak", "Santa Isabel"]},
+        {"name": "Dapitan", "barangays": ["Aliguay", "Bagting", "Banbanan", "Banonong", "Barcelona", "Canlucani", "Dawo", "Diwa-an", "Hilltop", "Maria Cristina"]},
+        {"name": "Sindangan", "barangays": ["Baclay", "Balok", "Bantayan", "Bitoon", "Buyogan", "Dawa", "Goleo", "Jose Dalman", "Labakid", "Liasan"]}
+      ]
+    },
+    {
+      "name": "Zamboanga del Sur",
+      "region": "Region IX",
+      "municipalities": [
+        {"name": "Pagadian City", "barangays": ["Balangasan", "Banale", "Bogo", "Bomba", "Buenavista", "Dao-ao", "Dumagoc", "Gubac", "Gumobay", "Kalasan"]},
+        {"name": "Zamboanga City", "barangays": ["Baliwasan", "Bunguiao", "Busay", "Cabaluay", "Cabatangan", "Canelar", "Dulian", "Guiwan", "La Paz", "Mampang"]},
+        {"name": "Molave", "barangays": ["Bagong Negros", "Berong", "Blancia", "Bogo Capalaran", "Bogo Calabat", "Bogo Sambulawan", "Bulanay", "Dipolo", "Fortich", "Gonosan"]}
+      ]
+    },
+    {
+      "name": "Zamboanga Sibugay",
+      "region": "Region IX",
+      "municipalities": [
+        {"name": "Ipil", "barangays": ["Bacalan", "Balonai", "Bangkaw-bangkaw", "Caparan", "Domandan", "Gumban", "Guitran", "Interpace", "Ipil Heights", "Labi"]},
+        {"name": "Diplahan", "barangays": ["Balansag", "Bangco", "Bantal", "Diplo", "Don Jose", "Lower Landing", "Poblacion", "San Jose", "Santo Niño", "Upper Landing"]},
+        {"name": "Kabasalan", "barangays": ["Bangkerohan", "Belatan", "Bliss", "Campo Uno", "Coyogan", "Dulian", "Gaulan", "Gomotoc", "Gulayon", "Jagupit"]}
       ]
     }
   ]
