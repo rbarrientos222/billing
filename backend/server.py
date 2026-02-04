@@ -401,7 +401,9 @@ async def get_mikrotik_stats(current_user: dict = Depends(get_current_user)):
     service = MikrotikService(config)
     if service.connect():
         stats = service.get_resource_stats()
+        active_clients = service.get_active_clients()
         service.disconnect()
+        stats['active_clients'] = active_clients
         return stats
     raise HTTPException(status_code=500, detail="Failed to connect to Mikrotik")
 
