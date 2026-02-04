@@ -894,15 +894,20 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
         "message": "Subscriber created successfully",
         "account_number": subscriber.account_number,
         "id": sub_id,
-        "pppoe_created": pppoe_created
+        "pppoe_created": pppoe_created,
+        "prorated_bill_generated": subscriber.generate_prorated_bill
     }
     
     if prorated_invoice:
         response_data["prorated_invoice"] = {
             "invoice_number": prorated_invoice["invoice_number"],
             "amount": prorated_invoice["amount"],
-            "due_date": prorated_invoice["due_date"].isoformat()
+            "due_date": prorated_invoice["due_date"].isoformat(),
+            "calculation": prorated_details['calculation'] if prorated_details else None,
+            "days_covered": prorated_details['days_remaining'] if prorated_details else None
         }
+    elif not subscriber.generate_prorated_bill:
+        response_data["billing_note"] = f"No prorated bill generated. First invoice will be on the {subscriber.billing_period}."
     
     if pppoe_error:
         response_data["pppoe_error"] = pppoe_error
