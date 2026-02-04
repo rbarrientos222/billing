@@ -946,7 +946,7 @@ export default function SubscriberManagement() {
                       paymentHistory.map((payment) => (
                         <TableRow key={payment.or_number}>
                           <TableCell className="font-mono text-xs">{payment.or_number}</TableCell>
-                          <TableCell className="font-bold text-green-600">₱{payment.amount.toLocaleString()}</TableCell>
+                          <TableCell className="font-bold text-green-600">₱{(payment.total_amount || payment.amount || 0).toLocaleString()}</TableCell>
                           <TableCell className="capitalize">{payment.mode}</TableCell>
                           <TableCell>{new Date(payment.payment_date).toLocaleString()}</TableCell>
                           <TableCell>{payment.received_by}</TableCell>
