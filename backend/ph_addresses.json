@@ -1,0 +1,127 @@
+{
+  "provinces": [
+    {
+      "name": "Metro Manila",
+      "municipalities": [
+        {
+          "name": "Manila",
+          "barangays": ["Ermita", "Intramuros", "Malate", "Paco", "Pandacan", "Port Area", "Quiapo", "Sampaloc", "San Miguel", "Santa Ana"]
+        },
+        {
+          "name": "Quezon City",
+          "barangays": ["Bagong Pag-asa", "Bahay Toro", "Balingasa", "Batasan Hills", "Commonwealth", "Cubao", "Diliman", "Fairview", "Kamuning", "Loyola Heights"]
+        },
+        {
+          "name": "Caloocan",
+          "barangays": ["Bagong Silang", "Camarin", "Grace Park", "Sangandaan", "Tala", "Bagumbayan", "Maypajo"]
+        },
+        {
+          "name": "Makati",
+          "barangays": ["Bel-Air", "Forbes Park", "Guadalupe Nuevo", "Guadalupe Viejo", "Magallanes", "Poblacion", "San Lorenzo", "Urdaneta"]
+        },
+        {
+          "name": "Pasig",
+          "barangays": ["Kapitolyo", "Manggahan", "Maybunga", "Oranbo", "Pinagbuhatan", "Rosario", "Santolan", "Ugong"]
+        }
+      ]
+    },
+    {
+      "name": "Cavite",
+      "municipalities": [
+        {
+          "name": "Bacoor",
+          "barangays": ["Alima", "Aniban", "Banalo", "Dulong Bayan", "Habay", "Ligas", "Molino", "Panapaan", "Queens Row", "Tabing Dagat"]
+        },
+        {
+          "name": "Dasmariñas",
+          "barangays": ["Burol", "Langkaan", "Paliparan", "Sabang", "Salawag", "Sampaloc", "San Agustin", "Victoria Reyes"]
+        },
+        {
+          "name": "Imus",
+          "barangays": ["Alapan", "Anabu", "Bayan Luma", "Bucandala", "Malagasang", "Pag-asa", "Tanzang Luma"]
+        }
+      ]
+    },
+    {
+      "name": "Laguna",
+      "municipalities": [
+        {
+          "name": "Biñan",
+          "barangays": ["Biñan", "Bungahan", "Canlalay", "Casile", "De La Paz", "Ganado", "Langkiwa", "Loma", "Malaban", "Malamig"]
+        },
+        {
+          "name": "Calamba",
+          "barangays": ["Bagong Kalsada", "Banlic", "Barandal", "Burol", "Halang", "Kay-Anlog", "Milagrosa", "Parian", "Real", "Saimsim"]
+        },
+        {
+          "name": "San Pedro",
+          "barangays": ["Bagong Silang", "Calendola", "Chrysanthemum", "Estrella", "Landayan", "Langgam", "Magsaysay", "Nueva", "Poblacion", "Riverside"]
+        }
+      ]
+    },
+    {
+      "name": "Bulacan",
+      "municipalities": [
+        {
+          "name": "Malolos",
+          "barangays": ["Anilao", "Atlag", "Barasoain", "Bulihan", "Caingin", "Calero", "Canalate", "Dakila", "Longos", "Mojon"]
+        },
+        {
+          "name": "Meycauayan",
+          "barangays": ["Bagbaguin", "Bahay Pare", "Bancal", "Banga", "Camalig", "Hulo", "Langka", "Liputan", "Malhacan", "Pajo"]
+        },
+        {
+          "name": "San Jose del Monte",
+          "barangays": ["Assumption", "Bagong Buhay", "Citrus", "Ciudad Real", "Dulong Bayan", "Graceville", "Gumaoc", "Kaybanban", "Minuyan", "Muzon"]
+        }
+      ]
+    },
+    {
+      "name": "Rizal",
+      "municipalities": [
+        {
+          "name": "Antipolo",
+          "barangays": ["Bagong Nayon", "Beverly Hills", "Cupang", "Dalig", "Dela Paz", "Inarawan", "Mambugan", "Mayamot", "San Jose", "San Roque"]
+        },
+        {
+          "name": "Cainta",
+          "barangays": ["San Andres", "San Isidro", "San Juan", "San Roque", "Santa Rosa"]
+        },
+        {
+          "name": "Taytay",
+          "barangays": ["Dolores", "Muzon", "San Isidro", "San Juan", "Santa Ana"]
+        }
+      ]
+    },
+    {
+      "name": "Pampanga",
+      "municipalities": [
+        {
+          "name": "Angeles City",
+          "barangays": ["Balibago", "Cutcut", "Lourdes", "Pampang", "Pulung Maragul", "Sapangbato", "Santo Rosario", "Timog"]
+        },
+        {
+          "name": "San Fernando",
+          "barangays": ["Baliti", "Calulut", "Del Carmen", "Del Pilar", "Dolores", "Juliana", "Lara", "Magliman", "Telabastagan"]
+        }
+      ]
+    },
+    {
+      "name": "Cebu",
+      "municipalities": [
+        {
+          "name": "Cebu City",
+          "barangays": ["Apas", "Banilad", "Basak", "Busay", "Camputhaw", "Capitol Site", "Lahug", "Mabolo", "Talamban", "Tisa"]
+        },
+        {
+          "name": "Mandaue",
+          "barangays": ["Alang-alang", "Bakilid", "Banilad", "Basak", "Cabancalan", "Centro", "Looc", "Mantuyong", "Subangdaku", "Tabok"]
+        },
+        {
+          "name": "Lapu-Lapu",
+          "barangays": ["Agus", "Babag", "Basak", "Buaya", "Caubian", "Ibo", "Looc", "Mactan", "Marigondon", "Pajac"]
+        }
+      ]
+    }
+  ]
+}
