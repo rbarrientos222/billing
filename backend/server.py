@@ -1553,16 +1553,17 @@ async def reactivate_subscriber(account_number: str, data: dict, current_user: d
     if generate_prorated:
         plan = await db.subscription_plans.find_one({"name": new_plan_id})
         if plan:
+            billing_day = 15 if subscriber.get('billing_period', '30th') == "15th" else 30
             prorate_calc = calculate_prorated_amount(
                 plan['price'],
-                subscriber.get('billing_period', '30th'),
+                billing_day,
                 now
             )
             
             if prorate_calc['amount'] > 0:
                 # Generate description for reactivation bill
                 billing_period = subscriber.get('billing_period', '30th')
-                period_info = get_billing_period_description(billing_period, now)
+                period_info = get_billing_period_description(billing_day, now)
                 start_str = now.strftime("%B %d, %Y")
                 end_str = period_info['end_date'].strftime("%B %d, %Y")
                 description = f"Reactivation bill for period {start_str} - {end_str}"
