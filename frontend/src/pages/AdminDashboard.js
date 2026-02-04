@@ -57,6 +57,10 @@ export default function AdminDashboard({ user, onLogout }) {
       setMikrotikStats(response.data);
     } catch (error) {
       console.error('Failed to fetch Mikrotik stats:', error);
+      // Set a placeholder to show "not configured" message
+      if (error.response?.status === 404) {
+        setMikrotikStats({ not_configured: true });
+      }
     }
   };
 
