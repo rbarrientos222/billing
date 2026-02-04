@@ -879,6 +879,22 @@ export default function SubscriberManagement() {
           </DialogHeader>
 
           <div className="space-y-6">
+            {/* Wallet Balance Card */}
+            {(selectedSubscriberHistory?.wallet_balance || 0) > 0 && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                    <DollarSign className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-green-700 font-medium">Wallet Credit Available</p>
+                    <p className="text-2xl font-bold text-green-600">₱{(selectedSubscriberHistory?.wallet_balance || 0).toLocaleString()}</p>
+                  </div>
+                </div>
+                <Badge className="bg-green-600">Active Credit</Badge>
+              </div>
+            )}
+
             {/* Invoices */}
             <div>
               <h3 className="font-medium mb-3 text-lg">Invoices</h3>
