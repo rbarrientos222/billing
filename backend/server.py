@@ -1409,13 +1409,22 @@ async def deactivate_subscriber(account_number: str, data: dict, current_user: d
             final_amount = round(daily_rate * days_used, 2)
             
             if final_amount > 0:
+                # Generate description for final bill
+                period_info = get_billing_period_description(billing_period, now)
+                start_str = period_info['start_date'].strftime("%B %d, %Y")
+                end_str = now.strftime("%B %d, %Y")
+                description = f"Final bill for period {start_str} - {end_str} (Disconnection)"
+                
                 invoice = {
                     "invoice_number": generate_invoice_number(),
                     "subscriber_id": account_number,
                     "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
                     "plan_name": subscriber.get('plan_id'),
                     "amount": final_amount,
+                    "description": description,
                     "type": "Final Bill - Disconnection",
+                    "billing_start": period_info['start_date'],
+                    "billing_end": now,
                     "due_date": now + timedelta(days=15),
                     "paid": False,
                     "is_prorated": True,
