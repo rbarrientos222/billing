@@ -79,12 +79,14 @@ export default function CashierDashboard({ user, onLogout }) {
   const selectSubscriber = async (subscriber) => {
     setSelectedSubscriber(subscriber);
     setSearchResults([]);
+    setPaymentResult(null);
     
     try {
       const [invoicesRes, paymentsRes] = await Promise.all([
         axios.get(`/invoices/subscriber/${subscriber.account_number}`),
         axios.get(`/payments/subscriber/${subscriber.account_number}`)
       ]);
+      console.log('Invoices received:', invoicesRes.data);
       setInvoices(invoicesRes.data);
       setPaymentHistory(paymentsRes.data);
       
