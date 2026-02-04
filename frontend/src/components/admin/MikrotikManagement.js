@@ -4,14 +4,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Wifi, RefreshCw, Server, Loader2 } from 'lucide-react';
+import { Wifi, RefreshCw, Server, Loader2, CheckCircle, XCircle, AlertCircle, Zap } from 'lucide-react';
 
 export default function MikrotikManagement() {
   const [config, setConfig] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResults, setTestResults] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     ip_address: '',
