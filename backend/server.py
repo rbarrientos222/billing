@@ -102,13 +102,19 @@ async def auto_generate_billing():
                     # Calculate due date (usually 15 days after billing)
                     due_date = today + timedelta(days=15)
                     
+                    # Get billing period description
+                    period_info = get_billing_period_description(billing_period, today)
+                    
                     invoice = {
                         "invoice_number": f"INV{today.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}",
                         "subscriber_id": sub['account_number'],
                         "subscriber_name": f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip(),
                         "plan_name": plan['name'],
                         "amount": plan['price'],
+                        "description": period_info['description'],
                         "billing_period": billing_period,
+                        "billing_start": period_info['start_date'],
+                        "billing_end": period_info['end_date'],
                         "due_date": due_date,
                         "paid": False,
                         "is_prorated": False,
