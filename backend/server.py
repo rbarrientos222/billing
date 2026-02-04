@@ -1010,6 +1010,53 @@ async def get_barangays(province: str, municipality: str):
     
     return {"barangays": []}
 
+# ========== DASHBOARD STATS ==========
+@api_router.get("/stats/monthly-sales")
+async def get_monthly_sales(current_user: dict = Depends(get_current_user)):
+    """Get monthly sales data for the last 12 months"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    now = datetime.now(timezone.utc)
+    months = []
+    
+    for i in range(11, -1, -1):
+        # Calculate the month
+        month_date = now - timedelta(days=i * 30)
+        month_start = month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if month_date.month == 12:
+            month_end = month_start.replace(year=month_date.year + 1, month=1)
+        else:
+            month_end = month_start.replace(month=month_date.month + 1)
+        
+        # Query payments for this month - handle both amount and total_amount fields
+        pipeline = [
+            {"$match": {"payment_date": {"$gte": month_start, "$lt": month_end}}},
+            {"$group": {
+                "_id": None,
+                "total": {"$sum": {"$ifNull": ["$total_amount", {"$ifNull": ["$amount", 0]}]}},
+                "count": {"$sum": 1}
+            }}
+        ]
+        
+        result = await db.payments.aggregate(pipeline).to_list(1)
+        
+        month_name = month_start.strftime("%b")
+        if result:
+            months.append({
+                "month": month_name,
+                "sales": round(result[0]['total'], 2),
+                "transactions": result[0]['count']
+            })
+        else:
+            months.append({
+                "month": month_name,
+                "sales": 0,
+                "transactions": 0
+            })
+    
+    return months
+
 # ========== SUBSCRIPTION PLANS ==========
 @api_router.get("/plans")
 async def list_plans():
