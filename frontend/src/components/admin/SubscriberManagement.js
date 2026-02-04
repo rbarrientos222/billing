@@ -41,8 +41,11 @@ export default function SubscriberManagement() {
     pppoe_username: '',
     pppoe_password: '',
     pppoe_profile: '',
-    activate_pppoe: false
+    activate_pppoe: false,
+    generate_prorated_bill: true
   });
+  const [proratedPreview, setProratedPreview] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   useEffect(() => {
     fetchSubscribers();
