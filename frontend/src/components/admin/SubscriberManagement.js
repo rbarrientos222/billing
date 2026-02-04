@@ -784,35 +784,22 @@ export default function SubscriberManagement() {
                         <TableCell>{sub.plan_id}</TableCell>
                         <TableCell>
                           {sub.pppoe_username ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                               Configured
-                            </span>
+                            </Badge>
                           ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            <Badge variant="outline" className="bg-gray-50 text-gray-600">
                               Not Set
-                            </span>
+                            </Badge>
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            sub.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
+                          <Badge variant={sub.is_active ? "default" : "secondary"} className={sub.is_active ? "bg-green-600" : "bg-red-100 text-red-700"}>
                             {sub.is_active ? 'Active' : 'Inactive'}
-                          </span>
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {sub.pppoe_username && sub.pppoe_password && sub.pppoe_profile && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleActivateSingle(sub.account_number)}
-                                data-testid={`activate-${sub.account_number}`}
-                                className="text-green-600 border-green-600 hover:bg-green-50"
-                              >
-                                Activate PPPoE
-                              </Button>
-                            )}
                             <Button
                               variant="outline"
                               size="sm"
@@ -821,6 +808,46 @@ export default function SubscriberManagement() {
                             >
                               View History
                             </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={() => openChangePlanDialog(sub)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Change Plan
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openChargeDialog(sub)}>
+                                  <DollarSign className="mr-2 h-4 w-4" />
+                                  Add Charge
+                                </DropdownMenuItem>
+                                {sub.pppoe_username && sub.pppoe_password && sub.pppoe_profile && !sub.is_active === false && (
+                                  <DropdownMenuItem onClick={() => handleActivateSingle(sub.account_number)}>
+                                    <RefreshCw className="mr-2 h-4 w-4" />
+                                    Sync to Mikrotik
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                {sub.is_active ? (
+                                  <DropdownMenuItem onClick={() => openDeactivateDialog(sub)} className="text-amber-600">
+                                    <PowerOff className="mr-2 h-4 w-4" />
+                                    Deactivate
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem onClick={() => openReactivateDialog(sub)} className="text-green-600">
+                                    <Power className="mr-2 h-4 w-4" />
+                                    Reactivate
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => openDeleteDialog(sub)} className="text-red-600">
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </TableCell>
                       </TableRow>
