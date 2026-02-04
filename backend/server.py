@@ -1239,8 +1239,8 @@ async def preview_prorated_bill(data: dict, current_user: dict = Depends(get_cur
         except:
             pass
     
-    billing_period = data.get('billing_period', '30th')
-    billing_day = 15 if billing_period == "15th" else 30
+    # Get billing_day from request (1-31) or default to 30
+    billing_day = int(data.get('billing_day', 30))
     
     prorate_calc = calculate_prorated_amount(
         plan['price'],
@@ -1249,10 +1249,7 @@ async def preview_prorated_bill(data: dict, current_user: dict = Depends(get_cur
     )
     
     # Calculate due date
-    if billing_period == "15th":
-        due_day = 15
-    else:
-        due_day = min(30, calendar.monthrange(installation_date.year, installation_date.month)[1])
+    due_day = min(billing_day, calendar.monthrange(installation_date.year, installation_date.month)[1])
     
     due_date = installation_date.replace(day=due_day)
     if due_date <= installation_date:
@@ -1264,14 +1261,15 @@ async def preview_prorated_bill(data: dict, current_user: dict = Depends(get_cur
     return {
         "plan_name": plan['name'],
         "monthly_rate": plan['price'],
-        "billing_period": billing_period,
+        "billing_day": billing_day,
         "installation_date": installation_date.strftime("%Y-%m-%d"),
+        "start_date": prorate_calc['start_date'],
+        "end_date": prorate_calc['end_date'],
         "prorated_amount": prorate_calc['amount'],
         "days_covered": prorate_calc['days_remaining'],
         "daily_rate": prorate_calc['daily_rate'],
         "calculation": prorate_calc['calculation'],
-        "due_date": due_date.strftime("%Y-%m-%d"),
-        "billing_day": prorate_calc['billing_day']
+        "due_date": due_date.strftime("%Y-%m-%d")
     }
 
 @api_router.put("/subscribers/{account_number}")
