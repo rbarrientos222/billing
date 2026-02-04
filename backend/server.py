@@ -2297,35 +2297,51 @@ async def get_billing_logs(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/billing/upcoming")
 async def get_upcoming_billing(current_user: dict = Depends(get_current_user)):
-    """Get subscribers with upcoming billing"""
+    """Get subscribers with upcoming billing grouped by billing day"""
     if current_user['role'] not in ['admin', 'billing']:
         raise HTTPException(status_code=403, detail="Access denied")
     
     today = datetime.now(timezone.utc)
     current_day = today.day
+    last_day_of_month = calendar.monthrange(today.year, today.month)[1]
     
-    subscribers_15th = await db.subscribers.find(
-        {"is_active": True, "billing_period": "15th"}, 
-        {"_id": 0, "account_number": 1, "first_name": 1, "last_name": 1, "plan_id": 1}
-    ).to_list(1000)
+    # Get all active subscribers
+    all_subscribers = await db.subscribers.find(
+        {"is_active": True}, 
+        {"_id": 0, "account_number": 1, "first_name": 1, "last_name": 1, "plan_id": 1, "billing_day": 1, "billing_period": 1}
+    ).to_list(10000)
     
-    subscribers_30th = await db.subscribers.find(
-        {"is_active": True, "billing_period": "30th"},
-        {"_id": 0, "account_number": 1, "first_name": 1, "last_name": 1, "plan_id": 1}
-    ).to_list(1000)
+    # Group by billing day
+    billing_groups = {}
+    for sub in all_subscribers:
+        # Get billing day with backward compatibility
+        billing_day = sub.get('billing_day', 30)
+        if 'billing_period' in sub and 'billing_day' not in sub:
+            billing_day = 15 if sub.get('billing_period') == "15th" else 30
+        
+        if billing_day not in billing_groups:
+            billing_groups[billing_day] = []
+        billing_groups[billing_day].append(sub)
     
-    return {
-        "billing_15th": {
-            "count": len(subscribers_15th),
-            "days_until": (15 - current_day) if current_day < 15 else (15 + (calendar.monthrange(today.year, today.month)[1] - current_day)),
-            "subscribers": subscribers_15th[:10]  # Return first 10 for preview
-        },
-        "billing_30th": {
-            "count": len(subscribers_30th),
-            "days_until": (30 - current_day) if current_day < 30 else 0,
-            "subscribers": subscribers_30th[:10]
+    # Calculate days until for each group
+    result = {}
+    for billing_day, subscribers in sorted(billing_groups.items()):
+        actual_billing_day = min(billing_day, last_day_of_month)
+        if current_day <= actual_billing_day:
+            days_until = actual_billing_day - current_day
+        else:
+            # Next month
+            next_month_last_day = calendar.monthrange(today.year, today.month + 1 if today.month < 12 else 1)[1]
+            days_until = (last_day_of_month - current_day) + min(billing_day, next_month_last_day)
+        
+        result[f"billing_{billing_day}"] = {
+            "billing_day": billing_day,
+            "count": len(subscribers),
+            "days_until": days_until,
+            "subscribers": subscribers[:10]  # Return first 10 for preview
         }
-    }
+    
+    return result
 
 # Include router
 app.include_router(api_router)
