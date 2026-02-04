@@ -1207,12 +1207,12 @@ async def get_today_payment_stats(current_user: dict = Depends(get_current_user)
     # Get start of today
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     
-    # Count and sum today's payments
+    # Count and sum today's payments - handle both legacy 'amount' and centralized 'total_amount'
     pipeline = [
         {"$match": {"payment_date": {"$gte": today_start}}},
         {"$group": {
             "_id": None,
-            "total": {"$sum": "$amount"},
+            "total": {"$sum": {"$ifNull": ["$total_amount", {"$ifNull": ["$amount", 0]}]}},
             "count": {"$sum": 1}
         }}
     ]
