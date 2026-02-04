@@ -84,35 +84,65 @@ export default function CashierDashboard({ user, onLogout }) {
       ]);
       setInvoices(invoicesRes.data);
       setPaymentHistory(paymentsRes.data);
+      
+      // Fetch wallet balance
+      try {
+        const walletRes = await axios.get(`/subscribers/${subscriber.account_number}/wallet`);
+        setWalletBalance(walletRes.data.balance || 0);
+      } catch (e) {
+        setWalletBalance(0);
+      }
     } catch (error) {
       toast.error('Failed to load subscriber details');
     }
   };
 
-  const handlePayment = async (invoiceId) => {
+  const handleCentralizedPayment = async () => {
+    if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+    
+    setProcessingPayment(true);
     try {
-      const response = await axios.post('/payments', {
-        invoice_id: invoiceId,
+      const response = await axios.post('/payments/centralized', {
         subscriber_id: selectedSubscriber.account_number,
         amount: parseFloat(paymentAmount),
-        mode: paymentMode,
-        received_by: user.username
+        mode: paymentMode
       });
-      toast.success(`Payment processed! OR# ${response.data.or_number}`);
+      
+      // Show detailed result
+      const result = response.data;
+      let message = `Payment processed! OR# ${result.or_number}\n`;
+      
+      if (result.invoices_fully_paid?.length > 0) {
+        message += `✓ ${result.invoices_fully_paid.length} invoice(s) fully paid\n`;
+      }
+      if (result.invoices_partially_paid?.length > 0) {
+        message += `◐ ${result.invoices_partially_paid.length} invoice(s) partially paid\n`;
+      }
+      if (result.wallet_credit_added > 0) {
+        message += `💰 ₱${result.wallet_credit_added.toLocaleString()} added to wallet`;
+      }
+      
+      toast.success(message, { duration: 5000 });
+      setPaymentResult(result);
       
       // Refresh subscriber data and today's stats
       selectSubscriber(selectedSubscriber);
       fetchTodayStats();
       setPaymentAmount('');
     } catch (error) {
-      toast.error('Payment processing failed');
+      toast.error(error.response?.data?.detail || 'Payment processing failed');
+    } finally {
+      setProcessingPayment(false);
     }
   };
 
-  // Calculate total unpaid amount
+  // Calculate total unpaid amount (considering partial payments)
   const totalUnpaid = invoices
     .filter(inv => !inv.paid)
-    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    .reduce((sum, inv) => sum + (inv.remaining_balance || inv.amount || 0), 0);
 
   return (
     <div className="min-h-screen bg-background">
