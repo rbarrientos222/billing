@@ -1240,6 +1240,32 @@ async def startup_event():
         }
         await db.users.insert_one(admin_user)
         logger.info("Default admin user created")
+    
+    # Start the scheduler for automatic billing
+    try:
+        # Get billing settings
+        settings = await db.billing_settings.find_one({})
+        billing_enabled = settings.get('auto_billing_enabled', True) if settings else True
+        billing_time = settings.get('billing_time', '00:01') if settings else '00:01'
+        
+        if billing_enabled:
+            # Parse time (format: "HH:MM")
+            hour, minute = map(int, billing_time.split(':'))
+            
+            # Schedule daily billing at specified time
+            scheduler.add_job(
+                auto_generate_billing,
+                CronTrigger(hour=hour, minute=minute),
+                id='daily_billing',
+                replace_existing=True
+            )
+            
+            scheduler.start()
+            logger.info(f"Automatic billing scheduler started - runs daily at {billing_time}")
+        else:
+            logger.info("Automatic billing is disabled")
+    except Exception as e:
+        logger.error(f"Failed to start billing scheduler: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
