@@ -77,6 +77,51 @@ export default function MikrotikManagement() {
     }
   };
 
+  const handleTestConnection = async () => {
+    setTesting(true);
+    setTestResults(null);
+    try {
+      const response = await axios.post('/mikrotik/test-connection', {
+        ip_address: formData.ip_address,
+        port: formData.port,
+        username: formData.username,
+        password: formData.password || undefined
+      });
+      setTestResults(response.data);
+      if (response.data.success) {
+        toast.success('Connection successful!');
+      } else {
+        toast.error('Connection failed. Check the details below.');
+      }
+    } catch (error) {
+      toast.error('Test failed: ' + (error.response?.data?.detail || 'Unknown error'));
+      setTestResults({
+        success: false,
+        steps: [{
+          step: 'Request',
+          status: 'failed',
+          message: 'Failed to execute test',
+          error: error.response?.data?.detail || error.message
+        }]
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const getStepIcon = (status) => {
+    switch (status) {
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'failed':
+        return <XCircle className="h-4 w-4 text-red-600" />;
+      case 'warning':
+        return <AlertCircle className="h-4 w-4 text-amber-600" />;
+      default:
+        return <Loader2 className="h-4 w-4 animate-spin" />;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
