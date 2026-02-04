@@ -1678,13 +1678,18 @@ async def add_manual_charge(account_number: str, data: dict, current_user: dict 
     
     now = datetime.now(timezone.utc)
     
+    # Generate full description with date
+    date_str = now.strftime("%B %d, %Y")
+    full_description = f"{charge_type}: {description} - Charged on {date_str}"
+    
     invoice = {
         "invoice_number": generate_invoice_number(),
         "subscriber_id": account_number,
         "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
-        "description": description,
+        "description": full_description,
         "amount": amount,
         "type": charge_type,
+        "charge_date": now,
         "due_date": now + timedelta(days=15),
         "paid": False,
         "is_manual_charge": True,
@@ -1708,7 +1713,7 @@ async def add_manual_charge(account_number: str, data: dict, current_user: dict 
         "message": "Charge added successfully",
         "invoice_number": invoice["invoice_number"],
         "amount": amount,
-        "description": description
+        "description": full_description
     }
 
 # ========== BILLING & INVOICING ==========
