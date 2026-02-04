@@ -1160,6 +1160,449 @@ async def update_subscriber(account_number: str, updates: dict, current_user: di
     await db.subscribers.update_one({"account_number": account_number}, {"$set": updates})
     return {"message": "Subscriber updated"}
 
+# ========== SUBSCRIBER PLAN MANAGEMENT ==========
+@api_router.post("/subscribers/{account_number}/change-plan")
+async def change_subscriber_plan(account_number: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Change subscriber's plan and PPPoE profile.
+    Calculates prorated bill for the remaining billing period.
+    """
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    subscriber = await db.subscribers.find_one({"account_number": account_number})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    new_plan_id = data.get('new_plan_id')
+    new_pppoe_profile = data.get('new_pppoe_profile')
+    generate_prorated = data.get('generate_prorated_bill', True)
+    
+    if not new_plan_id:
+        raise HTTPException(status_code=400, detail="New plan ID required")
+    
+    new_plan = await db.subscription_plans.find_one({"name": new_plan_id})
+    if not new_plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    
+    old_plan_id = subscriber.get('plan_id')
+    old_plan = await db.subscription_plans.find_one({"name": old_plan_id}) if old_plan_id else None
+    
+    now = datetime.now(timezone.utc)
+    response = {
+        "message": "Plan changed successfully",
+        "old_plan": old_plan_id,
+        "new_plan": new_plan_id
+    }
+    
+    # Calculate prorated adjustment if requested
+    if generate_prorated and old_plan:
+        billing_period = subscriber.get('billing_period', '30th')
+        
+        # Calculate days remaining in billing period
+        prorate_calc = calculate_prorated_amount(
+            new_plan['price'] - old_plan['price'],  # Price difference
+            billing_period,
+            now
+        )
+        
+        if prorate_calc['amount'] != 0:
+            invoice_type = "Plan Upgrade" if prorate_calc['amount'] > 0 else "Plan Downgrade Credit"
+            invoice = {
+                "invoice_number": generate_invoice_number(),
+                "subscriber_id": account_number,
+                "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
+                "plan_name": f"{old_plan_id} → {new_plan_id}",
+                "amount": abs(prorate_calc['amount']),
+                "type": invoice_type,
+                "due_date": now + timedelta(days=15),
+                "paid": False,
+                "is_prorated": True,
+                "calculation_details": prorate_calc['calculation'],
+                "created_at": now
+            }
+            await db.invoices.insert_one(invoice)
+            response["prorated_invoice"] = {
+                "invoice_number": invoice["invoice_number"],
+                "amount": invoice["amount"],
+                "type": invoice_type
+            }
+    
+    # Update subscriber's plan
+    update_data = {
+        "plan_id": new_plan_id,
+        "plan_changed_at": now,
+        "previous_plan": old_plan_id
+    }
+    
+    # Update PPPoE profile on Mikrotik if provided
+    if new_pppoe_profile:
+        update_data["pppoe_profile"] = new_pppoe_profile
+        
+        # Update on Mikrotik
+        mikrotik_config = await db.mikrotik_configs.find_one({})
+        if mikrotik_config and subscriber.get('pppoe_username'):
+            try:
+                service = MikrotikService(mikrotik_config)
+                if service.connect():
+                    resource = service.api.get_resource('/ppp/secret')
+                    secrets = resource.get(name=subscriber['pppoe_username'])
+                    if secrets:
+                        resource.set(id=secrets[0]['id'], profile=new_pppoe_profile)
+                        response["mikrotik_updated"] = True
+                    service.disconnect()
+            except Exception as e:
+                logger.error(f"Failed to update Mikrotik profile: {e}")
+                response["mikrotik_error"] = str(e)
+    
+    await db.subscribers.update_one(
+        {"account_number": account_number},
+        {"$set": update_data}
+    )
+    
+    # Log the change
+    await db.activity_logs.insert_one({
+        "type": "plan_change",
+        "subscriber_id": account_number,
+        "old_plan": old_plan_id,
+        "new_plan": new_plan_id,
+        "changed_by": current_user['username'],
+        "timestamp": now
+    })
+    
+    return response
+
+@api_router.post("/subscribers/{account_number}/deactivate")
+async def deactivate_subscriber(account_number: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Deactivate a subscriber.
+    - Changes PPPoE profile to non-internet profile
+    - Calculates prorated bill from billing cycle start to disconnection date
+    - Sets account status to deactivated
+    """
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    subscriber = await db.subscribers.find_one({"account_number": account_number})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    if not subscriber.get('is_active', True):
+        raise HTTPException(status_code=400, detail="Subscriber is already deactivated")
+    
+    disconnection_profile = data.get('disconnection_profile', 'NON-PAYMENTS')
+    reason = data.get('reason', 'Deactivated by admin')
+    generate_final_bill = data.get('generate_final_bill', True)
+    
+    now = datetime.now(timezone.utc)
+    response = {
+        "message": "Subscriber deactivated successfully",
+        "account_number": account_number,
+        "deactivation_date": now.isoformat()
+    }
+    
+    # Calculate final prorated bill (from billing cycle start to disconnection date)
+    if generate_final_bill:
+        plan = await db.subscription_plans.find_one({"name": subscriber.get('plan_id')})
+        if plan:
+            billing_period = subscriber.get('billing_period', '30th')
+            billing_day = 15 if billing_period == "15th" else 30
+            
+            # Calculate days from billing cycle start to today
+            current_day = now.day
+            if current_day >= billing_day:
+                days_used = current_day - billing_day
+            else:
+                # Previous billing cycle
+                days_used = current_day + (30 - billing_day)
+            
+            daily_rate = plan['price'] / 30
+            final_amount = round(daily_rate * days_used, 2)
+            
+            if final_amount > 0:
+                invoice = {
+                    "invoice_number": generate_invoice_number(),
+                    "subscriber_id": account_number,
+                    "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
+                    "plan_name": subscriber.get('plan_id'),
+                    "amount": final_amount,
+                    "type": "Final Bill - Disconnection",
+                    "due_date": now + timedelta(days=15),
+                    "paid": False,
+                    "is_prorated": True,
+                    "calculation_details": f"{days_used} days × ₱{round(daily_rate, 2)}/day = ₱{final_amount}",
+                    "created_at": now
+                }
+                await db.invoices.insert_one(invoice)
+                response["final_invoice"] = {
+                    "invoice_number": invoice["invoice_number"],
+                    "amount": final_amount,
+                    "days_charged": days_used
+                }
+    
+    # Update PPPoE profile on Mikrotik to disconnection profile
+    mikrotik_config = await db.mikrotik_configs.find_one({})
+    if mikrotik_config and subscriber.get('pppoe_username'):
+        try:
+            service = MikrotikService(mikrotik_config)
+            if service.connect():
+                resource = service.api.get_resource('/ppp/secret')
+                secrets = resource.get(name=subscriber['pppoe_username'])
+                if secrets:
+                    resource.set(id=secrets[0]['id'], profile=disconnection_profile)
+                    response["mikrotik_profile_changed"] = disconnection_profile
+                service.disconnect()
+        except Exception as e:
+            logger.error(f"Failed to update Mikrotik profile: {e}")
+            response["mikrotik_error"] = str(e)
+    
+    # Update subscriber status
+    await db.subscribers.update_one(
+        {"account_number": account_number},
+        {"$set": {
+            "is_active": False,
+            "deactivated_at": now,
+            "deactivation_reason": reason,
+            "previous_pppoe_profile": subscriber.get('pppoe_profile'),
+            "pppoe_profile": disconnection_profile
+        }}
+    )
+    
+    # Log the deactivation
+    await db.activity_logs.insert_one({
+        "type": "deactivation",
+        "subscriber_id": account_number,
+        "reason": reason,
+        "deactivated_by": current_user['username'],
+        "timestamp": now
+    })
+    
+    return response
+
+@api_router.post("/subscribers/{account_number}/reactivate")
+async def reactivate_subscriber(account_number: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Reactivate a deactivated subscriber.
+    - Changes PPPoE profile to selected active profile
+    - Calculates prorated bill from reactivation date to billing period end
+    """
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    subscriber = await db.subscribers.find_one({"account_number": account_number})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    if subscriber.get('is_active', True):
+        raise HTTPException(status_code=400, detail="Subscriber is already active")
+    
+    new_profile = data.get('pppoe_profile')
+    new_plan_id = data.get('plan_id', subscriber.get('plan_id'))
+    generate_prorated = data.get('generate_prorated_bill', True)
+    
+    if not new_profile:
+        raise HTTPException(status_code=400, detail="PPPoE profile required")
+    
+    now = datetime.now(timezone.utc)
+    response = {
+        "message": "Subscriber reactivated successfully",
+        "account_number": account_number,
+        "reactivation_date": now.isoformat()
+    }
+    
+    # Calculate prorated bill from reactivation to billing period end
+    if generate_prorated:
+        plan = await db.subscription_plans.find_one({"name": new_plan_id})
+        if plan:
+            prorate_calc = calculate_prorated_amount(
+                plan['price'],
+                subscriber.get('billing_period', '30th'),
+                now
+            )
+            
+            if prorate_calc['amount'] > 0:
+                invoice = {
+                    "invoice_number": generate_invoice_number(),
+                    "subscriber_id": account_number,
+                    "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
+                    "plan_name": new_plan_id,
+                    "amount": prorate_calc['amount'],
+                    "type": "Reactivation - Prorated",
+                    "due_date": now + timedelta(days=15),
+                    "paid": False,
+                    "is_prorated": True,
+                    "calculation_details": prorate_calc['calculation'],
+                    "created_at": now
+                }
+                await db.invoices.insert_one(invoice)
+                response["prorated_invoice"] = {
+                    "invoice_number": invoice["invoice_number"],
+                    "amount": prorate_calc['amount'],
+                    "days_covered": prorate_calc['days_remaining']
+                }
+    
+    # Update PPPoE profile on Mikrotik
+    mikrotik_config = await db.mikrotik_configs.find_one({})
+    if mikrotik_config and subscriber.get('pppoe_username'):
+        try:
+            service = MikrotikService(mikrotik_config)
+            if service.connect():
+                resource = service.api.get_resource('/ppp/secret')
+                secrets = resource.get(name=subscriber['pppoe_username'])
+                if secrets:
+                    resource.set(id=secrets[0]['id'], profile=new_profile)
+                    response["mikrotik_profile_changed"] = new_profile
+                service.disconnect()
+        except Exception as e:
+            logger.error(f"Failed to update Mikrotik profile: {e}")
+            response["mikrotik_error"] = str(e)
+    
+    # Update subscriber status
+    await db.subscribers.update_one(
+        {"account_number": account_number},
+        {"$set": {
+            "is_active": True,
+            "reactivated_at": now,
+            "pppoe_profile": new_profile,
+            "plan_id": new_plan_id
+        },
+        "$unset": {
+            "deactivated_at": "",
+            "deactivation_reason": ""
+        }}
+    )
+    
+    # Log the reactivation
+    await db.activity_logs.insert_one({
+        "type": "reactivation",
+        "subscriber_id": account_number,
+        "reactivated_by": current_user['username'],
+        "new_profile": new_profile,
+        "timestamp": now
+    })
+    
+    return response
+
+@api_router.delete("/subscribers/{account_number}")
+async def delete_subscriber(account_number: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Delete a subscriber permanently.
+    Requires admin password confirmation.
+    """
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Verify admin password
+    admin_password = data.get('admin_password')
+    if not admin_password:
+        raise HTTPException(status_code=400, detail="Admin password required")
+    
+    admin_user = await db.users.find_one({"username": current_user['username']})
+    if not admin_user or not pwd_context.verify(admin_password, admin_user['password_hash']):
+        raise HTTPException(status_code=401, detail="Invalid admin password")
+    
+    subscriber = await db.subscribers.find_one({"account_number": account_number})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    # Remove PPPoE account from Mikrotik
+    mikrotik_config = await db.mikrotik_configs.find_one({})
+    mikrotik_removed = False
+    if mikrotik_config and subscriber.get('pppoe_username'):
+        try:
+            service = MikrotikService(mikrotik_config)
+            if service.connect():
+                resource = service.api.get_resource('/ppp/secret')
+                secrets = resource.get(name=subscriber['pppoe_username'])
+                if secrets:
+                    resource.remove(id=secrets[0]['id'])
+                    mikrotik_removed = True
+                service.disconnect()
+        except Exception as e:
+            logger.error(f"Failed to remove Mikrotik account: {e}")
+    
+    # Delete subscriber and related data
+    await db.subscribers.delete_one({"account_number": account_number})
+    
+    # Archive the subscriber data before deletion
+    subscriber['deleted_at'] = datetime.now(timezone.utc)
+    subscriber['deleted_by'] = current_user['username']
+    await db.deleted_subscribers.insert_one(subscriber)
+    
+    # Log the deletion
+    await db.activity_logs.insert_one({
+        "type": "subscriber_deleted",
+        "subscriber_id": account_number,
+        "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}",
+        "deleted_by": current_user['username'],
+        "timestamp": datetime.now(timezone.utc)
+    })
+    
+    return {
+        "message": "Subscriber deleted successfully",
+        "account_number": account_number,
+        "mikrotik_account_removed": mikrotik_removed
+    }
+
+@api_router.post("/subscribers/{account_number}/charges")
+async def add_manual_charge(account_number: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Add manual charges to a subscriber (e.g., equipment replacement, service fees).
+    """
+    if current_user['role'] not in ['admin', 'billing', 'cashier']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    subscriber = await db.subscribers.find_one({"account_number": account_number})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    description = data.get('description')
+    amount = data.get('amount')
+    charge_type = data.get('charge_type', 'Other')
+    
+    if not description or amount is None:
+        raise HTTPException(status_code=400, detail="Description and amount required")
+    
+    try:
+        amount = float(amount)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid amount")
+    
+    now = datetime.now(timezone.utc)
+    
+    invoice = {
+        "invoice_number": generate_invoice_number(),
+        "subscriber_id": account_number,
+        "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
+        "description": description,
+        "amount": amount,
+        "type": charge_type,
+        "due_date": now + timedelta(days=15),
+        "paid": False,
+        "is_manual_charge": True,
+        "created_by": current_user['username'],
+        "created_at": now
+    }
+    await db.invoices.insert_one(invoice)
+    
+    # Log the charge
+    await db.activity_logs.insert_one({
+        "type": "manual_charge",
+        "subscriber_id": account_number,
+        "description": description,
+        "amount": amount,
+        "charge_type": charge_type,
+        "created_by": current_user['username'],
+        "timestamp": now
+    })
+    
+    return {
+        "message": "Charge added successfully",
+        "invoice_number": invoice["invoice_number"],
+        "amount": amount,
+        "description": description
+    }
+
 # ========== BILLING & INVOICING ==========
 @api_router.post("/invoices/generate")
 async def generate_invoices(current_user: dict = Depends(get_current_user)):
