@@ -77,6 +77,44 @@ export default function SubscriberManagement() {
     }
   };
 
+  const fetchProvinces = async () => {
+    try {
+      const response = await axios.get('/addresses/provinces');
+      setProvinces(response.data.provinces || []);
+    } catch (error) {
+      console.error('Failed to fetch provinces');
+    }
+  };
+
+  const fetchMunicipalities = async (province) => {
+    try {
+      const response = await axios.get(`/addresses/municipalities/${encodeURIComponent(province)}`);
+      setMunicipalities(response.data.municipalities || []);
+      setBarangays([]);
+    } catch (error) {
+      console.error('Failed to fetch municipalities');
+    }
+  };
+
+  const fetchBarangays = async (province, municipality) => {
+    try {
+      const response = await axios.get(`/addresses/barangays/${encodeURIComponent(province)}/${encodeURIComponent(municipality)}`);
+      setBarangays(response.data.barangays || []);
+    } catch (error) {
+      console.error('Failed to fetch barangays');
+    }
+  };
+
+  const handleProvinceChange = (value) => {
+    setFormData({ ...formData, province: value, municipality: '', barangay: '' });
+    fetchMunicipalities(value);
+  };
+
+  const handleMunicipalityChange = (value) => {
+    setFormData({ ...formData, municipality: value, barangay: '' });
+    fetchBarangays(formData.province, value);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
