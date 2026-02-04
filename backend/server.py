@@ -1160,6 +1160,7 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     sub_dict = subscriber.model_dump()
     sub_dict.pop('activate_pppoe', None)  # Don't store this field
     sub_dict.pop('generate_prorated_bill', None)  # Don't store this field, just use for invoice decision
+    sub_dict['pppoe_activated'] = pppoe_created  # Track PPPoE activation status
     result = await db.subscribers.insert_one(sub_dict)
     sub_id = str(result.inserted_id)
     
