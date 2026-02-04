@@ -46,10 +46,16 @@ Build a billing system with the following features:
   - Manual billing trigger
   - Billing logs history
   - Upcoming billing preview
+- [x] **Centralized Payment System** (NEW - Feb 4, 2026)
+  - `/api/payments/centralized` endpoint
+  - FIFO allocation to oldest invoices first
+  - Partial payment support (invoice status: 'partial')
+  - Overpayment handling (excess → wallet credit)
+  - Wallet balance tracking per subscriber
 - [x] Payment processing with OR number generation
 - [x] Payment history per subscriber
-- [x] Invoice management
-- [x] Dashboard statistics API
+- [x] Invoice management with remaining_balance calculation
+- [x] Dashboard statistics API (fixed to handle both legacy and centralized payments)
 - [x] Mikrotik integration structure (awaiting credentials)
 
 #### Frontend (React)
@@ -74,7 +80,25 @@ Build a billing system with the following features:
   - **Reactivate Subscriber** with prorated billing
   - **Delete Subscriber** with admin password confirmation
   - **Add Manual Charges** (equipment, service fees, etc.)
-- [x] Cashier Dashboard with subscriber search and payment
+- [x] **Cashier Dashboard** (Enhanced - Feb 4, 2026)
+  - Universal search (by account number, name, or phone)
+  - Subscriber info display with plan and status
+  - **Centralized Payment Form**
+    - Total Outstanding balance display
+    - Payment amount input
+    - Payment mode selection (Cash, GCash, Bank, Card)
+    - Quick amount buttons (individual invoice amounts + Pay All)
+    - Real-time payment preview
+    - Process Payment button
+  - Invoice list with status badges (Unpaid, Partial, Paid)
+  - Partial payment display (Total vs Paid amounts)
+  - Payment result feedback card
+  - Payment history table (OR#, Amount, Mode, Date)
+  - **Sidebar Cards:**
+    - Today's Collections (total + count)
+    - Outstanding Balance (when applicable)
+    - Wallet Balance (when subscriber has credit)
+  - Quick Actions (Print Receipt, Clear/New Search)
 - [x] Subscription Plans management
 - [x] User Management
 
@@ -90,10 +114,10 @@ Build a billing system with the following features:
 
 ## Upcoming Tasks (P0-P1)
 
-1. **Mikrotik Management Page** - UI for admin to configure Mikrotik credentials
-2. **Technician Module** - Login, dashboard, job order fulfillment
-3. **Subscriber Portal** - Login and dashboard for subscribers
-4. **Billing PDF/SOA Generation** - Generate PDF statements
+1. **Technician Module** - Login, dashboard, job order fulfillment with material entry
+2. **Subscriber Portal** - Login (account number) and dashboard for subscribers
+3. **Billing PDF/SOA Generation** - Generate PDF statements
+4. **Mikrotik Management Page** - UI for admin to configure Mikrotik credentials
 
 ---
 
@@ -105,7 +129,6 @@ Build a billing system with the following features:
 - Expenses module
 - Receipt printing
 - OR/SI numbering logic
-- Wallet/credit ledger for advance payments
 - Auto-email SOA
 - Automatic SMS triggers
 - Complete Philippine address data (municipalities/barangays)
