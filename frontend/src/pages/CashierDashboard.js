@@ -11,28 +11,81 @@ import { LogOut, Search, Receipt, DollarSign } from 'lucide-react';
 
 export default function CashierDashboard({ user, onLogout }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const [selectedSubscriber, setSelectedSubscriber] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMode, setPaymentMode] = useState('cash');
+  const [todayStats, setTodayStats] = useState({ total: 0, count: 0 });
+  const [searching, setSearching] = useState(false);
+
+  // Fetch today's payment stats on load
+  useEffect(() => {
+    fetchTodayStats();
+  }, []);
+
+  const fetchTodayStats = async () => {
+    try {
+      const response = await axios.get('/payments/today-stats');
+      setTodayStats(response.data);
+    } catch (error) {
+      console.error('Failed to fetch today stats');
+    }
+  };
 
   const handleSearch = async () => {
+    if (!searchTerm.trim()) return;
+    setSearching(true);
+    setSearchResults([]);
+    
     try {
+      // First try exact account number match
       const response = await axios.get(`/subscribers/${searchTerm}`);
-      setSelectedSubscriber(response.data);
-      
+      selectSubscriber(response.data);
+    } catch (error) {
+      // If not found by account number, search by name
+      try {
+        const searchResponse = await axios.get(`/subscribers/search?q=${encodeURIComponent(searchTerm)}`);
+        if (searchResponse.data.length === 1) {
+          // Single result, select directly
+          selectSubscriber(searchResponse.data[0]);
+        } else if (searchResponse.data.length > 1) {
+          // Multiple results, show list
+          setSearchResults(searchResponse.data);
+          setSelectedSubscriber(null);
+          setInvoices([]);
+          setPaymentHistory([]);
+        } else {
+          toast.error('Subscriber not found');
+          setSelectedSubscriber(null);
+          setInvoices([]);
+          setPaymentHistory([]);
+        }
+      } catch (searchError) {
+        toast.error('Subscriber not found');
+        setSelectedSubscriber(null);
+        setInvoices([]);
+        setPaymentHistory([]);
+      }
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const selectSubscriber = async (subscriber) => {
+    setSelectedSubscriber(subscriber);
+    setSearchResults([]);
+    
+    try {
       const [invoicesRes, paymentsRes] = await Promise.all([
-        axios.get(`/invoices/subscriber/${searchTerm}`),
-        axios.get(`/payments/subscriber/${searchTerm}`)
+        axios.get(`/invoices/subscriber/${subscriber.account_number}`),
+        axios.get(`/payments/subscriber/${subscriber.account_number}`)
       ]);
       setInvoices(invoicesRes.data);
       setPaymentHistory(paymentsRes.data);
     } catch (error) {
-      toast.error('Subscriber not found');
-      setSelectedSubscriber(null);
-      setInvoices([]);
-      setPaymentHistory([]);
+      toast.error('Failed to load subscriber details');
     }
   };
 
@@ -46,12 +99,20 @@ export default function CashierDashboard({ user, onLogout }) {
         received_by: user.username
       });
       toast.success(`Payment processed! OR# ${response.data.or_number}`);
-      handleSearch();
+      
+      // Refresh subscriber data and today's stats
+      selectSubscriber(selectedSubscriber);
+      fetchTodayStats();
       setPaymentAmount('');
     } catch (error) {
       toast.error('Payment processing failed');
     }
   };
+
+  // Calculate total unpaid amount
+  const totalUnpaid = invoices
+    .filter(inv => !inv.paid)
+    .reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
   return (
     <div className="min-h-screen bg-background">
