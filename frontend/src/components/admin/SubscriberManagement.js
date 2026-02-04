@@ -133,6 +133,11 @@ export default function SubscriberManagement() {
         successMessage += ` | PPPoE creation failed: ${response.data.pppoe_error}`;
       }
       
+      if (response.data.prorated_invoice) {
+        const invoice = response.data.prorated_invoice;
+        successMessage += ` | Prorated invoice generated: ₱${invoice.amount} (${invoice.invoice_number})`;
+      }
+      
       toast.success(successMessage);
       setDialogOpen(false);
       setFormData({ 
