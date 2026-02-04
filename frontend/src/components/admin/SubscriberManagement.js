@@ -4,12 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Plus, Search, Loader2, Calculator, Calendar } from 'lucide-react';
+import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw } from 'lucide-react';
 
 export default function SubscriberManagement() {
   const [subscribers, setSubscribers] = useState([]);
@@ -27,6 +29,23 @@ export default function SubscriberManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubscribers, setSelectedSubscribers] = useState([]);
   const [activating, setActivating] = useState(false);
+  
+  // New dialog states
+  const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
+  const [reactivateDialogOpen, setReactivateDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
+  const [selectedSubscriber, setSelectedSubscriber] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  
+  // Form states for actions
+  const [changePlanForm, setChangePlanForm] = useState({ new_plan_id: '', new_pppoe_profile: '', generate_prorated_bill: true });
+  const [deactivateForm, setDeactivateForm] = useState({ disconnection_profile: 'NON-PAYMENTS', reason: '', generate_final_bill: true });
+  const [reactivateForm, setReactivateForm] = useState({ pppoe_profile: '', plan_id: '', generate_prorated_bill: true });
+  const [deleteForm, setDeleteForm] = useState({ admin_password: '' });
+  const [chargeForm, setChargeForm] = useState({ description: '', amount: '', charge_type: 'Equipment' });
+  
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
