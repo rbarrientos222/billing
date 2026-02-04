@@ -183,6 +183,7 @@ class Subscriber(BaseModel):
     pppoe_password: Optional[str] = None
     pppoe_profile: Optional[str] = None
     activate_pppoe: bool = False
+    pppoe_activated: bool = False  # Track if PPPoE is actually activated in Mikrotik
     plan_id: Optional[str] = None
     billing_day: int = 30  # Day of month (1-31)
     installation_date: Optional[str] = None  # ISO date string
