@@ -736,12 +736,60 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     }
     await db.job_orders.insert_one(job)
     
+    # Generate prorated invoice if plan is assigned
+    prorated_invoice = None
+    if subscriber.plan_id:
+        plan = await db.subscription_plans.find_one({"name": subscriber.plan_id})
+        if plan:
+            installation_date = subscriber.installation_date or datetime.now(timezone.utc)
+            prorated_amount = calculate_prorated_amount(
+                plan['price'], 
+                subscriber.billing_period, 
+                installation_date
+            )
+            
+            if prorated_amount > 0:
+                # Determine due date based on billing period
+                if subscriber.billing_period == "15th":
+                    due_day = 15
+                elif subscriber.billing_period == "30th":
+                    import calendar
+                    due_day = calendar.monthrange(installation_date.year, installation_date.month)[1]
+                else:
+                    due_day = 30
+                
+                due_date = installation_date.replace(day=due_day)
+                if due_date <= installation_date:
+                    # If due date already passed, set to next month
+                    if installation_date.month == 12:
+                        due_date = due_date.replace(year=installation_date.year + 1, month=1)
+                    else:
+                        due_date = due_date.replace(month=installation_date.month + 1)
+                
+                prorated_invoice = {
+                    "invoice_number": generate_invoice_number(),
+                    "subscriber_id": subscriber.account_number,
+                    "amount": prorated_amount,
+                    "due_date": due_date,
+                    "paid": False,
+                    "is_prorated": True,
+                    "created_at": datetime.now(timezone.utc)
+                }
+                await db.invoices.insert_one(prorated_invoice)
+    
     response_data = {
         "message": "Subscriber created successfully",
         "account_number": subscriber.account_number,
         "id": sub_id,
         "pppoe_created": pppoe_created
     }
+    
+    if prorated_invoice:
+        response_data["prorated_invoice"] = {
+            "invoice_number": prorated_invoice["invoice_number"],
+            "amount": prorated_invoice["amount"],
+            "due_date": prorated_invoice["due_date"].isoformat()
+        }
     
     if pppoe_error:
         response_data["pppoe_error"] = pppoe_error
