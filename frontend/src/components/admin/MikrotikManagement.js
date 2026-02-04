@@ -176,10 +176,87 @@ export default function MikrotikManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" disabled={loading} data-testid="save-mikrotik-config-button">
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Save Configuration
-              </Button>
+              
+              <div className="flex gap-3 pt-2">
+                <Button type="submit" disabled={loading} data-testid="save-mikrotik-config-button">
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Save Configuration
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleTestConnection} 
+                  disabled={testing || !formData.ip_address || !formData.username}
+                  data-testid="test-connection-button"
+                >
+                  {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                  Test Connection
+                </Button>
+              </div>
+              
+              {/* Test Results */}
+              {testResults && (
+                <div className="mt-4 border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Connection Test Results</h4>
+                    <Badge variant={testResults.success ? "default" : "destructive"}>
+                      {testResults.success ? "Success" : "Failed"}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {testResults.steps?.map((step, idx) => (
+                      <div key={idx} className={`flex items-start gap-3 p-2 rounded ${
+                        step.status === 'success' ? 'bg-green-50 dark:bg-green-950/30' :
+                        step.status === 'failed' ? 'bg-red-50 dark:bg-red-950/30' :
+                        'bg-amber-50 dark:bg-amber-950/30'
+                      }`}>
+                        {getStepIcon(step.status)}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm">{step.step}</span>
+                            {step.time_ms && (
+                              <span className="text-xs text-muted-foreground">{step.time_ms}ms</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{step.message}</p>
+                          {step.error && (
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-mono">{step.error}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {testResults.router_info && (
+                    <div className="mt-3 pt-3 border-t">
+                      <h5 className="text-sm font-medium mb-2">Router Information</h5>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Version:</span>
+                          <span className="font-mono">{testResults.router_info.version || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Board:</span>
+                          <span className="font-mono">{testResults.router_info.board_name || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">CPU Load:</span>
+                          <span className="font-mono">{testResults.router_info.cpu_load || 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Active Clients:</span>
+                          <span className="font-mono">{testResults.router_info.active_clients ?? 'N/A'}</span>
+                        </div>
+                        <div className="flex justify-between col-span-2">
+                          <span className="text-muted-foreground">Uptime:</span>
+                          <span className="font-mono text-xs">{testResults.router_info.uptime || 'N/A'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </form>
           </CardContent>
         </Card>
