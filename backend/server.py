@@ -1269,4 +1269,10 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    # Shutdown scheduler
+    if scheduler.running:
+        scheduler.shutdown()
+        logger.info("Billing scheduler stopped")
+    
+    # Close database connection
     client.close()
