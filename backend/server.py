@@ -208,6 +208,36 @@ def generate_account_number() -> str:
 def generate_invoice_number() -> str:
     return f"INV{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
 
+def calculate_prorated_amount(monthly_rate: float, billing_period: str, installation_date: datetime) -> float:
+    """Calculate prorated bill based on installation date and billing period"""
+    now = installation_date
+    
+    # Determine billing cutoff day
+    if billing_period == "15th":
+        cutoff_day = 15
+    elif billing_period == "30th":
+        cutoff_day = 30  # or last day of month
+    else:
+        cutoff_day = 30  # default
+    
+    # Get current month's last day
+    if cutoff_day == 30:
+        import calendar
+        last_day = calendar.monthrange(now.year, now.month)[1]
+        cutoff_day = last_day
+    
+    # Calculate days remaining in current billing cycle
+    days_in_month = cutoff_day
+    days_remaining = cutoff_day - now.day + 1  # including installation day
+    
+    if days_remaining <= 0:
+        # If installed after cutoff, bill for next cycle
+        return 0
+    
+    # Calculate prorated amount
+    prorated = (monthly_rate / days_in_month) * days_remaining
+    return round(prorated, 2)
+
 # ========== MIKROTIK HELPER ==========
 class MikrotikService:
     def __init__(self, config: dict):
