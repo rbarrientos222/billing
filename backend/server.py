@@ -1120,12 +1120,20 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
                     else:
                         due_date = due_date.replace(month=installation_date.month + 1)
                 
+                # Generate description for prorated bill
+                start_date_str = installation_date.strftime("%B %d, %Y")
+                end_date_str = due_date.strftime("%B %d, %Y")
+                description = f"Prorated bill for period {start_date_str} - {end_date_str}"
+                
                 prorated_invoice = {
                     "invoice_number": generate_invoice_number(),
                     "subscriber_id": subscriber.account_number,
                     "subscriber_name": f"{subscriber.first_name} {subscriber.last_name}",
                     "plan_name": plan['name'],
                     "amount": prorated_amount,
+                    "description": description,
+                    "billing_start": installation_date,
+                    "billing_end": due_date,
                     "due_date": due_date,
                     "paid": False,
                     "is_prorated": True,
