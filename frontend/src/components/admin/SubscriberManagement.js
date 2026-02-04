@@ -879,10 +879,10 @@ export default function SubscriberManagement() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Invoice #</TableHead>
+                      <TableHead>Description</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Due Date</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Type</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -896,25 +896,22 @@ export default function SubscriberManagement() {
                       invoiceHistory.map((invoice) => (
                         <TableRow key={invoice.invoice_number}>
                           <TableCell className="font-mono text-xs">{invoice.invoice_number}</TableCell>
-                          <TableCell className="font-bold">₱{invoice.amount.toLocaleString()}</TableCell>
+                          <TableCell className="max-w-[250px]">
+                            <p className="text-sm truncate" title={invoice.description || invoice.plan_name}>
+                              {invoice.description || `${invoice.plan_name || 'Monthly'} Bill`}
+                            </p>
+                            {invoice.type && (
+                              <Badge variant="outline" className="text-xs mt-1">
+                                {invoice.type}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-bold">₱{invoice.amount?.toLocaleString()}</TableCell>
                           <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
                           <TableCell>
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                              invoice.paid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            }`}>
+                            <Badge variant={invoice.paid ? "default" : "destructive"} className={invoice.paid ? "bg-green-600" : ""}>
                               {invoice.paid ? 'Paid' : 'Unpaid'}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            {invoice.is_prorated ? (
-                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                Prorated
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                Regular
-                              </span>
-                            )}
+                            </Badge>
                           </TableCell>
                         </TableRow>
                       ))
