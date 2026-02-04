@@ -1174,6 +1174,64 @@ async def get_subscriber(account_number: str, current_user: dict = Depends(get_c
         raise HTTPException(status_code=404, detail="Subscriber not found")
     return subscriber
 
+@api_router.get("/subscribers/search")
+async def search_subscribers(q: str, current_user: dict = Depends(get_current_user)):
+    """
+    Search subscribers by name, account number, or phone.
+    """
+    if not q or len(q) < 2:
+        return []
+    
+    # Search by first name, last name, or account number (case-insensitive)
+    query = {
+        "$or": [
+            {"first_name": {"$regex": q, "$options": "i"}},
+            {"last_name": {"$regex": q, "$options": "i"}},
+            {"account_number": {"$regex": q, "$options": "i"}},
+            {"phone": {"$regex": q, "$options": "i"}},
+            {"pppoe_username": {"$regex": q, "$options": "i"}}
+        ]
+    }
+    
+    subscribers = await db.subscribers.find(query, {"_id": 0}).limit(20).to_list(20)
+    return subscribers
+
+@api_router.get("/payments/today-stats")
+async def get_today_payment_stats(current_user: dict = Depends(get_current_user)):
+    """
+    Get payment statistics for today.
+    """
+    if current_user['role'] not in ['admin', 'cashier', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get start of today
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Count and sum today's payments
+    pipeline = [
+        {"$match": {"payment_date": {"$gte": today_start}}},
+        {"$group": {
+            "_id": None,
+            "total": {"$sum": "$amount"},
+            "count": {"$sum": 1}
+        }}
+    ]
+    
+    result = await db.payments.aggregate(pipeline).to_list(1)
+    
+    if result:
+        return {
+            "total": result[0]['total'],
+            "count": result[0]['count'],
+            "date": today_start.strftime("%Y-%m-%d")
+        }
+    else:
+        return {
+            "total": 0,
+            "count": 0,
+            "date": today_start.strftime("%Y-%m-%d")
+        }
+
 @api_router.post("/billing/preview-prorated")
 async def preview_prorated_bill(data: dict, current_user: dict = Depends(get_current_user)):
     """
