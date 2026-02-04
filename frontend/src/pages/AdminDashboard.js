@@ -67,6 +67,15 @@ export default function AdminDashboard({ user, onLogout }) {
     }
   };
 
+  const fetchMonthlySales = async () => {
+    try {
+      const response = await axios.get('/stats/monthly-sales');
+      setMonthlySales(response.data);
+    } catch (error) {
+      console.error('Failed to fetch monthly sales:', error);
+    }
+  };
+
   const DashboardHome = () => {
     const statCards = [
       { 
