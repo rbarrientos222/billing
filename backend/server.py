@@ -1519,13 +1519,23 @@ async def reactivate_subscriber(account_number: str, data: dict, current_user: d
             )
             
             if prorate_calc['amount'] > 0:
+                # Generate description for reactivation bill
+                billing_period = subscriber.get('billing_period', '30th')
+                period_info = get_billing_period_description(billing_period, now)
+                start_str = now.strftime("%B %d, %Y")
+                end_str = period_info['end_date'].strftime("%B %d, %Y")
+                description = f"Reactivation bill for period {start_str} - {end_str}"
+                
                 invoice = {
                     "invoice_number": generate_invoice_number(),
                     "subscriber_id": account_number,
                     "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
                     "plan_name": new_plan_id,
                     "amount": prorate_calc['amount'],
+                    "description": description,
                     "type": "Reactivation - Prorated",
+                    "billing_start": now,
+                    "billing_end": period_info['end_date'],
                     "due_date": now + timedelta(days=15),
                     "paid": False,
                     "is_prorated": True,
