@@ -1946,6 +1946,15 @@ async def process_centralized_payment(data: dict, current_user: dict = Depends(g
             "created_at": now
         })
     
+    # Build payment descriptions for history
+    payment_descriptions = []
+    for inv in invoices_settled:
+        payment_descriptions.append(inv.get('description', f"Invoice {inv['invoice_number']}"))
+    for inv in invoices_partial:
+        payment_descriptions.append(f"{inv.get('description', f'Invoice {inv[\"invoice_number\"]}')} (partial)")
+    if wallet_credit > 0:
+        payment_descriptions.append(f"Wallet credit: ₱{wallet_credit}")
+    
     # Create main payment record
     payment_record = {
         "or_number": or_number,
@@ -1957,6 +1966,9 @@ async def process_centralized_payment(data: dict, current_user: dict = Depends(g
         "received_by": current_user['username'],
         "invoices_settled": [p['invoice_number'] for p in invoices_settled],
         "invoices_partial": [p['invoice_number'] for p in invoices_partial],
+        "invoices_settled_details": invoices_settled,
+        "invoices_partial_details": invoices_partial,
+        "description": "; ".join(payment_descriptions) if payment_descriptions else "Payment",
         "wallet_credit": wallet_credit,
         "allocation_details": payments_made
     }
