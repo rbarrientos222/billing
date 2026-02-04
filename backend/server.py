@@ -74,19 +74,17 @@ async def auto_generate_billing():
     invoices_generated = 0
     
     for sub in subscribers:
-        billing_period = sub.get('billing_period', '30th')
+        # Get billing day (1-31), default to 30 for backward compatibility
+        billing_day = sub.get('billing_day', 30)
+        # Handle legacy billing_period field
+        if 'billing_period' in sub and 'billing_day' not in sub:
+            billing_day = 15 if sub.get('billing_period') == "15th" else 30
         
-        # Determine billing day
-        if billing_period == "15th":
-            billing_day = 15
-        elif billing_period == "30th":
-            # For months with less than 30 days, use the last day
-            billing_day = min(30, last_day_of_month)
-        else:
-            billing_day = 30
+        # For months with less days than billing_day, use the last day
+        actual_billing_day = min(billing_day, last_day_of_month)
         
         # Check if today is the billing day
-        if current_day == billing_day:
+        if current_day == actual_billing_day:
             # Check if invoice already exists for this billing cycle
             start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             existing_invoice = await db.invoices.find_one({
@@ -103,7 +101,6 @@ async def auto_generate_billing():
                     due_date = today + timedelta(days=15)
                     
                     # Get billing period description
-                    billing_day = 15 if billing_period == "15th" else 30
                     period_info = get_billing_period_description(billing_day, today)
                     
                     invoice = {
@@ -113,7 +110,7 @@ async def auto_generate_billing():
                         "plan_name": plan['name'],
                         "amount": plan['price'],
                         "description": period_info['description'],
-                        "billing_period": billing_period,
+                        "billing_day": billing_day,
                         "billing_start": period_info['start_date'],
                         "billing_end": period_info['end_date'],
                         "due_date": due_date,
