@@ -170,7 +170,9 @@ export default function SubscriberManagement() {
       
       if (response.data.prorated_invoice) {
         const invoice = response.data.prorated_invoice;
-        successMessage += ` | Prorated invoice generated: ₱${invoice.amount} (${invoice.invoice_number})`;
+        successMessage += ` | Prorated invoice: ₱${invoice.amount} (${invoice.days_covered} days)`;
+      } else if (response.data.billing_note) {
+        successMessage += ` | ${response.data.billing_note}`;
       }
       
       toast.success(successMessage);
@@ -190,8 +192,10 @@ export default function SubscriberManagement() {
         pppoe_username: '',
         pppoe_password: '',
         pppoe_profile: '',
-        activate_pppoe: false
+        activate_pppoe: false,
+        generate_prorated_bill: true
       });
+      setProratedPreview(null);
       setMunicipalities([]);
       setBarangays([]);
       fetchSubscribers();
