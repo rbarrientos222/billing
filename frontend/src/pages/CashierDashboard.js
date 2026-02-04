@@ -147,6 +147,17 @@ export default function CashierDashboard({ user, onLogout }) {
     .filter(inv => !inv.paid)
     .reduce((sum, inv) => sum + (inv.remaining_balance || inv.amount || 0), 0);
 
+  // Get status badge for invoice
+  const getInvoiceStatus = (invoice) => {
+    if (invoice.paid) {
+      return <Badge className="bg-green-600"><Check className="h-3 w-3 mr-1" />Paid</Badge>;
+    }
+    if (invoice.paid_amount > 0) {
+      return <Badge variant="outline" className="border-yellow-500 text-yellow-600"><AlertCircle className="h-3 w-3 mr-1" />Partial</Badge>;
+    }
+    return <Badge variant="destructive">Unpaid</Badge>;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b border-border h-16 flex items-center justify-between px-4 sm:px-6">
