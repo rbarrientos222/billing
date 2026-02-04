@@ -19,6 +19,9 @@ export default function CashierDashboard({ user, onLogout }) {
   const [paymentMode, setPaymentMode] = useState('cash');
   const [todayStats, setTodayStats] = useState({ total: 0, count: 0 });
   const [searching, setSearching] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [paymentResult, setPaymentResult] = useState(null);
 
   // Fetch today's payment stats on load
   useEffect(() => {
