@@ -790,6 +790,7 @@ export default function SubscriberManagement() {
                     <TableHead>Name</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Plan</TableHead>
+                    <TableHead>Installation</TableHead>
                     <TableHead>Wallet</TableHead>
                     <TableHead>PPPoE</TableHead>
                     <TableHead>Status</TableHead>
@@ -799,7 +800,7 @@ export default function SubscriberManagement() {
                 <TableBody>
                   {filteredSubscribers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                         No subscribers found
                       </TableCell>
                     </TableRow>
@@ -818,6 +819,9 @@ export default function SubscriberManagement() {
                         <TableCell className="font-medium">{sub.first_name} {sub.last_name}</TableCell>
                         <TableCell>{sub.phone}</TableCell>
                         <TableCell>{sub.plan_id}</TableCell>
+                        <TableCell className="text-xs">
+                          {sub.installation_date ? new Date(sub.installation_date).toLocaleDateString() : '-'}
+                        </TableCell>
                         <TableCell>
                           {(sub.wallet_balance || 0) > 0 ? (
                             <span className="text-green-600 font-medium">₱{(sub.wallet_balance || 0).toLocaleString()}</span>
@@ -826,9 +830,13 @@ export default function SubscriberManagement() {
                           )}
                         </TableCell>
                         <TableCell>
-                          {sub.pppoe_username ? (
+                          {sub.pppoe_activated ? (
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              Configured
+                              Active
+                            </Badge>
+                          ) : sub.pppoe_username ? (
+                            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                              Pending
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="bg-gray-50 text-gray-600">
