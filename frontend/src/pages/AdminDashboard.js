@@ -26,6 +26,7 @@ export default function AdminDashboard({ user, onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stats, setStats] = useState({});
   const [mikrotikStats, setMikrotikStats] = useState(null);
+  const [monthlySales, setMonthlySales] = useState([]);
 
   const navigation = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -41,6 +42,7 @@ export default function AdminDashboard({ user, onLogout }) {
   useEffect(() => {
     fetchDashboardStats();
     fetchMikrotikStats();
+    fetchMonthlySales();
   }, []);
 
   const fetchDashboardStats = async () => {
