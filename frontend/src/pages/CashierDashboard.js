@@ -297,18 +297,42 @@ export default function CashierDashboard({ user, onLogout }) {
             <Card className="bg-gradient-to-br from-green-600 to-green-700 text-white">
               <CardContent className="pt-6">
                 <DollarSign className="h-8 w-8 mb-2 opacity-80" />
-                <p className="text-sm opacity-90">Quick Payment</p>
-                <p className="text-3xl font-bold font-heading mt-1">₱0.00</p>
-                <p className="text-xs opacity-75 mt-2">Total processed today</p>
+                <p className="text-sm opacity-90">Today's Collections</p>
+                <p className="text-3xl font-bold font-heading mt-1">₱{todayStats.total?.toLocaleString() || '0.00'}</p>
+                <p className="text-xs opacity-75 mt-2">{todayStats.count || 0} payment(s) processed today</p>
               </CardContent>
             </Card>
+            
+            {selectedSubscriber && totalUnpaid > 0 && (
+              <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white">
+                <CardContent className="pt-6">
+                  <Receipt className="h-8 w-8 mb-2 opacity-80" />
+                  <p className="text-sm opacity-90">Outstanding Balance</p>
+                  <p className="text-3xl font-bold font-heading mt-1">₱{totalUnpaid.toLocaleString()}</p>
+                  <p className="text-xs opacity-75 mt-2">
+                    {invoices.filter(inv => !inv.paid).length} unpaid invoice(s)
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button className="w-full" variant="outline">Print Receipt</Button>
-                <Button className="w-full" variant="outline">View History</Button>
+                <Button className="w-full" variant="outline" disabled={!selectedSubscriber}>
+                  Print Receipt
+                </Button>
+                <Button className="w-full" variant="outline" onClick={() => {
+                  setSelectedSubscriber(null);
+                  setInvoices([]);
+                  setPaymentHistory([]);
+                  setSearchTerm('');
+                  setSearchResults([]);
+                }}>
+                  Clear / New Search
+                </Button>
               </CardContent>
             </Card>
           </div>
