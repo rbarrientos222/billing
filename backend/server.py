@@ -1812,6 +1812,7 @@ async def get_subscriber_invoices(account_number: str):
 # ========== PAYMENTS & CASHIER ==========
 @api_router.post("/payments")
 async def process_payment(payment: Payment, current_user: dict = Depends(get_current_user)):
+    """Legacy single invoice payment - kept for compatibility"""
     if current_user['role'] not in ['admin', 'cashier']:
         raise HTTPException(status_code=403, detail="Access denied")
     
@@ -1827,7 +1828,223 @@ async def process_payment(payment: Payment, current_user: dict = Depends(get_cur
         {"$set": {"paid": True, "paid_date": datetime.now(timezone.utc)}}
     )
     
-    # Handle advance payment wallet
+    return {"message": "Payment processed", "or_number": payment_dict['or_number']}
+
+@api_router.post("/payments/centralized")
+async def process_centralized_payment(data: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Process centralized payment that allocates to multiple invoices.
+    - Pays oldest invoices first (FIFO)
+    - Supports partial payments
+    - Excess goes to wallet/credit balance
+    """
+    if current_user['role'] not in ['admin', 'cashier']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    subscriber_id = data.get('subscriber_id')
+    amount = float(data.get('amount', 0))
+    mode = data.get('mode', 'cash')
+    
+    if not subscriber_id or amount <= 0:
+        raise HTTPException(status_code=400, detail="Subscriber ID and amount required")
+    
+    subscriber = await db.subscribers.find_one({"account_number": subscriber_id})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    now = datetime.now(timezone.utc)
+    or_number = f"OR{now.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
+    
+    # Get all unpaid invoices sorted by creation date (oldest first)
+    unpaid_invoices = await db.invoices.find({
+        "subscriber_id": subscriber_id,
+        "paid": False
+    }).sort("created_at", 1).to_list(100)
+    
+    remaining_amount = amount
+    payments_made = []
+    invoices_settled = []
+    invoices_partial = []
+    
+    for invoice in unpaid_invoices:
+        if remaining_amount <= 0:
+            break
+        
+        invoice_balance = invoice.get('amount', 0) - invoice.get('paid_amount', 0)
+        
+        if remaining_amount >= invoice_balance:
+            # Full payment for this invoice
+            payment_for_invoice = invoice_balance
+            remaining_amount -= invoice_balance
+            
+            # Update invoice as fully paid
+            await db.invoices.update_one(
+                {"invoice_number": invoice['invoice_number']},
+                {"$set": {
+                    "paid": True,
+                    "paid_amount": invoice['amount'],
+                    "paid_date": now,
+                    "payment_or": or_number
+                }}
+            )
+            invoices_settled.append({
+                "invoice_number": invoice['invoice_number'],
+                "amount_paid": payment_for_invoice,
+                "description": invoice.get('description', invoice.get('plan_name', 'Invoice'))
+            })
+        else:
+            # Partial payment for this invoice
+            payment_for_invoice = remaining_amount
+            new_paid_amount = invoice.get('paid_amount', 0) + remaining_amount
+            remaining_amount = 0
+            
+            # Update invoice with partial payment
+            await db.invoices.update_one(
+                {"invoice_number": invoice['invoice_number']},
+                {"$set": {
+                    "paid_amount": new_paid_amount,
+                    "last_payment_date": now,
+                    "last_payment_or": or_number
+                }}
+            )
+            invoices_partial.append({
+                "invoice_number": invoice['invoice_number'],
+                "amount_paid": payment_for_invoice,
+                "remaining_balance": invoice['amount'] - new_paid_amount,
+                "description": invoice.get('description', invoice.get('plan_name', 'Invoice'))
+            })
+        
+        payments_made.append({
+            "invoice_number": invoice['invoice_number'],
+            "amount": payment_for_invoice
+        })
+    
+    # Handle excess payment - add to wallet
+    wallet_credit = 0
+    if remaining_amount > 0:
+        wallet_credit = remaining_amount
+        
+        # Update subscriber wallet
+        current_wallet = subscriber.get('wallet_balance', 0)
+        new_wallet = current_wallet + wallet_credit
+        
+        await db.subscribers.update_one(
+            {"account_number": subscriber_id},
+            {"$set": {"wallet_balance": new_wallet}}
+        )
+        
+        # Log wallet credit
+        await db.wallet_transactions.insert_one({
+            "subscriber_id": subscriber_id,
+            "type": "credit",
+            "amount": wallet_credit,
+            "description": f"Advance payment - OR# {or_number}",
+            "or_number": or_number,
+            "created_at": now
+        })
+    
+    # Create main payment record
+    payment_record = {
+        "or_number": or_number,
+        "subscriber_id": subscriber_id,
+        "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
+        "total_amount": amount,
+        "mode": mode,
+        "payment_date": now,
+        "received_by": current_user['username'],
+        "invoices_settled": [p['invoice_number'] for p in invoices_settled],
+        "invoices_partial": [p['invoice_number'] for p in invoices_partial],
+        "wallet_credit": wallet_credit,
+        "allocation_details": payments_made
+    }
+    await db.payments.insert_one(payment_record)
+    
+    # Calculate new total balance
+    updated_invoices = await db.invoices.find({
+        "subscriber_id": subscriber_id,
+        "paid": False
+    }).to_list(100)
+    new_total_balance = sum(
+        inv.get('amount', 0) - inv.get('paid_amount', 0) 
+        for inv in updated_invoices
+    )
+    
+    return {
+        "message": "Payment processed successfully",
+        "or_number": or_number,
+        "total_paid": amount,
+        "invoices_fully_paid": invoices_settled,
+        "invoices_partially_paid": invoices_partial,
+        "wallet_credit_added": wallet_credit,
+        "new_wallet_balance": subscriber.get('wallet_balance', 0) + wallet_credit,
+        "remaining_balance": new_total_balance
+    }
+
+@api_router.get("/subscribers/{account_number}/wallet")
+async def get_subscriber_wallet(account_number: str, current_user: dict = Depends(get_current_user)):
+    """Get subscriber wallet balance and transaction history"""
+    subscriber = await db.subscribers.find_one({"account_number": account_number})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    transactions = await db.wallet_transactions.find(
+        {"subscriber_id": account_number},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    
+    return {
+        "balance": subscriber.get('wallet_balance', 0),
+        "transactions": transactions
+    }
+
+@api_router.post("/payments/use-wallet")
+async def use_wallet_for_payment(data: dict, current_user: dict = Depends(get_current_user)):
+    """Use wallet balance to pay outstanding invoices"""
+    if current_user['role'] not in ['admin', 'cashier', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    subscriber_id = data.get('subscriber_id')
+    
+    subscriber = await db.subscribers.find_one({"account_number": subscriber_id})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    wallet_balance = subscriber.get('wallet_balance', 0)
+    if wallet_balance <= 0:
+        return {"message": "No wallet balance available", "amount_used": 0}
+    
+    # Process payment using wallet balance
+    result = await process_centralized_payment({
+        "subscriber_id": subscriber_id,
+        "amount": wallet_balance,
+        "mode": "wallet"
+    }, current_user)
+    
+    # Deduct from wallet
+    used_amount = wallet_balance - result.get('wallet_credit_added', 0)
+    new_balance = result.get('wallet_credit_added', 0)
+    
+    await db.subscribers.update_one(
+        {"account_number": subscriber_id},
+        {"$set": {"wallet_balance": new_balance}}
+    )
+    
+    # Log wallet debit
+    if used_amount > 0:
+        await db.wallet_transactions.insert_one({
+            "subscriber_id": subscriber_id,
+            "type": "debit",
+            "amount": used_amount,
+            "description": f"Auto-payment from wallet - OR# {result['or_number']}",
+            "or_number": result['or_number'],
+            "created_at": datetime.now(timezone.utc)
+        })
+    
+    return {
+        "message": "Wallet payment processed",
+        "amount_used": used_amount,
+        "remaining_wallet_balance": new_balance
+    }
     if payment.amount > 0:
         invoice = await db.invoices.find_one({"invoice_number": payment.invoice_id})
         if invoice and payment.amount > invoice['amount']:
