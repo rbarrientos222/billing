@@ -230,6 +230,21 @@ export default function SubscriberManagement() {
     }
   };
 
+  const handleViewHistory = async (subscriber) => {
+    try {
+      setSelectedSubscriberHistory(subscriber);
+      const [paymentsRes, invoicesRes] = await Promise.all([
+        axios.get(`/payments/subscriber/${subscriber.account_number}`),
+        axios.get(`/invoices/subscriber/${subscriber.account_number}`)
+      ]);
+      setPaymentHistory(paymentsRes.data);
+      setInvoiceHistory(invoicesRes.data);
+      setHistoryDialogOpen(true);
+    } catch (error) {
+      toast.error('Failed to fetch payment history');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
