@@ -576,6 +576,110 @@ export default function SubscriberManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment History Dialog */}
+      <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Payment History - {selectedSubscriberHistory?.first_name} {selectedSubscriberHistory?.last_name}</DialogTitle>
+            <DialogDescription>
+              Account: {selectedSubscriberHistory?.account_number}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Invoices */}
+            <div>
+              <h3 className="font-medium mb-3 text-lg">Invoices</h3>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Type</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invoiceHistory.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                          No invoices found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      invoiceHistory.map((invoice) => (
+                        <TableRow key={invoice.invoice_number}>
+                          <TableCell className="font-mono text-xs">{invoice.invoice_number}</TableCell>
+                          <TableCell className="font-bold">₱{invoice.amount.toLocaleString()}</TableCell>
+                          <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              invoice.paid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {invoice.paid ? 'Paid' : 'Unpaid'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {invoice.is_prorated ? (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Prorated
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Regular
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Payments */}
+            <div>
+              <h3 className="font-medium mb-3 text-lg">Payment Records</h3>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>OR Number</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Mode</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Received By</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paymentHistory.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                          No payments found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      paymentHistory.map((payment) => (
+                        <TableRow key={payment.or_number}>
+                          <TableCell className="font-mono text-xs">{payment.or_number}</TableCell>
+                          <TableCell className="font-bold text-green-600">₱{payment.amount.toLocaleString()}</TableCell>
+                          <TableCell className="capitalize">{payment.mode}</TableCell>
+                          <TableCell>{new Date(payment.payment_date).toLocaleString()}</TableCell>
+                          <TableCell>{payment.received_by}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
