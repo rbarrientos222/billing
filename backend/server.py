@@ -529,6 +529,178 @@ async def get_mikrotik_config(current_user: dict = Depends(get_current_user)):
     config = await db.mikrotik_configs.find_one({}, {"_id": 0, "password": 0})
     return config or {}
 
+@api_router.post("/mikrotik/test-connection")
+async def test_mikrotik_connection(test_config: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Test Mikrotik connection without saving the configuration.
+    Can test with provided credentials or use saved config.
+    """
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    import socket
+    import time
+    
+    # Get config to test - either from request or from database
+    if test_config.get('ip_address') and test_config.get('username'):
+        # Use provided config
+        config = test_config
+        # If password not provided, get from saved config
+        if not config.get('password'):
+            saved_config = await db.mikrotik_configs.find_one({})
+            if saved_config:
+                config['password'] = saved_config.get('password')
+            else:
+                return {
+                    "success": False,
+                    "step": "validation",
+                    "error": "Password required for new configuration"
+                }
+        else:
+            # Encrypt the password for the test
+            config['password'] = encrypt_password(config['password'])
+    else:
+        # Use saved config
+        config = await db.mikrotik_configs.find_one({})
+        if not config:
+            return {
+                "success": False,
+                "step": "validation",
+                "error": "No Mikrotik configuration found. Please enter credentials."
+            }
+    
+    results = {
+        "success": False,
+        "steps": [],
+        "router_info": None
+    }
+    
+    # Step 1: DNS Resolution
+    try:
+        ip_address = config.get('ip_address', '')
+        # Remove port if accidentally included in IP
+        if ':' in ip_address:
+            ip_address = ip_address.split(':')[0]
+        
+        start_time = time.time()
+        resolved_ip = socket.gethostbyname(ip_address)
+        dns_time = round((time.time() - start_time) * 1000, 2)
+        results["steps"].append({
+            "step": "DNS Resolution",
+            "status": "success",
+            "message": f"Resolved {ip_address} to {resolved_ip}",
+            "time_ms": dns_time
+        })
+    except socket.gaierror as e:
+        results["steps"].append({
+            "step": "DNS Resolution",
+            "status": "failed",
+            "message": f"Cannot resolve hostname: {ip_address}",
+            "error": str(e)
+        })
+        return results
+    
+    # Step 2: Port Connectivity
+    port = config.get('port', 8728)
+    try:
+        start_time = time.time()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(10)
+        result = sock.connect_ex((resolved_ip, port))
+        port_time = round((time.time() - start_time) * 1000, 2)
+        sock.close()
+        
+        if result == 0:
+            results["steps"].append({
+                "step": "Port Connectivity",
+                "status": "success",
+                "message": f"Port {port} is open on {resolved_ip}",
+                "time_ms": port_time
+            })
+        else:
+            results["steps"].append({
+                "step": "Port Connectivity",
+                "status": "failed",
+                "message": f"Port {port} is closed or filtered",
+                "error": f"Connection failed with error code {result}"
+            })
+            return results
+    except socket.timeout:
+        results["steps"].append({
+            "step": "Port Connectivity",
+            "status": "failed",
+            "message": f"Connection to port {port} timed out",
+            "error": "Timeout after 10 seconds"
+        })
+        return results
+    except Exception as e:
+        results["steps"].append({
+            "step": "Port Connectivity",
+            "status": "failed",
+            "message": f"Failed to connect to port {port}",
+            "error": str(e)
+        })
+        return results
+    
+    # Step 3: API Authentication
+    try:
+        start_time = time.time()
+        service = MikrotikService(config)
+        if service.connect():
+            auth_time = round((time.time() - start_time) * 1000, 2)
+            results["steps"].append({
+                "step": "API Authentication",
+                "status": "success",
+                "message": "Successfully authenticated with Mikrotik API",
+                "time_ms": auth_time
+            })
+            
+            # Step 4: Get Router Info
+            try:
+                stats = service.get_resource_stats()
+                active_clients = service.get_active_clients()
+                results["steps"].append({
+                    "step": "Router Info",
+                    "status": "success",
+                    "message": "Successfully retrieved router information"
+                })
+                results["router_info"] = {
+                    "cpu_load": stats.get('cpu_load'),
+                    "free_memory": stats.get('free_memory'),
+                    "total_memory": stats.get('total_memory'),
+                    "uptime": stats.get('uptime'),
+                    "version": stats.get('version'),
+                    "board_name": stats.get('board_name'),
+                    "active_clients": active_clients
+                }
+                results["success"] = True
+            except Exception as e:
+                results["steps"].append({
+                    "step": "Router Info",
+                    "status": "warning",
+                    "message": "Connected but failed to get router info",
+                    "error": str(e)
+                })
+                results["success"] = True  # Connection still successful
+            
+            service.disconnect()
+        else:
+            results["steps"].append({
+                "step": "API Authentication",
+                "status": "failed",
+                "message": "Failed to authenticate with Mikrotik API",
+                "error": "Check username/password and ensure API service is enabled"
+            })
+    except Exception as e:
+        results["steps"].append({
+            "step": "API Authentication",
+            "status": "failed",
+            "message": "API connection failed",
+            "error": str(e)
+        })
+    
+    return results
+
 @api_router.get("/mikrotik/stats")
 async def get_mikrotik_stats(current_user: dict = Depends(get_current_user)):
     config = await db.mikrotik_configs.find_one({})
