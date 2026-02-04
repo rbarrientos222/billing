@@ -92,7 +92,10 @@ class Subscriber(BaseModel):
     last_name: str
     email: Optional[str] = None
     phone: Optional[str] = None
-    address: Optional[str] = None
+    street: Optional[str] = None
+    barangay: Optional[str] = None
+    municipality: Optional[str] = None
+    province: Optional[str] = None
     pppoe_username: Optional[str] = None
     pppoe_password: Optional[str] = None
     pppoe_profile: Optional[str] = None
