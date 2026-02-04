@@ -127,7 +127,7 @@ export default function CashierDashboard({ user, onLogout }) {
         message += `◐ ${result.invoices_partially_paid.length} invoice(s) partially paid\n`;
       }
       if (result.wallet_credit_added > 0) {
-        message += `💰 ₱${result.wallet_credit_added.toLocaleString()} added to wallet`;
+        message += `💰 ₱${(result.wallet_credit_added || 0).toLocaleString()} added to wallet`;
       }
       
       toast.success(message, { duration: 5000 });
