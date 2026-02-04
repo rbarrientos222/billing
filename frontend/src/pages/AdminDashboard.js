@@ -193,24 +193,33 @@ export default function AdminDashboard({ user, onLogout }) {
                     <h3 className="font-medium text-green-900 dark:text-green-100">Mikrotik Router</h3>
                     <Wifi className="h-5 w-5 text-green-600" />
                   </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between text-green-800 dark:text-green-200">
-                      <span>Active Clients:</span>
-                      <span className="font-bold font-mono text-lg text-green-600">{mikrotikStats.active_clients || 0}</span>
+                  {mikrotikStats.not_configured ? (
+                    <div className="text-sm text-green-700 dark:text-green-300 text-center py-4">
+                      <p>Router not configured</p>
+                      <Link to="/admin/mikrotik" className="text-green-600 dark:text-green-400 underline text-xs mt-2 inline-block">
+                        Configure Mikrotik
+                      </Link>
                     </div>
-                    <div className="flex justify-between text-green-800 dark:text-green-200">
-                      <span>CPU Load:</span>
-                      <span className="font-mono font-medium">{mikrotikStats.cpu_load}</span>
+                  ) : (
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between text-green-800 dark:text-green-200">
+                        <span>Active Clients:</span>
+                        <span className="font-bold font-mono text-lg text-green-600">{mikrotikStats.active_clients || 0}</span>
+                      </div>
+                      <div className="flex justify-between text-green-800 dark:text-green-200">
+                        <span>CPU Load:</span>
+                        <span className="font-mono font-medium">{mikrotikStats.cpu_load}</span>
+                      </div>
+                      <div className="flex justify-between text-green-800 dark:text-green-200">
+                        <span>Free Memory:</span>
+                        <span className="font-mono font-medium">{mikrotikStats.free_memory}</span>
+                      </div>
+                      <div className="flex justify-between text-green-800 dark:text-green-200">
+                        <span>Uptime:</span>
+                        <span className="font-mono font-medium text-xs">{mikrotikStats.uptime}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-green-800 dark:text-green-200">
-                      <span>Free Memory:</span>
-                      <span className="font-mono font-medium">{mikrotikStats.free_memory}</span>
-                    </div>
-                    <div className="flex justify-between text-green-800 dark:text-green-200">
-                      <span>Uptime:</span>
-                      <span className="font-mono font-medium text-xs">{mikrotikStats.uptime}</span>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             )}
