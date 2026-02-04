@@ -44,6 +44,7 @@ export default function SubscriberManagement() {
     fetchSubscribers();
     fetchPlans();
     fetchProfiles();
+    fetchProvinces();
   }, []);
 
   const fetchSubscribers = async () => {
