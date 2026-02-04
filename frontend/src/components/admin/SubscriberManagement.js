@@ -309,6 +309,132 @@ export default function SubscriberManagement() {
     }
   };
 
+  // Action handlers
+  const openChangePlanDialog = (subscriber) => {
+    setSelectedSubscriber(subscriber);
+    setChangePlanForm({
+      new_plan_id: subscriber.plan_id || '',
+      new_pppoe_profile: subscriber.pppoe_profile || '',
+      generate_prorated_bill: true
+    });
+    setChangePlanDialogOpen(true);
+  };
+
+  const handleChangePlan = async () => {
+    if (!selectedSubscriber) return;
+    setActionLoading(true);
+    try {
+      const response = await axios.post(`/subscribers/${selectedSubscriber.account_number}/change-plan`, changePlanForm);
+      toast.success(response.data.message);
+      if (response.data.prorated_invoice) {
+        toast.info(`Prorated invoice: ₱${response.data.prorated_invoice.amount} (${response.data.prorated_invoice.type})`);
+      }
+      setChangePlanDialogOpen(false);
+      fetchSubscribers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to change plan');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const openDeactivateDialog = (subscriber) => {
+    setSelectedSubscriber(subscriber);
+    setDeactivateForm({
+      disconnection_profile: 'NON-PAYMENTS',
+      reason: '',
+      generate_final_bill: true
+    });
+    setDeactivateDialogOpen(true);
+  };
+
+  const handleDeactivate = async () => {
+    if (!selectedSubscriber) return;
+    setActionLoading(true);
+    try {
+      const response = await axios.post(`/subscribers/${selectedSubscriber.account_number}/deactivate`, deactivateForm);
+      toast.success(response.data.message);
+      if (response.data.final_invoice) {
+        toast.info(`Final bill: ₱${response.data.final_invoice.amount} (${response.data.final_invoice.days_charged} days)`);
+      }
+      setDeactivateDialogOpen(false);
+      fetchSubscribers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to deactivate subscriber');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const openReactivateDialog = (subscriber) => {
+    setSelectedSubscriber(subscriber);
+    setReactivateForm({
+      pppoe_profile: subscriber.previous_pppoe_profile || '',
+      plan_id: subscriber.plan_id || '',
+      generate_prorated_bill: true
+    });
+    setReactivateDialogOpen(true);
+  };
+
+  const handleReactivate = async () => {
+    if (!selectedSubscriber) return;
+    setActionLoading(true);
+    try {
+      const response = await axios.post(`/subscribers/${selectedSubscriber.account_number}/reactivate`, reactivateForm);
+      toast.success(response.data.message);
+      if (response.data.prorated_invoice) {
+        toast.info(`Prorated bill: ₱${response.data.prorated_invoice.amount} (${response.data.prorated_invoice.days_covered} days)`);
+      }
+      setReactivateDialogOpen(false);
+      fetchSubscribers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to reactivate subscriber');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const openDeleteDialog = (subscriber) => {
+    setSelectedSubscriber(subscriber);
+    setDeleteForm({ admin_password: '' });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!selectedSubscriber || !deleteForm.admin_password) return;
+    setActionLoading(true);
+    try {
+      const response = await axios.delete(`/subscribers/${selectedSubscriber.account_number}`, { data: deleteForm });
+      toast.success(response.data.message);
+      setDeleteDialogOpen(false);
+      fetchSubscribers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete subscriber');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const openChargeDialog = (subscriber) => {
+    setSelectedSubscriber(subscriber);
+    setChargeForm({ description: '', amount: '', charge_type: 'Equipment' });
+    setChargeDialogOpen(true);
+  };
+
+  const handleAddCharge = async () => {
+    if (!selectedSubscriber || !chargeForm.description || !chargeForm.amount) return;
+    setActionLoading(true);
+    try {
+      const response = await axios.post(`/subscribers/${selectedSubscriber.account_number}/charges`, chargeForm);
+      toast.success(`Charge added: ₱${chargeForm.amount} - ${chargeForm.description}`);
+      setChargeDialogOpen(false);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to add charge');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
