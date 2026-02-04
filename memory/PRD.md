@@ -56,7 +56,7 @@ Build a billing system with the following features:
 - [x] Login page with role-based routing
 - [x] Admin Dashboard with:
   - Sales metrics and charts
-  - **Billing Calendar View** (NEW)
+  - **Billing Calendar View**
     - Visual calendar showing billing dates (15th, 30th)
     - Subscriber counts per billing period
     - Days until next billing
@@ -67,6 +67,13 @@ Build a billing system with the following features:
   - Cascading address dropdowns (Province > Municipality > Barangay)
   - PPPoE configuration fields
   - View Payment History dialog
+  - **Prorated Billing Option** (NEW)
+    - Checkbox to enable/disable prorated bill generation
+    - Real-time prorated bill preview showing:
+      - Days covered (from today until billing date)
+      - Daily rate calculation
+      - Total prorated amount
+      - Due date
 - [x] Cashier Dashboard with subscriber search and payment
 - [x] Subscription Plans management
 - [x] User Management
