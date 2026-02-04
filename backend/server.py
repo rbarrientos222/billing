@@ -1239,11 +1239,11 @@ async def preview_prorated_bill(data: dict, current_user: dict = Depends(get_cur
         except:
             pass
     
-    billing_period = data.get('billing_period', '30th')
+    billing_day = 15 if billing_period == "15th" else 30
     
     prorate_calc = calculate_prorated_amount(
         plan['price'],
-        billing_period,
+        billing_day,
         installation_date
     )
     
