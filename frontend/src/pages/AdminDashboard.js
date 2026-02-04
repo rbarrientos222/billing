@@ -118,14 +118,14 @@ export default function AdminDashboard({ user, onLogout }) {
       { title: 'Total Invoices', value: stats.total_invoices || 0, icon: FileText, color: 'text-purple-600' },
     ];
 
-    // Mock monthly data
-    const monthlyData = [
-      { month: 'Jan', sales: 45000 },
-      { month: 'Feb', sales: 52000 },
-      { month: 'Mar', sales: 48000 },
-      { month: 'Apr', sales: 61000 },
-      { month: 'May', sales: 55000 },
-      { month: 'Jun', sales: 67000 },
+    // Use live monthly sales data
+    const monthlyData = monthlySales.length > 0 ? monthlySales : [
+      { month: 'Jan', sales: 0 },
+      { month: 'Feb', sales: 0 },
+      { month: 'Mar', sales: 0 },
+      { month: 'Apr', sales: 0 },
+      { month: 'May', sales: 0 },
+      { month: 'Jun', sales: 0 },
     ];
 
     return (
