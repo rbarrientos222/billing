@@ -1080,7 +1080,7 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
             installation_date = subscriber.installation_date or datetime.now(timezone.utc)
             prorate_calc = calculate_prorated_amount(
                 plan['price'], 
-                subscriber.billing_period, 
+                subscriber.billing_day, 
                 installation_date
             )
             prorated_amount = prorate_calc['amount']
