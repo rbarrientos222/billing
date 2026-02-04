@@ -545,17 +545,27 @@ export default function SubscriberManagement() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          {sub.pppoe_username && sub.pppoe_password && sub.pppoe_profile && (
+                          <div className="flex items-center justify-end gap-2">
+                            {sub.pppoe_username && sub.pppoe_password && sub.pppoe_profile && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleActivateSingle(sub.account_number)}
+                                data-testid={`activate-${sub.account_number}`}
+                                className="text-green-600 border-green-600 hover:bg-green-50"
+                              >
+                                Activate PPPoE
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleActivateSingle(sub.account_number)}
-                              data-testid={`activate-${sub.account_number}`}
-                              className="text-green-600 border-green-600 hover:bg-green-50"
+                              onClick={() => handleViewHistory(sub)}
+                              className="text-blue-600 border-blue-600 hover:bg-blue-50"
                             >
-                              Activate PPPoE
+                              View History
                             </Button>
-                          )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
