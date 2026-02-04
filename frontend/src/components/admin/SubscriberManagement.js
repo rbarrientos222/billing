@@ -963,6 +963,264 @@ export default function SubscriberManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Change Plan Dialog */}
+      <Dialog open={changePlanDialogOpen} onOpenChange={setChangePlanDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Subscription Plan</DialogTitle>
+            <DialogDescription>
+              {selectedSubscriber && `Update plan for ${selectedSubscriber.first_name} ${selectedSubscriber.last_name}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Current Plan</Label>
+              <p className="text-sm text-muted-foreground">{selectedSubscriber?.plan_id || 'None'}</p>
+            </div>
+            <div>
+              <Label>New Plan</Label>
+              <Select value={changePlanForm.new_plan_id} onValueChange={(v) => setChangePlanForm({...changePlanForm, new_plan_id: v})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select new plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.map((plan) => (
+                    <SelectItem key={plan.name} value={plan.name}>
+                      {plan.name} - ₱{plan.price}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>New PPPoE Profile (Mikrotik)</Label>
+              <Select value={changePlanForm.new_pppoe_profile} onValueChange={(v) => setChangePlanForm({...changePlanForm, new_pppoe_profile: v})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select profile" />
+                </SelectTrigger>
+                <SelectContent>
+                  {profiles.map((profile) => (
+                    <SelectItem key={profile} value={profile}>{profile}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="generate_prorated_change"
+                checked={changePlanForm.generate_prorated_bill}
+                onCheckedChange={(c) => setChangePlanForm({...changePlanForm, generate_prorated_bill: c})}
+              />
+              <Label htmlFor="generate_prorated_change" className="text-sm">Generate prorated adjustment bill</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChangePlanDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleChangePlan} disabled={actionLoading || !changePlanForm.new_plan_id}>
+              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Update Plan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deactivate Dialog */}
+      <Dialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-amber-600">Deactivate Subscriber</DialogTitle>
+            <DialogDescription>
+              {selectedSubscriber && `Deactivate ${selectedSubscriber.first_name} ${selectedSubscriber.last_name}'s account`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Disconnection Profile (No Internet)</Label>
+              <Select value={deactivateForm.disconnection_profile} onValueChange={(v) => setDeactivateForm({...deactivateForm, disconnection_profile: v})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {profiles.map((profile) => (
+                    <SelectItem key={profile} value={profile}>{profile}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">Usually "NON-PAYMENTS" or a profile without bandwidth</p>
+            </div>
+            <div>
+              <Label>Reason</Label>
+              <Input 
+                value={deactivateForm.reason} 
+                onChange={(e) => setDeactivateForm({...deactivateForm, reason: e.target.value})}
+                placeholder="e.g., Non-payment, Customer request"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="generate_final_bill"
+                checked={deactivateForm.generate_final_bill}
+                onCheckedChange={(c) => setDeactivateForm({...deactivateForm, generate_final_bill: c})}
+              />
+              <Label htmlFor="generate_final_bill" className="text-sm">Generate final bill (prorated to disconnection date)</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeactivateDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeactivate} disabled={actionLoading}>
+              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Deactivate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reactivate Dialog */}
+      <Dialog open={reactivateDialogOpen} onOpenChange={setReactivateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-green-600">Reactivate Subscriber</DialogTitle>
+            <DialogDescription>
+              {selectedSubscriber && `Reactivate ${selectedSubscriber.first_name} ${selectedSubscriber.last_name}'s account`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Subscription Plan</Label>
+              <Select value={reactivateForm.plan_id} onValueChange={(v) => setReactivateForm({...reactivateForm, plan_id: v})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.map((plan) => (
+                    <SelectItem key={plan.name} value={plan.name}>
+                      {plan.name} - ₱{plan.price}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>PPPoE Profile</Label>
+              <Select value={reactivateForm.pppoe_profile} onValueChange={(v) => setReactivateForm({...reactivateForm, pppoe_profile: v})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select active profile" />
+                </SelectTrigger>
+                <SelectContent>
+                  {profiles.map((profile) => (
+                    <SelectItem key={profile} value={profile}>{profile}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="generate_prorated_reactivate"
+                checked={reactivateForm.generate_prorated_bill}
+                onCheckedChange={(c) => setReactivateForm({...reactivateForm, generate_prorated_bill: c})}
+              />
+              <Label htmlFor="generate_prorated_reactivate" className="text-sm">Generate prorated bill (from today to billing date)</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReactivateDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleReactivate} disabled={actionLoading || !reactivateForm.pppoe_profile} className="bg-green-600 hover:bg-green-700">
+              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Reactivate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete Subscriber</DialogTitle>
+            <DialogDescription>
+              This action is permanent and cannot be undone. The PPPoE account will also be removed from Mikrotik.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+              <p className="text-sm text-red-700">
+                <strong>Warning:</strong> You are about to delete <strong>{selectedSubscriber?.first_name} {selectedSubscriber?.last_name}</strong> ({selectedSubscriber?.account_number}).
+              </p>
+            </div>
+            <div>
+              <Label>Enter Admin Password to Confirm</Label>
+              <Input 
+                type="password"
+                value={deleteForm.admin_password} 
+                onChange={(e) => setDeleteForm({...deleteForm, admin_password: e.target.value})}
+                placeholder="Your admin password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={actionLoading || !deleteForm.admin_password}>
+              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete Permanently
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Charge Dialog */}
+      <Dialog open={chargeDialogOpen} onOpenChange={setChargeDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Manual Charge</DialogTitle>
+            <DialogDescription>
+              {selectedSubscriber && `Add charge for ${selectedSubscriber.first_name} ${selectedSubscriber.last_name}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Charge Type</Label>
+              <Select value={chargeForm.charge_type} onValueChange={(v) => setChargeForm({...chargeForm, charge_type: v})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Equipment">Equipment</SelectItem>
+                  <SelectItem value="Service Fee">Service Fee</SelectItem>
+                  <SelectItem value="Reconnection Fee">Reconnection Fee</SelectItem>
+                  <SelectItem value="Installation">Installation</SelectItem>
+                  <SelectItem value="Relocation">Relocation</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Input 
+                value={chargeForm.description} 
+                onChange={(e) => setChargeForm({...chargeForm, description: e.target.value})}
+                placeholder="e.g., Router replacement, Cable repair"
+              />
+            </div>
+            <div>
+              <Label>Amount (₱)</Label>
+              <Input 
+                type="number"
+                value={chargeForm.amount} 
+                onChange={(e) => setChargeForm({...chargeForm, amount: e.target.value})}
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChargeDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddCharge} disabled={actionLoading || !chargeForm.description || !chargeForm.amount}>
+              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Add Charge
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
