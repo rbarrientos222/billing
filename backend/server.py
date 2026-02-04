@@ -103,7 +103,8 @@ async def auto_generate_billing():
                     due_date = today + timedelta(days=15)
                     
                     # Get billing period description
-                    period_info = get_billing_period_description(billing_period, today)
+                    billing_day = 15 if billing_period == "15th" else 30
+                    period_info = get_billing_period_description(billing_day, today)
                     
                     invoice = {
                         "invoice_number": f"INV{today.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}",
