@@ -184,6 +184,7 @@ class Subscriber(BaseModel):
     installation_date: Optional[datetime] = None
     is_active: bool = True
     modem_mac: Optional[str] = None
+    generate_prorated_bill: bool = True  # If False, wait for next billing cycle
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class SubscriptionPlan(BaseModel):
