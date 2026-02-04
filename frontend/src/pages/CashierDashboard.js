@@ -243,64 +243,199 @@ export default function CashierDashboard({ user, onLogout }) {
                         </Badge>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">Unpaid Invoices</h4>
-                      {totalUnpaid > 0 && (
-                        <div className="text-right">
-                          <span className="text-sm text-muted-foreground">Total Balance:</span>
-                          <p className="text-xl font-bold text-red-600">₱{totalUnpaid.toLocaleString()}</p>
-                        </div>
-                      )}
-                    </div>
-                    {invoices.filter(inv => !inv.paid).map((invoice) => (
-                      <div key={invoice.invoice_number} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex-1">
-                            <p className="font-mono text-sm text-muted-foreground">{invoice.invoice_number}</p>
-                            <p className="text-sm mt-1" title={invoice.description}>
-                              {invoice.description || `${invoice.plan_name || 'Monthly'} Bill`}
-                            </p>
-                            {invoice.type && (
-                              <Badge variant="outline" className="text-xs mt-1">
-                                {invoice.type}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-primary">₱{invoice.amount?.toLocaleString()}</p>
-                            <span className="text-xs text-muted-foreground">
-                              Due: {new Date(invoice.due_date).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 mt-3">
-                          <Input 
-                            type="number" 
-                            placeholder="Amount"
-                            value={paymentAmount}
-                            onChange={(e) => setPaymentAmount(e.target.value)}
-                          />
-                          <Select value={paymentMode} onValueChange={setPaymentMode}>
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="cash">Cash</SelectItem>
-                              <SelectItem value="gcash">GCash</SelectItem>
-                              <SelectItem value="bank">Bank</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Button onClick={() => handlePayment(invoice.invoice_number)} data-testid="pay-button">
-                            Pay
-                          </Button>
+                    {/* Wallet Balance Display */}
+                    {walletBalance > 0 && (
+                      <div className="mt-3 pt-3 border-t border-green-300 dark:border-green-700">
+                        <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                          <Wallet className="h-4 w-4" />
+                          <span className="text-sm font-medium">Wallet Credit:</span>
+                          <span className="font-bold">₱{walletBalance.toLocaleString()}</span>
                         </div>
                       </div>
-                    ))}
-                    {invoices.filter(inv => !inv.paid).length === 0 && (
-                      <p className="text-center text-muted-foreground py-4">No unpaid invoices</p>
+                    )}
+                  </div>
+
+                  {/* Centralized Payment Section */}
+                  {totalUnpaid > 0 && (
+                    <Card className="border-2 border-primary">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex items-center gap-2">
+                          <CreditCard className="h-5 w-5" />
+                          Process Payment
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex justify-between items-center bg-muted p-3 rounded-lg">
+                          <span className="text-sm text-muted-foreground">Total Outstanding:</span>
+                          <span className="text-2xl font-bold text-red-600">₱{totalUnpaid.toLocaleString()}</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="sm:col-span-1">
+                            <Label htmlFor="payment-amount">Payment Amount</Label>
+                            <Input
+                              id="payment-amount"
+                              type="number"
+                              placeholder="Enter amount"
+                              value={paymentAmount}
+                              onChange={(e) => setPaymentAmount(e.target.value)}
+                              className="text-lg font-medium"
+                              data-testid="payment-amount-input"
+                            />
+                          </div>
+                          <div>
+                            <Label>Payment Mode</Label>
+                            <Select value={paymentMode} onValueChange={setPaymentMode}>
+                              <SelectTrigger data-testid="payment-mode-select">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="cash">Cash</SelectItem>
+                                <SelectItem value="gcash">GCash</SelectItem>
+                                <SelectItem value="bank">Bank Transfer</SelectItem>
+                                <SelectItem value="card">Credit/Debit Card</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-end">
+                            <Button 
+                              onClick={handleCentralizedPayment} 
+                              disabled={processingPayment || !paymentAmount}
+                              className="w-full h-10"
+                              data-testid="process-payment-button"
+                            >
+                              {processingPayment ? 'Processing...' : 'Process Payment'}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Quick amount buttons */}
+                        <div className="flex flex-wrap gap-2">
+                          <span className="text-sm text-muted-foreground mr-2 self-center">Quick:</span>
+                          {invoices.filter(inv => !inv.paid).slice(0, 3).map((inv, idx) => (
+                            <Button 
+                              key={idx}
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setPaymentAmount(inv.remaining_balance?.toString() || inv.amount?.toString())}
+                            >
+                              ₱{(inv.remaining_balance || inv.amount)?.toLocaleString()}
+                            </Button>
+                          ))}
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setPaymentAmount(totalUnpaid.toString())}
+                            className="bg-primary/10"
+                          >
+                            Pay All (₱{totalUnpaid.toLocaleString()})
+                          </Button>
+                        </div>
+
+                        {/* Payment Preview */}
+                        {paymentAmount && parseFloat(paymentAmount) > 0 && (
+                          <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border border-blue-200 dark:border-blue-800 text-sm">
+                            <p className="font-medium text-blue-800 dark:text-blue-300 mb-1">Payment Preview:</p>
+                            {parseFloat(paymentAmount) < totalUnpaid ? (
+                              <p className="text-blue-700 dark:text-blue-400">
+                                ₱{parseFloat(paymentAmount).toLocaleString()} will be applied to oldest invoice(s). 
+                                Remaining balance: ₱{(totalUnpaid - parseFloat(paymentAmount)).toLocaleString()}
+                              </p>
+                            ) : parseFloat(paymentAmount) === totalUnpaid ? (
+                              <p className="text-green-700 dark:text-green-400">
+                                ✓ This will pay all outstanding invoices in full.
+                              </p>
+                            ) : (
+                              <p className="text-green-700 dark:text-green-400">
+                                ✓ All invoices paid. ₱{(parseFloat(paymentAmount) - totalUnpaid).toLocaleString()} will be credited to wallet.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Payment Result Feedback */}
+                  {paymentResult && (
+                    <Card className="border-green-500 bg-green-50 dark:bg-green-950">
+                      <CardContent className="pt-4">
+                        <div className="flex items-center gap-2 text-green-700 dark:text-green-400 mb-2">
+                          <Check className="h-5 w-5" />
+                          <span className="font-medium">Payment Successful!</span>
+                        </div>
+                        <div className="text-sm space-y-1">
+                          <p>OR#: <span className="font-mono font-medium">{paymentResult.or_number}</span></p>
+                          <p>Amount: <span className="font-bold">₱{paymentResult.total_paid?.toLocaleString()}</span></p>
+                          {paymentResult.invoices_fully_paid?.length > 0 && (
+                            <p className="text-green-600">✓ {paymentResult.invoices_fully_paid.length} invoice(s) fully paid</p>
+                          )}
+                          {paymentResult.invoices_partially_paid?.length > 0 && (
+                            <p className="text-yellow-600">◐ {paymentResult.invoices_partially_paid.length} invoice(s) partially paid</p>
+                          )}
+                          {paymentResult.wallet_credit_added > 0 && (
+                            <p className="text-blue-600">💰 ₱{paymentResult.wallet_credit_added?.toLocaleString()} added to wallet</p>
+                          )}
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="mt-3"
+                          onClick={() => setPaymentResult(null)}
+                        >
+                          Dismiss
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Invoice List */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Invoices</h4>
+                    {invoices.filter(inv => !inv.paid).length > 0 ? (
+                      <div className="space-y-2">
+                        {invoices.filter(inv => !inv.paid).map((invoice) => (
+                          <div key={invoice.invoice_number} className="border rounded-lg p-3 hover:bg-muted/50 transition-colors">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-mono text-sm text-muted-foreground">{invoice.invoice_number}</p>
+                                  {getInvoiceStatus(invoice)}
+                                </div>
+                                <p className="text-sm" title={invoice.description}>
+                                  {invoice.description || `${invoice.plan_name || 'Monthly'} Bill`}
+                                </p>
+                                {invoice.type && (
+                                  <Badge variant="outline" className="text-xs mt-1">
+                                    {invoice.type}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <p className="text-lg font-bold text-primary">₱{(invoice.remaining_balance || invoice.amount)?.toLocaleString()}</p>
+                                {invoice.paid_amount > 0 && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Total: ₱{invoice.amount?.toLocaleString()} | Paid: ₱{invoice.paid_amount?.toLocaleString()}
+                                  </p>
+                                )}
+                                <span className="text-xs text-muted-foreground">
+                                  Due: {new Date(invoice.due_date).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                        <Check className="h-12 w-12 mx-auto text-green-600 mb-2" />
+                        <p className="text-green-700 dark:text-green-400 font-medium">All invoices paid!</p>
+                        {walletBalance > 0 && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Wallet credit available: ₱{walletBalance.toLocaleString()}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
