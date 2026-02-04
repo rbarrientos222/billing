@@ -935,6 +935,11 @@ async def bulk_activate_pppoe(account_numbers: list[str], current_user: dict = D
         )
         
         if service.create_pppoe_account(pppoe_account):
+            # Update subscriber to mark PPPoE as activated
+            await db.subscribers.update_one(
+                {"account_number": account_number},
+                {"$set": {"pppoe_activated": True}}
+            )
             results["success"].append(account_number)
         else:
             results["failed"].append(account_number)
