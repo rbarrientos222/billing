@@ -1438,8 +1438,10 @@ async def deactivate_subscriber(account_number: str, data: dict, current_user: d
     if generate_final_bill:
         plan = await db.subscription_plans.find_one({"name": subscriber.get('plan_id')})
         if plan:
-            billing_period = subscriber.get('billing_period', '30th')
-            billing_day = 15 if billing_period == "15th" else 30
+            # Get billing day with backward compatibility
+            billing_day = subscriber.get('billing_day', 30)
+            if 'billing_period' in subscriber and 'billing_day' not in subscriber:
+                billing_day = 15 if subscriber.get('billing_period') == "15th" else 30
             
             # Calculate days from billing cycle start to today
             current_day = now.day
@@ -1454,7 +1456,6 @@ async def deactivate_subscriber(account_number: str, data: dict, current_user: d
             
             if final_amount > 0:
                 # Generate description for final bill
-                billing_day = 15 if billing_period == "15th" else 30
                 period_info = get_billing_period_description(billing_day, now)
                 start_str = period_info['start_date'].strftime("%B %d, %Y")
                 end_str = now.strftime("%B %d, %Y")
