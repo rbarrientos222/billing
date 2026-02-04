@@ -1320,9 +1320,10 @@ async def change_subscriber_plan(account_number: str, data: dict, current_user: 
         billing_period = subscriber.get('billing_period', '30th')
         
         # Calculate days remaining in billing period
+        billing_day = 15 if billing_period == "15th" else 30
         prorate_calc = calculate_prorated_amount(
             new_plan['price'] - old_plan['price'],  # Price difference
-            billing_period,
+            billing_day,
             now
         )
         
@@ -1330,7 +1331,7 @@ async def change_subscriber_plan(account_number: str, data: dict, current_user: 
             invoice_type = "Plan Upgrade" if prorate_calc['amount'] > 0 else "Plan Downgrade Credit"
             
             # Generate description for plan change
-            period_info = get_billing_period_description(billing_period, now)
+            period_info = get_billing_period_description(billing_day, now)
             description = f"{invoice_type}: {old_plan_id} to {new_plan_id} - {period_info['description']}"
             
             invoice = {
