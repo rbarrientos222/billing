@@ -288,6 +288,73 @@ def generate_account_number() -> str:
 def generate_invoice_number() -> str:
     return f"INV{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
 
+def get_billing_period_description(billing_period: str, reference_date: datetime = None) -> dict:
+    """
+    Generate billing period description based on billing day (15th or 30th).
+    Returns start date, end date, and formatted description.
+    """
+    if reference_date is None:
+        reference_date = datetime.now(timezone.utc)
+    
+    billing_day = 15 if billing_period == "15th" else 30
+    current_day = reference_date.day
+    current_month = reference_date.month
+    current_year = reference_date.year
+    
+    # Determine the billing cycle dates
+    if billing_day == 15:
+        if current_day <= 15:
+            # Current cycle: prev month 16 - current month 15
+            if current_month == 1:
+                start_date = reference_date.replace(year=current_year-1, month=12, day=16)
+            else:
+                start_date = reference_date.replace(month=current_month-1, day=16)
+            end_date = reference_date.replace(day=15)
+        else:
+            # Current cycle: current month 16 - next month 15
+            start_date = reference_date.replace(day=16)
+            if current_month == 12:
+                end_date = reference_date.replace(year=current_year+1, month=1, day=15)
+            else:
+                end_date = reference_date.replace(month=current_month+1, day=15)
+    else:  # 30th billing
+        last_day = calendar.monthrange(current_year, current_month)[1]
+        actual_billing_day = min(30, last_day)
+        
+        if current_day <= actual_billing_day:
+            # Current cycle: prev month (last day+1 or 1) - current month billing day
+            if current_month == 1:
+                prev_last_day = calendar.monthrange(current_year-1, 12)[1]
+                prev_billing_day = min(30, prev_last_day)
+                start_date = reference_date.replace(year=current_year-1, month=12, day=prev_billing_day) + timedelta(days=1)
+            else:
+                prev_last_day = calendar.monthrange(current_year, current_month-1)[1]
+                prev_billing_day = min(30, prev_last_day)
+                start_date = reference_date.replace(month=current_month-1, day=prev_billing_day) + timedelta(days=1)
+            end_date = reference_date.replace(day=actual_billing_day)
+        else:
+            # Current cycle: current month (billing day+1) - next month billing day
+            start_date = reference_date.replace(day=actual_billing_day) + timedelta(days=1)
+            if current_month == 12:
+                next_last_day = calendar.monthrange(current_year+1, 1)[1]
+                next_billing_day = min(30, next_last_day)
+                end_date = reference_date.replace(year=current_year+1, month=1, day=next_billing_day)
+            else:
+                next_last_day = calendar.monthrange(current_year, current_month+1)[1]
+                next_billing_day = min(30, next_last_day)
+                end_date = reference_date.replace(month=current_month+1, day=next_billing_day)
+    
+    # Format the description
+    start_str = start_date.strftime("%B %d, %Y")
+    end_str = end_date.strftime("%B %d, %Y")
+    description = f"Bill for billing period {start_str} - {end_str}"
+    
+    return {
+        "start_date": start_date,
+        "end_date": end_date,
+        "description": description
+    }
+
 def calculate_prorated_amount(monthly_rate: float, billing_period: str, installation_date: datetime) -> dict:
     """
     Calculate prorated bill based on installation date and billing period.
