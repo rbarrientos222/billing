@@ -921,6 +921,66 @@ async def get_subscriber(account_number: str, current_user: dict = Depends(get_c
         raise HTTPException(status_code=404, detail="Subscriber not found")
     return subscriber
 
+@api_router.post("/billing/preview-prorated")
+async def preview_prorated_bill(data: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Preview prorated bill calculation before creating subscriber.
+    
+    Request body:
+    {
+        "plan_id": "Basic Plan",
+        "billing_period": "15th" or "30th",
+        "installation_date": "2026-02-04" (optional, defaults to today)
+    }
+    """
+    if current_user['role'] not in ['admin', 'billing', 'cashier']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    plan = await db.subscription_plans.find_one({"name": data.get('plan_id')})
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    
+    installation_date = datetime.now(timezone.utc)
+    if data.get('installation_date'):
+        try:
+            installation_date = datetime.fromisoformat(data['installation_date'].replace('Z', '+00:00'))
+        except:
+            pass
+    
+    billing_period = data.get('billing_period', '30th')
+    
+    prorate_calc = calculate_prorated_amount(
+        plan['price'],
+        billing_period,
+        installation_date
+    )
+    
+    # Calculate due date
+    if billing_period == "15th":
+        due_day = 15
+    else:
+        due_day = min(30, calendar.monthrange(installation_date.year, installation_date.month)[1])
+    
+    due_date = installation_date.replace(day=due_day)
+    if due_date <= installation_date:
+        if installation_date.month == 12:
+            due_date = due_date.replace(year=installation_date.year + 1, month=1)
+        else:
+            due_date = due_date.replace(month=installation_date.month + 1)
+    
+    return {
+        "plan_name": plan['name'],
+        "monthly_rate": plan['price'],
+        "billing_period": billing_period,
+        "installation_date": installation_date.strftime("%Y-%m-%d"),
+        "prorated_amount": prorate_calc['amount'],
+        "days_covered": prorate_calc['days_remaining'],
+        "daily_rate": prorate_calc['daily_rate'],
+        "calculation": prorate_calc['calculation'],
+        "due_date": due_date.strftime("%Y-%m-%d"),
+        "billing_day": prorate_calc['billing_day']
+    }
+
 @api_router.put("/subscribers/{account_number}")
 async def update_subscriber(account_number: str, updates: dict, current_user: dict = Depends(get_current_user)):
     if current_user['role'] not in ['admin', 'user']:
