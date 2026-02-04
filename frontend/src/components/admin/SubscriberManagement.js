@@ -560,17 +560,35 @@ export default function SubscriberManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Billing Period</Label>
-                <Select value={formData.billing_period} onValueChange={(value) => setFormData({ ...formData, billing_period: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="15th">15th of Month</SelectItem>
-                    <SelectItem value="30th">30th of Month</SelectItem>
-                  </SelectContent>
-                </Select>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Installation Date</Label>
+                  <Input 
+                    type="date" 
+                    value={formData.installation_date} 
+                    onChange={(e) => setFormData({ ...formData, installation_date: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Billing Day (Day of Month)</Label>
+                  <Select 
+                    value={formData.billing_day.toString()} 
+                    onValueChange={(value) => setFormData({ ...formData, billing_day: parseInt(value) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select billing day" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[200px]">
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                        <SelectItem key={day} value={day.toString()}>
+                          {day}{day === 1 ? 'st' : day === 2 ? 'nd' : day === 3 ? 'rd' : 'th'} of Month
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               
               {/* Prorated Billing Section */}
