@@ -494,6 +494,17 @@ export default function CashierDashboard({ user, onLogout }) {
                 </CardContent>
               </Card>
             )}
+
+            {selectedSubscriber && walletBalance > 0 && (
+              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <CardContent className="pt-6">
+                  <Wallet className="h-8 w-8 mb-2 opacity-80" />
+                  <p className="text-sm opacity-90">Wallet Credit</p>
+                  <p className="text-3xl font-bold font-heading mt-1">₱{walletBalance.toLocaleString()}</p>
+                  <p className="text-xs opacity-75 mt-2">Available for future bills</p>
+                </CardContent>
+              </Card>
+            )}
             
             <Card>
               <CardHeader>
