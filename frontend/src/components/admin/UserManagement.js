@@ -8,17 +8,23 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Key, Loader2 } from 'lucide-react';
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
     full_name: '',
     role: 'cashier',
     password: ''
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    new_password: '',
+    confirm_password: ''
   });
 
   useEffect(() => {
@@ -58,6 +64,37 @@ export default function UserManagement() {
       fetchUsers();
     } catch (error) {
       toast.error('Failed to delete user');
+    }
+  };
+
+  const handleChangePassword = (user) => {
+    setSelectedUser(user);
+    setPasswordForm({ new_password: '', confirm_password: '' });
+    setPasswordDialogOpen(true);
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    
+    if (passwordForm.new_password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    
+    try {
+      await axios.put(`/users/${selectedUser.username}/password`, {
+        new_password: passwordForm.new_password
+      });
+      toast.success('Password changed successfully');
+      setPasswordDialogOpen(false);
+      setSelectedUser(null);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to change password');
     }
   };
 
@@ -191,14 +228,25 @@ export default function UserManagement() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(user.username)}
-                            disabled={user.username === 'admin'}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleChangePassword(user)}
+                              title="Change Password"
+                            >
+                              <Key className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(user.username)}
+                              disabled={user.username === 'admin'}
+                              title="Delete User"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -209,6 +257,46 @@ export default function UserManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Change Password Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Change password for user: <strong>{selectedUser?.username}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <div>
+              <Label>New Password</Label>
+              <Input
+                type="password"
+                value={passwordForm.new_password}
+                onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                placeholder="Enter new password"
+                required
+                minLength={6}
+              />
+            </div>
+            <div>
+              <Label>Confirm Password</Label>
+              <Input
+                type="password"
+                value={passwordForm.confirm_password}
+                onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
+                placeholder="Confirm new password"
+                required
+                minLength={6}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1">Change Password</Button>
+              <Button type="button" variant="outline" onClick={() => setPasswordDialogOpen(false)}>Cancel</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
