@@ -559,6 +559,28 @@ async def delete_user(username: str, current_user: dict = Depends(get_current_us
     await db.users.delete_one({"username": username})
     return {"message": "User deleted successfully"}
 
+@api_router.put("/users/{username}/password")
+async def change_user_password(username: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """Change a user's password (admin only)"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    user = await db.users.find_one({"username": username})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    new_password = data.get('new_password')
+    if not new_password or len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    hashed_password = pwd_context.hash(new_password)
+    await db.users.update_one(
+        {"username": username},
+        {"$set": {"hashed_password": hashed_password}}
+    )
+    
+    return {"message": "Password changed successfully"}
+
 # ========== MIKROTIK MANAGEMENT ==========
 @api_router.post("/mikrotik/config")
 async def save_mikrotik_config(config: MikrotikConfig, current_user: dict = Depends(get_current_user)):
