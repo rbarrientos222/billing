@@ -196,9 +196,12 @@ export default function AdminDashboard({ user, onLogout }) {
                   {mikrotikStats.not_configured ? (
                     <div className="text-sm text-green-700 dark:text-green-300 text-center py-4">
                       <p>Router not configured</p>
-                      <Link to="/admin/mikrotik" className="text-green-600 dark:text-green-400 underline text-xs mt-2 inline-block">
+                      <button 
+                        onClick={() => window.location.href = '/admin/mikrotik'}
+                        className="text-green-600 dark:text-green-400 underline text-xs mt-2 inline-block hover:text-green-700"
+                      >
                         Configure Mikrotik
-                      </Link>
+                      </button>
                     </div>
                   ) : (
                     <div className="space-y-2 text-sm">
