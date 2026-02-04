@@ -1167,13 +1167,6 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     
     return response_data
 
-@api_router.get("/subscribers/{account_number}")
-async def get_subscriber(account_number: str, current_user: dict = Depends(get_current_user)):
-    subscriber = await db.subscribers.find_one({"account_number": account_number}, {"_id": 0})
-    if not subscriber:
-        raise HTTPException(status_code=404, detail="Subscriber not found")
-    return subscriber
-
 @api_router.get("/subscribers/search")
 async def search_subscribers(q: str, current_user: dict = Depends(get_current_user)):
     """
@@ -1195,6 +1188,13 @@ async def search_subscribers(q: str, current_user: dict = Depends(get_current_us
     
     subscribers = await db.subscribers.find(query, {"_id": 0}).limit(20).to_list(20)
     return subscribers
+
+@api_router.get("/subscribers/{account_number}")
+async def get_subscriber(account_number: str, current_user: dict = Depends(get_current_user)):
+    subscriber = await db.subscribers.find_one({"account_number": account_number}, {"_id": 0})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    return subscriber
 
 @api_router.get("/payments/today-stats")
 async def get_today_payment_stats(current_user: dict = Depends(get_current_user)):
