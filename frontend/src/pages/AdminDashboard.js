@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { 
   LayoutDashboard, Users, UserCircle, Wifi, Settings, 
   Package, DollarSign, FileText, LogOut, Menu, X,
-  TrendingUp, TrendingDown, Activity, AlertCircle
+  TrendingUp, TrendingDown, Activity, AlertCircle, CalendarDays
 } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -19,6 +19,7 @@ import InventoryManagement from '@/components/admin/InventoryManagement';
 import ExpenseManagement from '@/components/admin/ExpenseManagement';
 import CompanySettings from '@/components/admin/CompanySettings';
 import SubscriptionPlans from '@/components/admin/SubscriptionPlans';
+import BillingCalendar from '@/components/admin/BillingCalendar';
 
 export default function AdminDashboard({ user, onLogout }) {
   const location = useLocation();
