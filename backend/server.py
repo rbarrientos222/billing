@@ -1319,10 +1319,12 @@ async def change_subscriber_plan(account_number: str, data: dict, current_user: 
     
     # Calculate prorated adjustment if requested
     if generate_prorated and old_plan:
-        billing_period = subscriber.get('billing_period', '30th')
+        # Get billing day (1-31), with backward compatibility for billing_period
+        billing_day = subscriber.get('billing_day', 30)
+        if 'billing_period' in subscriber and 'billing_day' not in subscriber:
+            billing_day = 15 if subscriber.get('billing_period') == "15th" else 30
         
         # Calculate days remaining in billing period
-        billing_day = 15 if billing_period == "15th" else 30
         prorate_calc = calculate_prorated_amount(
             new_plan['price'] - old_plan['price'],  # Price difference
             billing_day,
