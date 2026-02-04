@@ -1450,7 +1450,8 @@ async def deactivate_subscriber(account_number: str, data: dict, current_user: d
             
             if final_amount > 0:
                 # Generate description for final bill
-                period_info = get_billing_period_description(billing_period, now)
+                billing_day = 15 if billing_period == "15th" else 30
+                period_info = get_billing_period_description(billing_day, now)
                 start_str = period_info['start_date'].strftime("%B %d, %Y")
                 end_str = now.strftime("%B %d, %Y")
                 description = f"Final bill for period {start_str} - {end_str} (Disconnection)"
