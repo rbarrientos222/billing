@@ -229,6 +229,58 @@ export default function AdminDashboard({ user, onLogout }) {
             )}
           </div>
         </div>
+
+        {/* Billing Calendar Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <BillingCalendar />
+          
+          {/* Quick Actions Card */}
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="font-heading flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-primary" />
+                Billing Quick Actions
+              </CardTitle>
+              <CardDescription>Manage your billing operations</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <Link to="/admin/subscribers" className="block">
+                  <div className="bg-muted/50 hover:bg-muted rounded-lg p-4 text-center transition-colors cursor-pointer">
+                    <UserCircle className="h-8 w-8 mx-auto mb-2 text-primary" />
+                    <p className="text-sm font-medium">View Subscribers</p>
+                    <p className="text-xs text-muted-foreground">{stats.active_subscribers || 0} active</p>
+                  </div>
+                </Link>
+                <Link to="/admin/plans" className="block">
+                  <div className="bg-muted/50 hover:bg-muted rounded-lg p-4 text-center transition-colors cursor-pointer">
+                    <FileText className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                    <p className="text-sm font-medium">Manage Plans</p>
+                    <p className="text-xs text-muted-foreground">Subscription plans</p>
+                  </div>
+                </Link>
+              </div>
+              
+              <div className="border-t border-border pt-4">
+                <h4 className="text-sm font-medium mb-3">Billing Overview</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Total Invoices</span>
+                    <span className="font-medium">{stats.total_invoices || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Unpaid Invoices</span>
+                    <span className="font-medium text-amber-600">{stats.unpaid_invoices || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Total Receivables</span>
+                    <span className="font-medium text-red-600">₱{(stats.receivables || 0).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   };
