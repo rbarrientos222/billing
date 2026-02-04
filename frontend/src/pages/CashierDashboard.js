@@ -447,11 +447,12 @@ export default function CashierDashboard({ user, onLogout }) {
               {selectedSubscriber && paymentHistory.length > 0 && (
                 <div className="mt-6 space-y-2">
                   <h4 className="font-medium">Payment History</h4>
-                  <div className="rounded-md border max-h-60 overflow-y-auto">
+                  <div className="rounded-md border max-h-72 overflow-y-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-muted sticky top-0">
                         <tr>
                           <th className="text-left p-2">OR Number</th>
+                          <th className="text-left p-2">Description</th>
                           <th className="text-left p-2">Amount</th>
                           <th className="text-left p-2">Mode</th>
                           <th className="text-left p-2">Date</th>
@@ -459,8 +460,11 @@ export default function CashierDashboard({ user, onLogout }) {
                       </thead>
                       <tbody>
                         {paymentHistory.map((payment) => (
-                          <tr key={payment.or_number} className="border-t">
+                          <tr key={payment.or_number} className="border-t hover:bg-muted/50">
                             <td className="p-2 font-mono text-xs">{payment.or_number}</td>
+                            <td className="p-2 text-xs max-w-[200px] truncate" title={payment.description || 'Payment'}>
+                              {payment.description || payment.invoice_id || 'Payment'}
+                            </td>
                             <td className="p-2 font-bold text-green-600">₱{(payment.total_amount || payment.amount || 0).toLocaleString()}</td>
                             <td className="p-2 capitalize">{payment.mode}</td>
                             <td className="p-2 text-xs">{new Date(payment.payment_date).toLocaleDateString()}</td>
