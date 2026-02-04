@@ -248,6 +248,15 @@ class MikrotikService:
         except Exception as e:
             logger.error(f"Failed to get stats: {e}")
         return {}
+    
+    def get_active_clients(self) -> int:
+        try:
+            resource = self.api.get_resource('/ppp/active')
+            active = resource.get()
+            return len(active) if active else 0
+        except Exception as e:
+            logger.error(f"Failed to get active clients: {e}")
+            return 0
 
     def get_pppoe_secrets(self) -> list:
         try:
