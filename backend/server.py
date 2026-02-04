@@ -54,6 +54,81 @@ api_router = APIRouter(prefix="/api")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Scheduler for automatic billing
+scheduler = AsyncIOScheduler()
+
+# ========== AUTOMATIC BILLING FUNCTIONS ==========
+async def auto_generate_billing():
+    """
+    Automatic billing function that runs daily.
+    Generates invoices for subscribers whose billing day matches today.
+    """
+    today = datetime.now(timezone.utc)
+    current_day = today.day
+    last_day_of_month = calendar.monthrange(today.year, today.month)[1]
+    
+    logger.info(f"Running automatic billing check for day {current_day}")
+    
+    # Get all active subscribers
+    subscribers = await db.subscribers.find({"is_active": True}).to_list(10000)
+    invoices_generated = 0
+    
+    for sub in subscribers:
+        billing_period = sub.get('billing_period', '30th')
+        
+        # Determine billing day
+        if billing_period == "15th":
+            billing_day = 15
+        elif billing_period == "30th":
+            # For months with less than 30 days, use the last day
+            billing_day = min(30, last_day_of_month)
+        else:
+            billing_day = 30
+        
+        # Check if today is the billing day
+        if current_day == billing_day:
+            # Check if invoice already exists for this billing cycle
+            start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            existing_invoice = await db.invoices.find_one({
+                "subscriber_id": sub['account_number'],
+                "created_at": {"$gte": start_of_month},
+                "is_prorated": {"$ne": True}  # Exclude prorated invoices
+            })
+            
+            if not existing_invoice:
+                # Get subscriber's plan
+                plan = await db.subscription_plans.find_one({"name": sub.get('plan_id')})
+                if plan:
+                    # Calculate due date (usually 15 days after billing)
+                    due_date = today + timedelta(days=15)
+                    
+                    invoice = {
+                        "invoice_number": f"INV{today.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}",
+                        "subscriber_id": sub['account_number'],
+                        "subscriber_name": f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip(),
+                        "plan_name": plan['name'],
+                        "amount": plan['price'],
+                        "billing_period": billing_period,
+                        "due_date": due_date,
+                        "paid": False,
+                        "is_prorated": False,
+                        "created_at": today
+                    }
+                    await db.invoices.insert_one(invoice)
+                    invoices_generated += 1
+                    logger.info(f"Generated invoice {invoice['invoice_number']} for {sub['account_number']}")
+    
+    logger.info(f"Automatic billing completed. Generated {invoices_generated} invoices.")
+    
+    # Log billing run
+    await db.billing_logs.insert_one({
+        "run_date": today,
+        "invoices_generated": invoices_generated,
+        "status": "completed"
+    })
+    
+    return invoices_generated
+
 # ========== MODELS ==========
 class User(BaseModel):
     username: str
