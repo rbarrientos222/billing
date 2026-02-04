@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { LogOut, Search, Receipt, DollarSign } from 'lucide-react';
+import { LogOut, Search, Receipt, DollarSign, Wallet, CreditCard, Check, AlertCircle } from 'lucide-react';
 
 export default function CashierDashboard({ user, onLogout }) {
   const [searchTerm, setSearchTerm] = useState('');
