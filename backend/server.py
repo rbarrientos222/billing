@@ -1558,7 +1558,11 @@ async def reactivate_subscriber(account_number: str, data: dict, current_user: d
     if generate_prorated:
         plan = await db.subscription_plans.find_one({"name": new_plan_id})
         if plan:
-            billing_day = 15 if subscriber.get('billing_period', '30th') == "15th" else 30
+            # Get billing day with backward compatibility
+            billing_day = subscriber.get('billing_day', 30)
+            if 'billing_period' in subscriber and 'billing_day' not in subscriber:
+                billing_day = 15 if subscriber.get('billing_period') == "15th" else 30
+            
             prorate_calc = calculate_prorated_amount(
                 plan['price'],
                 billing_day,
