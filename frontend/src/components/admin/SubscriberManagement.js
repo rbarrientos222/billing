@@ -140,7 +140,10 @@ export default function SubscriberManagement() {
         last_name: '', 
         email: '', 
         phone: '', 
-        address: '', 
+        street: '',
+        barangay: '',
+        municipality: '',
+        province: '',
         plan_id: '', 
         billing_period: '30th', 
         modem_mac: '',
@@ -149,6 +152,8 @@ export default function SubscriberManagement() {
         pppoe_profile: '',
         activate_pppoe: false
       });
+      setMunicipalities([]);
+      setBarangays([]);
       fetchSubscribers();
     } catch (error) {
       toast.error('Failed to create subscriber');
