@@ -857,6 +857,11 @@ async def activate_subscriber_pppoe(account_number: str, current_user: dict = De
         service.disconnect()
         
         if success:
+            # Update subscriber to mark PPPoE as activated
+            await db.subscribers.update_one(
+                {"account_number": account_number},
+                {"$set": {"pppoe_activated": True}}
+            )
             return {"message": "PPPoE account activated in Mikrotik", "success": True}
         raise HTTPException(status_code=500, detail="Failed to create PPPoE account")
     raise HTTPException(status_code=500, detail="Failed to connect to Mikrotik")
