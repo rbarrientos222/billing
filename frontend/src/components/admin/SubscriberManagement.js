@@ -600,7 +600,7 @@ export default function SubscriberManagement() {
                     onCheckedChange={(checked) => setFormData({ ...formData, generate_prorated_bill: checked })}
                   />
                   <Label htmlFor="generate_prorated_bill" className="text-sm cursor-pointer">
-                    Generate prorated bill (charge from today until billing date)
+                    Generate prorated bill (charge from installation date until billing date)
                   </Label>
                 </div>
                 
@@ -626,8 +626,12 @@ export default function SubscriberManagement() {
                           <span>₱{proratedPreview.monthly_rate?.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
+                          <span className="text-muted-foreground">Period:</span>
+                          <span>{proratedPreview.start_date} to {proratedPreview.end_date}</span>
+                        </div>
+                        <div className="flex justify-between">
                           <span className="text-muted-foreground">Days Covered:</span>
-                          <span>{proratedPreview.days_covered} days (until {formData.billing_period})</span>
+                          <span>{proratedPreview.days_covered} days</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Daily Rate:</span>
@@ -651,7 +655,7 @@ export default function SubscriberManagement() {
                 {!formData.generate_prorated_bill && (
                   <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
                     <p className="text-sm text-amber-700 dark:text-amber-300">
-                      <strong>No prorated bill:</strong> First invoice will be generated on the {formData.billing_period} of the month during the regular billing cycle.
+                      <strong>No prorated bill:</strong> First invoice will be generated on the {formData.billing_day}{formData.billing_day === 1 ? 'st' : formData.billing_day === 2 ? 'nd' : formData.billing_day === 3 ? 'rd' : 'th'} of the month during the regular billing cycle.
                     </p>
                   </div>
                 )}
