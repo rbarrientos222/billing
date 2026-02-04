@@ -160,7 +160,7 @@ export default function AdminDashboard({ user, onLogout }) {
           <Card className="lg:col-span-2 border-border">
             <CardHeader>
               <CardTitle className="font-heading">Monthly Sales Trend</CardTitle>
-              <CardDescription>Revenue over the last 6 months</CardDescription>
+              <CardDescription>Revenue over the last 12 months</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
