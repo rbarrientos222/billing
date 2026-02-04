@@ -54,17 +54,17 @@ export default function CashierDashboard({ user, onLogout }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border h-16 flex items-center justify-between px-6">
+      <header className="bg-card border-b border-border h-16 flex items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
             <Receipt className="h-5 w-5 text-primary-foreground" />
           </div>
-          <div>
-            <h1 className="text-lg font-heading font-bold" data-testid="cashier-dashboard-title">Cashier Module</h1>
-            <p className="text-xs text-muted-foreground">{user.username}</p>
+          <div className="min-w-0">
+            <h1 className="text-lg font-heading font-bold truncate" data-testid="cashier-dashboard-title">Cashier Module</h1>
+            <p className="text-xs text-muted-foreground truncate">{user.username}</p>
           </div>
         </div>
-        <Button variant="outline" onClick={onLogout} data-testid="logout-button">
+        <Button variant="outline" onClick={onLogout} data-testid="logout-button" className="shrink-0">
           <LogOut className="h-4 w-4 mr-2" />
           Logout
         </Button>
