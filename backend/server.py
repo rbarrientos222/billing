@@ -1949,9 +1949,13 @@ async def process_centralized_payment(data: dict, current_user: dict = Depends(g
     # Build payment descriptions for history
     payment_descriptions = []
     for inv in invoices_settled:
-        payment_descriptions.append(inv.get('description', f"Invoice {inv['invoice_number']}"))
+        inv_num = inv['invoice_number']
+        desc = inv.get('description', f"Invoice {inv_num}")
+        payment_descriptions.append(desc)
     for inv in invoices_partial:
-        payment_descriptions.append(f"{inv.get('description', f'Invoice {inv[\"invoice_number\"]}')} (partial)")
+        inv_num = inv['invoice_number']
+        desc = inv.get('description', f"Invoice {inv_num}")
+        payment_descriptions.append(f"{desc} (partial)")
     if wallet_credit > 0:
         payment_descriptions.append(f"Wallet credit: ₱{wallet_credit}")
     
