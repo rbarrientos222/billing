@@ -288,35 +288,62 @@ def generate_account_number() -> str:
 def generate_invoice_number() -> str:
     return f"INV{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
 
-def calculate_prorated_amount(monthly_rate: float, billing_period: str, installation_date: datetime) -> float:
-    """Calculate prorated bill based on installation date and billing period"""
+def calculate_prorated_amount(monthly_rate: float, billing_period: str, installation_date: datetime) -> dict:
+    """
+    Calculate prorated bill based on installation date and billing period.
+    
+    Logic:
+    - If billing_period is "15th": Calculate from today until the 15th
+    - If billing_period is "30th": Calculate from today until the 30th (or last day of month if month has fewer days)
+    
+    Returns dict with amount and calculation details
+    """
     now = installation_date
+    current_day = now.day
     
     # Determine billing cutoff day
     if billing_period == "15th":
-        cutoff_day = 15
-    elif billing_period == "30th":
-        cutoff_day = 30  # or last day of month
+        billing_day = 15
+    else:  # "30th" or default
+        billing_day = 30
+    
+    # Get last day of current month
+    last_day_of_month = calendar.monthrange(now.year, now.month)[1]
+    
+    # Adjust billing day if it exceeds month's days (e.g., Feb 28/29)
+    actual_billing_day = min(billing_day, last_day_of_month)
+    
+    # Calculate days remaining until billing day
+    if current_day <= actual_billing_day:
+        # Billing day is in current month
+        days_remaining = actual_billing_day - current_day + 1  # +1 includes installation day
+        days_in_period = actual_billing_day
     else:
-        cutoff_day = 30  # default
+        # Billing day already passed, calculate for next month's cycle
+        # Days remaining in current month + days until billing day in next month
+        if billing_period == "15th":
+            next_billing_day = 15
+        else:
+            # Get last day of next month for 30th billing
+            next_month = now.month + 1 if now.month < 12 else 1
+            next_year = now.year if now.month < 12 else now.year + 1
+            next_month_last_day = calendar.monthrange(next_year, next_month)[1]
+            next_billing_day = min(30, next_month_last_day)
+        
+        days_remaining = (last_day_of_month - current_day + 1) + next_billing_day
+        days_in_period = last_day_of_month  # Use current month days for calculation
     
-    # Get current month's last day
-    if cutoff_day == 30:
-        import calendar
-        last_day = calendar.monthrange(now.year, now.month)[1]
-        cutoff_day = last_day
+    # Calculate daily rate and prorated amount
+    daily_rate = monthly_rate / 30  # Standard 30-day month for rate calculation
+    prorated_amount = daily_rate * days_remaining
     
-    # Calculate days remaining in current billing cycle
-    days_in_month = cutoff_day
-    days_remaining = cutoff_day - now.day + 1  # including installation day
-    
-    if days_remaining <= 0:
-        # If installed after cutoff, bill for next cycle
-        return 0
-    
-    # Calculate prorated amount
-    prorated = (monthly_rate / days_in_month) * days_remaining
-    return round(prorated, 2)
+    return {
+        "amount": round(prorated_amount, 2),
+        "days_remaining": days_remaining,
+        "billing_day": actual_billing_day,
+        "daily_rate": round(daily_rate, 2),
+        "calculation": f"{days_remaining} days × ₱{round(daily_rate, 2)}/day = ₱{round(prorated_amount, 2)}"
+    }
 
 # ========== MIKROTIK HELPER ==========
 class MikrotikService:
