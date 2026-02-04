@@ -66,14 +66,14 @@ Build a billing system with the following features:
 - [x] Subscriber Management with:
   - Cascading address dropdowns (Province > Municipality > Barangay)
   - PPPoE configuration fields
+  - Auto-generated PPPoE username (firstnamelastname format)
   - View Payment History dialog
-  - **Prorated Billing Option** (NEW)
-    - Checkbox to enable/disable prorated bill generation
-    - Real-time prorated bill preview showing:
-      - Days covered (from today until billing date)
-      - Daily rate calculation
-      - Total prorated amount
-      - Due date
+  - **Prorated Billing Option** with real-time preview
+  - **Change Plan** with prorated adjustment billing
+  - **Deactivate Subscriber** with final bill calculation and Mikrotik profile change
+  - **Reactivate Subscriber** with prorated billing
+  - **Delete Subscriber** with admin password confirmation
+  - **Add Manual Charges** (equipment, service fees, etc.)
 - [x] Cashier Dashboard with subscriber search and payment
 - [x] Subscription Plans management
 - [x] User Management
