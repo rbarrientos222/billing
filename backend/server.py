@@ -1123,6 +1123,97 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "unpaid_invoices": unpaid_invoices
     }
 
+# ========== BILLING CYCLE MANAGEMENT ==========
+@api_router.get("/billing/status")
+async def get_billing_status(current_user: dict = Depends(get_current_user)):
+    """Get the status of automatic billing"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get last billing log
+    last_log = await db.billing_logs.find_one({}, {"_id": 0}, sort=[("run_date", -1)])
+    
+    # Get billing settings
+    settings = await db.billing_settings.find_one({}, {"_id": 0})
+    
+    # Count pending invoices
+    pending_count = await db.invoices.count_documents({"paid": False})
+    
+    today = datetime.now(timezone.utc)
+    
+    return {
+        "scheduler_running": scheduler.running,
+        "last_run": last_log,
+        "settings": settings or {"auto_billing_enabled": True, "billing_time": "00:01"},
+        "pending_invoices": pending_count,
+        "current_day": today.day,
+        "next_15th_billing": "Active" if today.day < 15 else "Completed for this month",
+        "next_30th_billing": "Active" if today.day < 30 else "Completed for this month"
+    }
+
+@api_router.post("/billing/settings")
+async def update_billing_settings(settings: dict, current_user: dict = Depends(get_current_user)):
+    """Update automatic billing settings"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    await db.billing_settings.delete_many({})
+    settings['updated_at'] = datetime.now(timezone.utc)
+    settings['updated_by'] = current_user['username']
+    await db.billing_settings.insert_one(settings)
+    
+    return {"message": "Billing settings updated"}
+
+@api_router.post("/billing/run-now")
+async def run_billing_now(current_user: dict = Depends(get_current_user)):
+    """Manually trigger billing generation (for testing or catch-up)"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    invoices_generated = await auto_generate_billing()
+    return {"message": f"Billing run completed. Generated {invoices_generated} invoices."}
+
+@api_router.get("/billing/logs")
+async def get_billing_logs(current_user: dict = Depends(get_current_user)):
+    """Get billing run history"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    logs = await db.billing_logs.find({}, {"_id": 0}).sort("run_date", -1).to_list(100)
+    return logs
+
+@api_router.get("/billing/upcoming")
+async def get_upcoming_billing(current_user: dict = Depends(get_current_user)):
+    """Get subscribers with upcoming billing"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    today = datetime.now(timezone.utc)
+    current_day = today.day
+    
+    subscribers_15th = await db.subscribers.find(
+        {"is_active": True, "billing_period": "15th"}, 
+        {"_id": 0, "account_number": 1, "first_name": 1, "last_name": 1, "plan_id": 1}
+    ).to_list(1000)
+    
+    subscribers_30th = await db.subscribers.find(
+        {"is_active": True, "billing_period": "30th"},
+        {"_id": 0, "account_number": 1, "first_name": 1, "last_name": 1, "plan_id": 1}
+    ).to_list(1000)
+    
+    return {
+        "billing_15th": {
+            "count": len(subscribers_15th),
+            "days_until": (15 - current_day) if current_day < 15 else (15 + (calendar.monthrange(today.year, today.month)[1] - current_day)),
+            "subscribers": subscribers_15th[:10]  # Return first 10 for preview
+        },
+        "billing_30th": {
+            "count": len(subscribers_30th),
+            "days_until": (30 - current_day) if current_day < 30 else 0,
+            "subscribers": subscribers_30th[:10]
+        }
+    }
+
 # Include router
 app.include_router(api_router)
 
