@@ -2199,9 +2199,9 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     total_invoices = await db.invoices.count_documents({})
     unpaid_invoices = await db.invoices.count_documents({"paid": False})
     
-    # Gross sales
+    # Gross sales - handle both 'amount' (legacy) and 'total_amount' (centralized payments)
     payments = await db.payments.find({}).to_list(10000)
-    gross_sales = sum(p['amount'] for p in payments)
+    gross_sales = sum(p.get('total_amount', p.get('amount', 0)) for p in payments)
     
     # Expenses
     expenses = await db.expenses.find({}).to_list(10000)
