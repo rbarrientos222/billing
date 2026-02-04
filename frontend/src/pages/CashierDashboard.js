@@ -21,12 +21,17 @@ export default function CashierDashboard({ user, onLogout }) {
       const response = await axios.get(`/subscribers/${searchTerm}`);
       setSelectedSubscriber(response.data);
       
-      const invoicesResponse = await axios.get(`/invoices/subscriber/${searchTerm}`);
-      setInvoices(invoicesResponse.data);
+      const [invoicesRes, paymentsRes] = await Promise.all([
+        axios.get(`/invoices/subscriber/${searchTerm}`),
+        axios.get(`/payments/subscriber/${searchTerm}`)
+      ]);
+      setInvoices(invoicesRes.data);
+      setPaymentHistory(paymentsRes.data);
     } catch (error) {
       toast.error('Subscriber not found');
       setSelectedSubscriber(null);
       setInvoices([]);
+      setPaymentHistory([]);
     }
   };
 
