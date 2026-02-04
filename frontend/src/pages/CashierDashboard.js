@@ -141,7 +141,7 @@ export default function CashierDashboard({ user, onLogout }) {
             <CardContent className="space-y-4">
               <div className="flex gap-2">
                 <Input 
-                  placeholder="Enter account number or name" 
+                  placeholder="Search by account number, name, or phone..." 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
