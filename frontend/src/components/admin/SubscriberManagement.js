@@ -755,6 +755,7 @@ export default function SubscriberManagement() {
                     <TableHead>Name</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Plan</TableHead>
+                    <TableHead>Wallet</TableHead>
                     <TableHead>PPPoE</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -763,7 +764,7 @@ export default function SubscriberManagement() {
                 <TableBody>
                   {filteredSubscribers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                         No subscribers found
                       </TableCell>
                     </TableRow>
@@ -782,6 +783,13 @@ export default function SubscriberManagement() {
                         <TableCell className="font-medium">{sub.first_name} {sub.last_name}</TableCell>
                         <TableCell>{sub.phone}</TableCell>
                         <TableCell>{sub.plan_id}</TableCell>
+                        <TableCell>
+                          {(sub.wallet_balance || 0) > 0 ? (
+                            <span className="text-green-600 font-medium">₱{(sub.wallet_balance || 0).toLocaleString()}</span>
+                          ) : (
+                            <span className="text-muted-foreground">₱0</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {sub.pppoe_username ? (
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
