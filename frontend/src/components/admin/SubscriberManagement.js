@@ -55,6 +55,16 @@ export default function SubscriberManagement() {
     fetchProvinces();
   }, []);
 
+  // Auto-generate PPPoE username when first/last name changes
+  useEffect(() => {
+    if (formData.first_name || formData.last_name) {
+      const generatedUsername = (formData.first_name + formData.last_name)
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, ''); // Remove special characters and spaces
+      setFormData(prev => ({ ...prev, pppoe_username: generatedUsername }));
+    }
+  }, [formData.first_name, formData.last_name]);
+
   // Fetch prorated preview when plan or billing period changes
   useEffect(() => {
     if (formData.plan_id && formData.billing_period && formData.generate_prorated_bill) {
