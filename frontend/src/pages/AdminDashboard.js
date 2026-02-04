@@ -186,16 +186,20 @@ export default function AdminDashboard({ user, onLogout }) {
               <Card className="border-border bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium text-green-900 dark:text-green-100">Mikrotik Status</h3>
+                    <h3 className="font-medium text-green-900 dark:text-green-100">Mikrotik Router</h3>
                     <Wifi className="h-5 w-5 text-green-600" />
                   </div>
                   <div className="space-y-2 text-sm">
+                    <div className="flex justify-between text-green-800 dark:text-green-200">
+                      <span>Active Clients:</span>
+                      <span className="font-bold font-mono text-lg text-green-600">{mikrotikStats.active_clients || 0}</span>
+                    </div>
                     <div className="flex justify-between text-green-800 dark:text-green-200">
                       <span>CPU Load:</span>
                       <span className="font-mono font-medium">{mikrotikStats.cpu_load}</span>
                     </div>
                     <div className="flex justify-between text-green-800 dark:text-green-200">
-                      <span>Memory:</span>
+                      <span>Free Memory:</span>
                       <span className="font-mono font-medium">{mikrotikStats.free_memory}</span>
                     </div>
                     <div className="flex justify-between text-green-800 dark:text-green-200">
