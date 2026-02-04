@@ -574,6 +574,49 @@ async def sync_mikrotik_accounts(current_user: dict = Depends(get_current_user))
         return {"message": f"Synced {len(secrets)} accounts"}
     raise HTTPException(status_code=500, detail="Failed to sync accounts")
 
+@api_router.get("/addresses/provinces")
+async def get_provinces():
+    import json
+    from pathlib import Path
+    
+    addresses_file = Path(__file__).parent / 'ph_addresses.json'
+    with open(addresses_file, 'r') as f:
+        data = json.load(f)
+    
+    return {"provinces": [p["name"] for p in data["provinces"]]}
+
+@api_router.get("/addresses/municipalities/{province}")
+async def get_municipalities(province: str):
+    import json
+    from pathlib import Path
+    
+    addresses_file = Path(__file__).parent / 'ph_addresses.json'
+    with open(addresses_file, 'r') as f:
+        data = json.load(f)
+    
+    for prov in data["provinces"]:
+        if prov["name"] == province:
+            return {"municipalities": [m["name"] for m in prov["municipalities"]]}
+    
+    return {"municipalities": []}
+
+@api_router.get("/addresses/barangays/{province}/{municipality}")
+async def get_barangays(province: str, municipality: str):
+    import json
+    from pathlib import Path
+    
+    addresses_file = Path(__file__).parent / 'ph_addresses.json'
+    with open(addresses_file, 'r') as f:
+        data = json.load(f)
+    
+    for prov in data["provinces"]:
+        if prov["name"] == province:
+            for muni in prov["municipalities"]:
+                if muni["name"] == municipality:
+                    return {"barangays": muni["barangays"]}
+    
+    return {"barangays": []}
+
 # ========== SUBSCRIPTION PLANS ==========
 @api_router.get("/plans")
 async def list_plans():
