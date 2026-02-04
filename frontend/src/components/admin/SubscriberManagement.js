@@ -459,11 +459,21 @@ export default function SubscriberManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>First Name</Label>
-                  <Input value={formData.first_name} onChange={(e) => setFormData({ ...formData, first_name: e.target.value })} required />
+                  <Input 
+                    value={formData.first_name} 
+                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value.toUpperCase() })} 
+                    style={{ textTransform: 'uppercase' }}
+                    required 
+                  />
                 </div>
                 <div>
                   <Label>Last Name</Label>
-                  <Input value={formData.last_name} onChange={(e) => setFormData({ ...formData, last_name: e.target.value })} required />
+                  <Input 
+                    value={formData.last_name} 
+                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value.toUpperCase() })} 
+                    style={{ textTransform: 'uppercase' }}
+                    required 
+                  />
                 </div>
               </div>
               <div>
