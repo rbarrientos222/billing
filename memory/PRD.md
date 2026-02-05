@@ -178,6 +178,7 @@ Build a billing system with the following features:
 |----------|-------|--------|
 | P2 | PPPoE Profile dropdown is static (not fetching from Mikrotik) | Not Started |
 | P2 | Address data for municipalities and barangays is incomplete sample data | Not Started |
+| P3 | Babel plugin disabled in dev environment as workaround | Technical Debt |
 
 ---
 
