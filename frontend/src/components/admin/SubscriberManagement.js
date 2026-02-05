@@ -1072,6 +1072,16 @@ export default function SubscriberManagement() {
                   )}
                 </TableBody>
               </Table>
+              
+              {/* Pagination */}
+              <TablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={filteredSubscribers.length}
+                pageSize={pageSize}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+              />
             </div>
           )}
         </CardContent>
