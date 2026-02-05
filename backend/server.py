@@ -261,11 +261,66 @@ class InventoryUnit(BaseModel):
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class Supplier(BaseModel):
+    """Supplier/Vendor information"""
+    supplier_id: Optional[str] = None
+    name: str
+    contact_person: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    notes: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class PurchaseItem(BaseModel):
+    """Individual item in a purchase"""
+    item_code: Optional[str] = None  # None if creating new item
+    name: str
+    category: str = "Equipment"
+    quantity: float
+    unit: str = "pcs"
+    unit_cost: float
+    total_cost: float = 0
+    is_new_item: bool = False  # True if this creates a new inventory item
+    is_serialized: bool = False  # For items needing MAC/Serial tracking
+    is_bulk: bool = False  # For items tracked by length
+
+class PurchasePayment(BaseModel):
+    """Payment record for a purchase"""
+    payment_id: Optional[str] = None
+    amount: float
+    payment_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    payment_mode: str = "cash"  # cash, bank_transfer, check, gcash
+    reference_number: Optional[str] = None
+    notes: Optional[str] = None
+
+class Purchase(BaseModel):
+    """Purchase order/record"""
+    purchase_id: Optional[str] = None
+    po_number: Optional[str] = None  # Purchase Order number
+    supplier_id: Optional[str] = None
+    supplier_name: Optional[str] = None  # For quick entry without creating supplier
+    invoice_number: Optional[str] = None
+    purchase_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    delivery_date: Optional[datetime] = None
+    items: List[PurchaseItem] = []
+    subtotal: float = 0
+    total_amount: float = 0
+    payment_status: str = "unpaid"  # unpaid, partial, paid
+    amount_paid: float = 0
+    payments: List[PurchasePayment] = []
+    notes: Optional[str] = None
+    created_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class Expense(BaseModel):
     category: str
     description: str
     amount: float
     is_recurring: bool = False
+    reference_type: Optional[str] = None  # 'purchase' for auto-created expenses
+    reference_id: Optional[str] = None  # purchase_id for linking
     expense_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class CompanySettings(BaseModel):
