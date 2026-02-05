@@ -242,10 +242,15 @@ export default function SubscriberManagement() {
         ...formData,
         account_number: '',
         is_active: true,
-        installation_date: new Date().toISOString()
+        installation_date: new Date().toISOString(),
+        assigned_unit_id: selectedUnit?.unit_id || null
       });
       
       let successMessage = `Subscriber created with account number: ${response.data.account_number}`;
+      
+      if (response.data.assigned_equipment) {
+        successMessage += ` | Equipment assigned: ${response.data.assigned_equipment.mac_address || response.data.assigned_equipment.serial_number}`;
+      }
       
       if (response.data.pppoe_created) {
         successMessage += ' | PPPoE account created in Mikrotik ✓';
@@ -282,6 +287,7 @@ export default function SubscriberManagement() {
         generate_prorated_bill: true
       });
       setProratedPreview(null);
+      setSelectedUnit(null);
       setMunicipalities([]);
       setBarangays([]);
       fetchSubscribers();
