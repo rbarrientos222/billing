@@ -109,7 +109,8 @@ Build a billing system with the following features:
   - **Installation Date** field with prorated calculation
   - **Custom Billing Day** selection (1-31)
   - **Wallet Balance** display in subscriber list
-  - View Records dialog (payment history, wallet, invoices)
+  - **Table Pagination** (10/20/50/100 per page) - NEW Feb 2026
+  - **Tabbed View Records dialog** (Invoices, Payments, Equipment tabs) - NEW Feb 2026
   - **Prorated Billing Option** with real-time preview
   - **Change Plan** with prorated adjustment billing
   - **Deactivate Subscriber** with final bill calculation
