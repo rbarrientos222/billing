@@ -110,9 +110,6 @@ export default function LoginPage({ onLogin }) {
                 )}
               </Button>
             </form>
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              <p>Default admin: <code className="text-xs bg-muted px-2 py-1 rounded">admin / @Gello1006</code></p>
-            </div>
           </CardContent>
         </Card>
       </div>
