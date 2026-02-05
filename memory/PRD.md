@@ -197,3 +197,4 @@ Build a billing system with the following features:
 
 - `/app/test_reports/iteration_2.json` - Centralized payment testing
 - `/app/test_reports/iteration_3.json` - Inventory unit tracking testing (100% pass rate)
+- `/app/test_reports/iteration_4.json` - MAC search & equipment assignment testing (100% pass rate)
