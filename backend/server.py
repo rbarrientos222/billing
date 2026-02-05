@@ -2871,7 +2871,7 @@ async def create_purchase(purchase: Purchase, current_user: dict = Depends(get_c
     
     purchase_dict = purchase.model_dump()
     purchase_dict['purchase_id'] = generate_purchase_id()
-    purchase_dict['created_by'] = current_user['sub']
+    purchase_dict['created_by'] = current_user['username']
     purchase_dict['created_at'] = datetime.now(timezone.utc)
     
     # Calculate totals
