@@ -2621,10 +2621,13 @@ async def add_inventory_unit(item_code: str, unit: InventoryUnit, current_user: 
     
     await db.inventory_units.insert_one(unit_dict)
     
-    # Update the parent inventory count
+    # Update the parent inventory count and decrement pending_units if applicable
     await db.inventory.update_one(
         {"item_code": item_code},
-        {"$inc": {"quantity": 1}, "$set": {"updated_at": datetime.now(timezone.utc)}}
+        {
+            "$inc": {"quantity": 1, "pending_units": -1}, 
+            "$set": {"updated_at": datetime.now(timezone.utc)}
+        }
     )
     
     return {"message": "Unit added to inventory", "unit_id": unit_dict['unit_id']}
