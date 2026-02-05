@@ -1097,26 +1097,41 @@ export default function SubscriberManagement() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
-            {/* Wallet Balance Card */}
-            {(selectedSubscriberHistory?.wallet_balance || 0) > 0 && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-green-700 font-medium">Wallet Credit Available</p>
-                    <p className="text-2xl font-bold text-green-600">₱{(selectedSubscriberHistory?.wallet_balance || 0).toLocaleString()}</p>
-                  </div>
+          {/* Wallet Balance Card */}
+          {(selectedSubscriberHistory?.wallet_balance || 0) > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 text-white" />
                 </div>
-                <Badge className="bg-green-600">Active Credit</Badge>
+                <div>
+                  <p className="text-sm text-green-700 font-medium">Wallet Credit Available</p>
+                  <p className="text-2xl font-bold text-green-600">₱{(selectedSubscriberHistory?.wallet_balance || 0).toLocaleString()}</p>
+                </div>
               </div>
-            )}
+              <Badge className="bg-green-600">Active Credit</Badge>
+            </div>
+          )}
 
-            {/* Invoices */}
-            <div>
-              <h3 className="font-medium mb-3 text-lg">Invoices</h3>
+          {/* Tabbed Content */}
+          <Tabs defaultValue="invoices" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="invoices" className="flex items-center gap-2" data-testid="tab-invoices">
+                <FileText className="h-4 w-4" />
+                Invoices ({invoiceHistory.length})
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="flex items-center gap-2" data-testid="tab-payments">
+                <Receipt className="h-4 w-4" />
+                Payments ({paymentHistory.length})
+              </TabsTrigger>
+              <TabsTrigger value="equipment" className="flex items-center gap-2" data-testid="tab-equipment">
+                <Package className="h-4 w-4" />
+                Equipment ({assignedEquipment.length})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Invoices Tab */}
+            <TabsContent value="invoices" className="mt-4">
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -1131,7 +1146,8 @@ export default function SubscriberManagement() {
                   <TableBody>
                     {invoiceHistory.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                           No invoices found
                         </TableCell>
                       </TableRow>
@@ -1162,11 +1178,10 @@ export default function SubscriberManagement() {
                   </TableBody>
                 </Table>
               </div>
-            </div>
+            </TabsContent>
 
-            {/* Payments */}
-            <div>
-              <h3 className="font-medium mb-3 text-lg">Payment Records</h3>
+            {/* Payments Tab */}
+            <TabsContent value="payments" className="mt-4">
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -1181,7 +1196,8 @@ export default function SubscriberManagement() {
                   <TableBody>
                     {paymentHistory.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
                           No payments found
                         </TableCell>
                       </TableRow>
@@ -1199,36 +1215,33 @@ export default function SubscriberManagement() {
                   </TableBody>
                 </Table>
               </div>
-            </div>
+            </TabsContent>
 
-            {/* Assigned Equipment */}
-            <div>
-              <h3 className="font-medium mb-3 text-lg flex items-center gap-2">
-                <Package className="h-5 w-5 text-purple-600" />
-                Assigned Equipment
-              </h3>
+            {/* Equipment Tab */}
+            <TabsContent value="equipment" className="mt-4">
               {assignedEquipment.length === 0 ? (
-                <div className="text-center py-6 bg-gray-50 dark:bg-gray-900 rounded-lg border border-dashed">
-                  <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">No equipment assigned to this subscriber</p>
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-lg border border-dashed">
+                  <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3 opacity-50" />
+                  <p className="text-muted-foreground">No equipment assigned to this subscriber</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {assignedEquipment.map((equipment) => (
                     <div 
                       key={equipment.unit_id} 
-                      className="p-3 bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg flex items-center justify-between"
+                      className="p-4 bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg flex items-center justify-between"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                          <Wifi className="h-5 w-5 text-white" />
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+                          <Wifi className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <p className="font-medium text-purple-900 dark:text-purple-100">
+                          <p className="font-medium text-purple-900 dark:text-purple-100 text-lg">
                             {equipment.item_name || equipment.item_code}
                           </p>
-                          <div className="flex items-center gap-3 text-xs text-purple-600 dark:text-purple-400">
+                          <div className="flex items-center gap-4 text-sm text-purple-600 dark:text-purple-400 mt-1">
                             {equipment.mac_address && <span>MAC: <span className="font-mono">{equipment.mac_address}</span></span>}
+                            {equipment.mac_address && equipment.serial_number && <span className="text-purple-300">|</span>}
                             {equipment.serial_number && <span>S/N: <span className="font-mono">{equipment.serial_number}</span></span>}
                           </div>
                         </div>
@@ -1236,7 +1249,7 @@ export default function SubscriberManagement() {
                       <div className="text-right">
                         <Badge className="bg-purple-600">Assigned</Badge>
                         {equipment.assigned_date && (
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-muted-foreground mt-2">
                             {new Date(equipment.assigned_date).toLocaleDateString()}
                           </p>
                         )}
@@ -1245,8 +1258,8 @@ export default function SubscriberManagement() {
                   ))}
                 </div>
               )}
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
