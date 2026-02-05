@@ -1191,9 +1191,33 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     sub_dict = subscriber.model_dump()
     sub_dict.pop('activate_pppoe', None)  # Don't store this field
     sub_dict.pop('generate_prorated_bill', None)  # Don't store this field, just use for invoice decision
+    sub_dict.pop('assigned_unit_id', None)  # Don't store this field, handle separately
     sub_dict['pppoe_activated'] = pppoe_created  # Track PPPoE activation status
     result = await db.subscribers.insert_one(sub_dict)
     sub_id = str(result.inserted_id)
+    
+    # Assign inventory unit if specified
+    assigned_equipment = None
+    if subscriber.assigned_unit_id:
+        unit = await db.inventory_units.find_one({"unit_id": subscriber.assigned_unit_id})
+        if unit and unit.get('status') == 'available':
+            await db.inventory_units.update_one(
+                {"unit_id": subscriber.assigned_unit_id},
+                {"$set": {
+                    "status": "assigned",
+                    "assigned_to": subscriber.account_number,
+                    "assigned_date": datetime.now(timezone.utc)
+                }}
+            )
+            # Get item details for response
+            item = await db.inventory.find_one({"item_code": unit['item_code']}, {"_id": 0, "name": 1})
+            assigned_equipment = {
+                "unit_id": subscriber.assigned_unit_id,
+                "mac_address": unit.get('mac_address'),
+                "serial_number": unit.get('serial_number'),
+                "item_name": item.get('name') if item else unit['item_code']
+            }
+            logger.info(f"Assigned unit {subscriber.assigned_unit_id} to subscriber {subscriber.account_number}")
     
     # Create initial job order for installation
     job = {
