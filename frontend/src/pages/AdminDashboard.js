@@ -35,9 +35,8 @@ export default function AdminDashboard({ user, onLogout }) {
     { name: 'Users', path: '/admin/users', icon: Users },
     { name: 'Subscribers', path: '/admin/subscribers', icon: UserCircle },
     { name: 'Mikrotik', path: '/admin/mikrotik', icon: Wifi },
-    { name: 'Subscription Plans', path: '/admin/plans', icon: FileText },
-    { name: 'Inventory', path: '/admin/inventory', icon: Package },
     { name: 'Purchasing', path: '/admin/purchasing', icon: ShoppingCart },
+    { name: 'Inventory', path: '/admin/inventory', icon: Package },
     { name: 'Expenses', path: '/admin/expenses', icon: DollarSign },
     { name: 'Settings', path: '/admin/settings', icon: Settings },
   ];
