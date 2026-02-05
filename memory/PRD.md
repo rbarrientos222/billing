@@ -129,12 +129,13 @@ Build a billing system with the following features:
 | Priority | Issue | Status |
 |----------|-------|--------|
 | P2 | PPPoE Profile dropdown is static (not fetching from Mikrotik) | Not Started |
+| P2 | Address data for municipalities and barangays is incomplete sample data | Not Started |
 
 ---
 
 ## Upcoming Tasks (P0-P1)
 
-1. **Technician Module** - Login, dashboard, job order fulfillment with material entry
+1. **Technician Module** - Login, dashboard, job order fulfillment with material entry from inventory
 2. **Subscriber Portal** - Login (account number) and dashboard for subscribers
 3. **Billing PDF/SOA Generation** - Generate PDF statements
 4. **Mikrotik Management Page** - UI for admin to configure Mikrotik credentials
@@ -145,13 +146,14 @@ Build a billing system with the following features:
 
 - Admin Settings (discounts, import/export)
 - Company Setup page
-- Inventory Management module
 - Expenses module
+- Wallet Management UI (admin manual add/deduct credits)
 - Receipt printing
 - OR/SI numbering logic
 - Auto-email SOA
-- Automatic SMS triggers
+- Automatic SMS triggers for billing events
 - Complete Philippine address data (municipalities/barangays)
+- Backend code refactoring (server.py is 2700+ lines - needs modularization)
 
 ---
 
