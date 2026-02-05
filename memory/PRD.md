@@ -81,6 +81,18 @@ Build a billing system with the following features:
   - Auto-assign selected equipment to subscriber on creation
   - Get subscriber equipment endpoint
   - Equipment tracking linked to subscriber account
+- [x] **Purchasing Module** (NEW - Feb 5, 2026)
+  - Supplier management (name, contact, phone, email, address)
+  - Create purchase orders with PO number, invoice number
+  - Purchase date and delivery date tracking
+  - Add new inventory items during purchase (auto-create)
+  - Restock existing inventory items
+  - Track items by category, quantity, unit, cost
+  - Option for serialized items (MAC/Serial) and bulk items (length)
+  - Auto-create expense entry when purchase is created
+  - Payment tracking (unpaid, partial, paid)
+  - Add partial payments with payment mode (cash, bank, check, GCash)
+  - Purchase statistics (total spent, monthly, unpaid amount)
 
 #### Frontend (React)
 - [x] Login page with role-based routing (no default credentials)
