@@ -16,7 +16,8 @@ import UserManagement from '@/components/admin/UserManagement';
 import SubscriberManagement from '@/components/admin/SubscriberManagement';
 import MikrotikManagement from '@/components/admin/MikrotikManagement';
 import InventoryManagement from '@/components/admin/InventoryManagement';
-import PurchasingModule from '@/components/admin/PurchasingModule';
+// Lazy load PurchasingModule to avoid babel stack overflow
+const PurchasingModule = React.lazy(() => import('@/components/admin/PurchasingModule'));
 import ExpenseManagement from '@/components/admin/ExpenseManagement';
 import CompanySettings from '@/components/admin/CompanySettings';
 import SubscriptionPlans from '@/components/admin/SubscriptionPlans';
