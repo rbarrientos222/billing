@@ -78,48 +78,49 @@ Build a billing system with the following features:
   - Auto-increment parent inventory quantity on unit add
 
 #### Frontend (React)
-- [x] Login page with role-based routing
+- [x] Login page with role-based routing (no default credentials)
 - [x] Admin Dashboard with:
-  - Sales metrics and charts
-  - **Billing Calendar View**
-    - Visual calendar showing billing dates (15th, 30th)
-    - Subscriber counts per billing period
-    - Days until next billing
-    - Auto-billing scheduler status
-    - Pending invoices indicator
+  - Sales metrics with live data
+  - **Monthly Sales Trend Chart** (12-month graph)
+  - **Billing Calendar View** (dynamic - shows all custom billing days)
   - Billing Quick Actions panel
 - [x] Subscriber Management with:
   - Cascading address dropdowns (Province > Municipality > Barangay)
-  - PPPoE configuration fields
+  - PPPoE configuration fields with activation status (Pending/Active)
   - Auto-generated PPPoE username (firstnamelastname format)
-  - View Payment History dialog
+  - **Auto-capitalization** for name fields
+  - **Installation Date** field with prorated calculation
+  - **Custom Billing Day** selection (1-31)
+  - **Wallet Balance** display in subscriber list
+  - View Records dialog (payment history, wallet, invoices)
   - **Prorated Billing Option** with real-time preview
   - **Change Plan** with prorated adjustment billing
-  - **Deactivate Subscriber** with final bill calculation and Mikrotik profile change
+  - **Deactivate Subscriber** with final bill calculation
   - **Reactivate Subscriber** with prorated billing
   - **Delete Subscriber** with admin password confirmation
   - **Add Manual Charges** (equipment, service fees, etc.)
-- [x] **Cashier Dashboard** (Enhanced - Feb 4, 2026)
+- [x] **Cashier Dashboard**
   - Universal search (by account number, name, or phone)
-  - Subscriber info display with plan and status
-  - **Centralized Payment Form**
-    - Total Outstanding balance display
-    - Payment amount input
-    - Payment mode selection (Cash, GCash, Bank, Card)
-    - Quick amount buttons (individual invoice amounts + Pay All)
-    - Real-time payment preview
-    - Process Payment button
+  - **Centralized Payment Form** with FIFO allocation
   - Invoice list with status badges (Unpaid, Partial, Paid)
-  - Partial payment display (Total vs Paid amounts)
-  - Payment result feedback card
-  - Payment history table (OR#, Amount, Mode, Date)
-  - **Sidebar Cards:**
-    - Today's Collections (total + count)
-    - Outstanding Balance (when applicable)
-    - Wallet Balance (when subscriber has credit)
-  - Quick Actions (Print Receipt, Clear/New Search)
-- [x] Subscription Plans management
-- [x] User Management
+  - Payment history with descriptions
+  - Today's Collections (live updated)
+  - Wallet Balance display
+- [x] **Subscription Plans Management**
+  - Full CRUD (Create, Edit, Delete)
+- [x] **User Management**
+  - Full CRUD with Change Password functionality
+- [x] **Inventory Management** (NEW - Feb 5, 2026)
+  - Stats cards (Total Items, Total Value, Low Stock, Categories)
+  - Low stock alerts with restock badge
+  - Item list with search and category filter
+  - Add/Edit/Delete inventory items
+  - Track standard items, bulk items (length), and serialized items
+  - **Manage Units dialog** for serialized items
+    - List units with MAC address, serial number, status
+    - Assign/Available/Defective status badges
+    - Add new units with MAC/Serial
+    - Delete available units
 
 ---
 
