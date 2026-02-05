@@ -251,7 +251,7 @@ class Inventory(BaseModel):
 class InventoryUnit(BaseModel):
     """Individual unit tracking for serialized equipment"""
     unit_id: Optional[str] = None
-    item_code: str  # Parent inventory item
+    item_code: Optional[str] = None  # Parent inventory item - optional since it comes from URL path
     mac_address: Optional[str] = None
     serial_number: Optional[str] = None
     status: str = "available"  # available, assigned, defective, returned
