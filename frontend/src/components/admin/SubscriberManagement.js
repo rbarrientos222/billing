@@ -188,6 +188,53 @@ export default function SubscriberManagement() {
     fetchBarangays(formData.province, value);
   };
 
+  // MAC address search function
+  const searchMacAddress = async (query) => {
+    if (!query || query.length < 2) {
+      setMacSearchResults([]);
+      setShowMacDropdown(false);
+      return;
+    }
+    
+    setMacSearchLoading(true);
+    try {
+      const response = await axios.get(`/inventory/units/search?q=${encodeURIComponent(query)}`);
+      // Filter only available units
+      const availableUnits = response.data.filter(unit => unit.status === 'available');
+      setMacSearchResults(availableUnits);
+      setShowMacDropdown(availableUnits.length > 0);
+    } catch (error) {
+      console.error('Failed to search MAC addresses');
+      setMacSearchResults([]);
+    } finally {
+      setMacSearchLoading(false);
+    }
+  };
+
+  const handleMacInputChange = (e) => {
+    const value = e.target.value.toUpperCase();
+    setFormData({ ...formData, modem_mac: value });
+    setSelectedUnit(null); // Clear selection when typing
+    searchMacAddress(value);
+  };
+
+  const handleSelectUnit = (unit) => {
+    setFormData({ ...formData, modem_mac: unit.mac_address || unit.serial_number || '' });
+    setSelectedUnit(unit);
+    setShowMacDropdown(false);
+    setMacSearchResults([]);
+  };
+
+  const fetchAssignedEquipment = async (accountNumber) => {
+    try {
+      const response = await axios.get(`/subscribers/${accountNumber}/equipment`);
+      setAssignedEquipment(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch equipment');
+      setAssignedEquipment([]);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
