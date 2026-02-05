@@ -647,14 +647,14 @@ export default function InventoryManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredItems.length === 0 ? (
+                  {paginatedItems.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         No items found
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredItems.map((item) => {
+                    paginatedItems.map((item) => {
                       const Icon = getCategoryIcon(item.category);
                       return (
                         <TableRow key={item.item_code} className={item.low_stock ? 'bg-red-50 dark:bg-red-950/20' : ''}>
