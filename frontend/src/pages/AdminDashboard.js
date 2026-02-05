@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { 
   LayoutDashboard, Users, UserCircle, Wifi, Settings, 
   Package, DollarSign, FileText, LogOut, Menu, X,
-  TrendingUp, TrendingDown, Activity, AlertCircle, CalendarDays
+  TrendingUp, TrendingDown, Activity, AlertCircle, CalendarDays, ShoppingCart
 } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -16,6 +16,7 @@ import UserManagement from '@/components/admin/UserManagement';
 import SubscriberManagement from '@/components/admin/SubscriberManagement';
 import MikrotikManagement from '@/components/admin/MikrotikManagement';
 import InventoryManagement from '@/components/admin/InventoryManagement';
+import PurchasingModule from '@/components/admin/PurchasingModule';
 import ExpenseManagement from '@/components/admin/ExpenseManagement';
 import CompanySettings from '@/components/admin/CompanySettings';
 import SubscriptionPlans from '@/components/admin/SubscriptionPlans';
@@ -35,6 +36,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { name: 'Mikrotik', path: '/admin/mikrotik', icon: Wifi },
     { name: 'Subscription Plans', path: '/admin/plans', icon: FileText },
     { name: 'Inventory', path: '/admin/inventory', icon: Package },
+    { name: 'Purchasing', path: '/admin/purchasing', icon: ShoppingCart },
     { name: 'Expenses', path: '/admin/expenses', icon: DollarSign },
     { name: 'Settings', path: '/admin/settings', icon: Settings },
   ];
