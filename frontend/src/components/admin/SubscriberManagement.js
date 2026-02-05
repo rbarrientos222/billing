@@ -360,12 +360,14 @@ export default function SubscriberManagement() {
   const handleViewHistory = async (subscriber) => {
     try {
       setSelectedSubscriberHistory(subscriber);
-      const [paymentsRes, invoicesRes] = await Promise.all([
+      const [paymentsRes, invoicesRes, equipmentRes] = await Promise.all([
         axios.get(`/payments/subscriber/${subscriber.account_number}`),
-        axios.get(`/invoices/subscriber/${subscriber.account_number}`)
+        axios.get(`/invoices/subscriber/${subscriber.account_number}`),
+        axios.get(`/subscribers/${subscriber.account_number}/equipment`)
       ]);
       setPaymentHistory(paymentsRes.data);
       setInvoiceHistory(invoicesRes.data);
+      setAssignedEquipment(equipmentRes.data || []);
       setHistoryDialogOpen(true);
     } catch (error) {
       toast.error('Failed to fetch payment history');
