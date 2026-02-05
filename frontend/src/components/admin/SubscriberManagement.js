@@ -865,7 +865,7 @@ export default function SubscriberManagement() {
                               onClick={() => handleViewHistory(sub)}
                               className="text-blue-600 border-blue-600 hover:bg-blue-50"
                             >
-                              View History
+                              View Records
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
