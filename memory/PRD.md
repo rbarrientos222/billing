@@ -132,6 +132,7 @@ Build a billing system with the following features:
   - Stats cards (Total Items, Total Value, Low Stock, Categories)
   - Low stock alerts with restock badge
   - Item list with search and category filter
+  - **Table Pagination** (10/20/50/100 per page) - NEW Feb 2026
   - Add/Edit/Delete inventory items
   - Track standard items, bulk items (length), and serialized items
   - **Manage Units dialog** for serialized items
