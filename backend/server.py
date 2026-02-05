@@ -231,14 +231,23 @@ class JobOrder(BaseModel):
     completed_at: Optional[datetime] = None
 
 class Inventory(BaseModel):
+    item_code: Optional[str] = None
     name: str
-    category: str
-    quantity: float
-    unit: str
-    cost_per_unit: float
+    category: str  # Equipment, Cable, Consumable, Tool, etc.
+    description: Optional[str] = None
+    quantity: float = 0
+    unit: str  # pcs, meters, rolls, etc.
+    cost_per_unit: float = 0
+    restock_level: float = 0  # Alert when quantity falls below this
     mac_address: Optional[str] = None
     serial_number: Optional[str] = None
-    is_bulk: bool = False
+    is_bulk: bool = False  # True for items tracked by length/weight (cables, wires)
+    total_length: Optional[float] = None  # For cables: total length in meters
+    supplier: Optional[str] = None
+    location: Optional[str] = None  # Storage location
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Expense(BaseModel):
     category: str
