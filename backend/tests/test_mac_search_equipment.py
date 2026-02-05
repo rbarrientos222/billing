@@ -123,72 +123,81 @@ class TestMACSearchAndEquipmentAssignment:
     
     def test_create_subscriber_with_equipment_assignment(self):
         """Test creating subscriber with assigned_unit_id to auto-assign equipment"""
-        # First, create a new available unit for testing
-        test_item_code = "ITM6F481E53"  # Test Huawei Router Serialized
-        test_mac = f"TEST{uuid.uuid4().hex[:8].upper()}"
+        # First, find an available unit
+        search_response = self.session.get(f"{BASE_URL}/api/inventory/units/search?q=TEST")
+        assert search_response.status_code == 200
         
-        # Create a test unit
-        unit_response = self.session.post(f"{BASE_URL}/api/inventory/{test_item_code}/units", json={
-            "mac_address": test_mac,
-            "serial_number": f"SN{uuid.uuid4().hex[:8].upper()}",
-            "notes": "Test unit for subscriber assignment"
-        })
+        units = search_response.json()
+        available_units = [u for u in units if u.get('status') == 'available']
         
-        if unit_response.status_code == 201:
+        if not available_units:
+            # Create a new unit if none available
+            test_item_code = "ITM6F481E53"  # Test Huawei Router Serialized
+            test_mac = f"TEST{uuid.uuid4().hex[:8].upper()}"
+            
+            unit_response = self.session.post(f"{BASE_URL}/api/inventory/{test_item_code}/units", json={
+                "mac_address": test_mac,
+                "serial_number": f"SN{uuid.uuid4().hex[:8].upper()}",
+                "notes": "Test unit for subscriber assignment"
+            })
+            
+            if unit_response.status_code != 201:
+                pytest.skip(f"Could not create test unit: {unit_response.text}")
+            
             unit_data = unit_response.json()
             test_unit_id = unit_data.get('unit_id')
             print(f"Created test unit: {test_unit_id} with MAC: {test_mac}")
-            
-            # Now create a subscriber with this unit assigned
-            subscriber_data = {
-                "account_number": "",  # Will be auto-generated
-                "first_name": "TEST",
-                "last_name": "EQUIPMENT",
-                "email": "test.equipment@test.com",
-                "phone": "09171234567",
-                "plan_id": "Basic Plan",
-                "billing_day": 15,
-                "installation_date": "2026-01-15",
-                "modem_mac": test_mac,
-                "assigned_unit_id": test_unit_id,
-                "generate_prorated_bill": False
-            }
-            
-            sub_response = self.session.post(f"{BASE_URL}/api/subscribers", json=subscriber_data)
-            assert sub_response.status_code == 200, f"Create subscriber failed: {sub_response.text}"
-            
-            sub_data = sub_response.json()
-            account_number = sub_data.get('account_number')
-            print(f"Created subscriber: {account_number}")
-            
-            # Verify equipment was assigned
-            if sub_data.get('assigned_equipment'):
-                print(f"Equipment assigned: {sub_data['assigned_equipment']}")
-                assert sub_data['assigned_equipment']['unit_id'] == test_unit_id
-                assert sub_data['assigned_equipment']['mac_address'] == test_mac
-            
-            # Verify via equipment endpoint
-            eq_response = self.session.get(f"{BASE_URL}/api/subscribers/{account_number}/equipment")
-            assert eq_response.status_code == 200
-            equipment = eq_response.json()
-            print(f"Equipment via endpoint: {len(equipment)} items")
-            
-            # Verify unit status changed to assigned
-            unit_check = self.session.get(f"{BASE_URL}/api/inventory/units/search?q={test_mac}")
-            if unit_check.status_code == 200:
-                units = unit_check.json()
-                for u in units:
-                    if u.get('unit_id') == test_unit_id:
-                        assert u.get('status') == 'assigned', f"Unit should be assigned, got: {u.get('status')}"
-                        assert u.get('assigned_to') == account_number, f"Unit should be assigned to {account_number}"
-                        print(f"Unit status verified: {u.get('status')} to {u.get('assigned_to')}")
-            
-            # Cleanup - delete subscriber (this won't unassign equipment automatically)
-            # We'll leave the unit assigned for now
-            
         else:
-            print(f"Could not create test unit: {unit_response.text}")
-            pytest.skip("Could not create test unit for assignment test")
+            # Use existing available unit
+            test_unit = available_units[0]
+            test_unit_id = test_unit.get('unit_id')
+            test_mac = test_unit.get('mac_address')
+            print(f"Using existing available unit: {test_unit_id} with MAC: {test_mac}")
+        
+        # Now create a subscriber with this unit assigned
+        subscriber_data = {
+            "account_number": "",  # Will be auto-generated
+            "first_name": "TEST",
+            "last_name": "EQUIPMENT",
+            "email": "test.equipment@test.com",
+            "phone": "09171234567",
+            "plan_id": "Basic Plan",
+            "billing_day": 15,
+            "installation_date": "2026-01-15",
+            "modem_mac": test_mac,
+            "assigned_unit_id": test_unit_id,
+            "generate_prorated_bill": False
+        }
+        
+        sub_response = self.session.post(f"{BASE_URL}/api/subscribers", json=subscriber_data)
+        assert sub_response.status_code == 200, f"Create subscriber failed: {sub_response.text}"
+        
+        sub_data = sub_response.json()
+        account_number = sub_data.get('account_number')
+        print(f"Created subscriber: {account_number}")
+        
+        # Verify equipment was assigned
+        if sub_data.get('assigned_equipment'):
+            print(f"Equipment assigned: {sub_data['assigned_equipment']}")
+            assert sub_data['assigned_equipment']['unit_id'] == test_unit_id
+            assert sub_data['assigned_equipment']['mac_address'] == test_mac
+        
+        # Verify via equipment endpoint
+        eq_response = self.session.get(f"{BASE_URL}/api/subscribers/{account_number}/equipment")
+        assert eq_response.status_code == 200
+        equipment = eq_response.json()
+        print(f"Equipment via endpoint: {len(equipment)} items")
+        assert len(equipment) >= 1, "Subscriber should have at least 1 equipment"
+        
+        # Verify unit status changed to assigned
+        unit_check = self.session.get(f"{BASE_URL}/api/inventory/units/search?q={test_mac}")
+        if unit_check.status_code == 200:
+            units = unit_check.json()
+            for u in units:
+                if u.get('unit_id') == test_unit_id:
+                    assert u.get('status') == 'assigned', f"Unit should be assigned, got: {u.get('status')}"
+                    assert u.get('assigned_to') == account_number, f"Unit should be assigned to {account_number}"
+                    print(f"Unit status verified: {u.get('status')} to {u.get('assigned_to')}")
     
     def test_create_subscriber_without_equipment(self):
         """Test creating subscriber without equipment assignment"""
