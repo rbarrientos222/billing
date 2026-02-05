@@ -76,6 +76,11 @@ Build a billing system with the following features:
   - Return units (back to available or mark defective)
   - Prevent duplicate MAC addresses/serial numbers
   - Auto-increment parent inventory quantity on unit add
+- [x] **Equipment Assignment on Subscriber Registration** (NEW - Feb 5, 2026)
+  - Search inventory units by MAC address during registration
+  - Auto-assign selected equipment to subscriber on creation
+  - Get subscriber equipment endpoint
+  - Equipment tracking linked to subscriber account
 
 #### Frontend (React)
 - [x] Login page with role-based routing (no default credentials)
