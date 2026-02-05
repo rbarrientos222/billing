@@ -141,6 +141,7 @@ class TestMACSearchAndEquipmentAssignment:
             
             # Now create a subscriber with this unit assigned
             subscriber_data = {
+                "account_number": "",  # Will be auto-generated
                 "first_name": "TEST",
                 "last_name": "EQUIPMENT",
                 "email": "test.equipment@test.com",
