@@ -298,11 +298,37 @@ export default function SubscriberManagement() {
     }
   };
 
-  const filteredSubscribers = subscribers.filter((sub) =>
-    sub.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sub.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    sub.account_number?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Pagination state for subscribers
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const filteredSubscribers = useMemo(() => {
+    return subscribers.filter((sub) =>
+      sub.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sub.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sub.account_number?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [subscribers, searchTerm]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSubscribers.length / pageSize));
+  const paginatedSubscribers = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredSubscribers.slice(start, start + pageSize);
+  }, [filteredSubscribers, currentPage, pageSize]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const handlePageSizeChange = (size) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
 
   const handleSelectSubscriber = (accountNumber) => {
     setSelectedSubscribers(prev => 
