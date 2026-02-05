@@ -239,8 +239,7 @@ class Inventory(BaseModel):
     unit: str  # pcs, meters, rolls, etc.
     cost_per_unit: float = 0
     restock_level: float = 0  # Alert when quantity falls below this
-    mac_address: Optional[str] = None
-    serial_number: Optional[str] = None
+    is_serialized: bool = False  # True for items that need MAC/Serial tracking (routers, modems)
     is_bulk: bool = False  # True for items tracked by length/weight (cables, wires)
     total_length: Optional[float] = None  # For cables: total length in meters
     supplier: Optional[str] = None
@@ -248,6 +247,18 @@ class Inventory(BaseModel):
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class InventoryUnit(BaseModel):
+    """Individual unit tracking for serialized equipment"""
+    unit_id: Optional[str] = None
+    item_code: str  # Parent inventory item
+    mac_address: Optional[str] = None
+    serial_number: Optional[str] = None
+    status: str = "available"  # available, assigned, defective, returned
+    assigned_to: Optional[str] = None  # Subscriber account number
+    assigned_date: Optional[datetime] = None
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Expense(BaseModel):
     category: str
