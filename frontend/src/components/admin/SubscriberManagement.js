@@ -724,9 +724,77 @@ export default function SubscriberManagement() {
                 )}
               </div>
 
-              <div>
-                <Label>Modem MAC Address</Label>
-                <Input value={formData.modem_mac} onChange={(e) => setFormData({ ...formData, modem_mac: e.target.value })} placeholder="AA:BB:CC:DD:EE:FF" />
+              <div className="relative">
+                <Label>Modem MAC Address / Equipment</Label>
+                <div className="relative">
+                  <Input 
+                    value={formData.modem_mac} 
+                    onChange={handleMacInputChange}
+                    onFocus={() => formData.modem_mac.length >= 2 && macSearchResults.length > 0 && setShowMacDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowMacDropdown(false), 200)}
+                    placeholder="Type MAC address to search inventory..."
+                    className={selectedUnit ? "border-green-500 bg-green-50" : ""}
+                  />
+                  {macSearchLoading && (
+                    <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+                
+                {/* Search Results Dropdown */}
+                {showMacDropdown && macSearchResults.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-900 border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {macSearchResults.map((unit) => (
+                      <div
+                        key={unit.unit_id}
+                        className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer border-b last:border-b-0"
+                        onMouseDown={() => handleSelectUnit(unit)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-mono text-sm font-medium">{unit.mac_address || unit.serial_number}</p>
+                            <p className="text-xs text-muted-foreground">{unit.item_name || unit.item_code}</p>
+                          </div>
+                          <Badge variant="outline" className="text-green-600 border-green-300">Available</Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Selected Unit Info */}
+                {selectedUnit && (
+                  <div className="mt-2 p-2 bg-green-50 dark:bg-green-950 border border-green-200 rounded-md flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wifi className="h-4 w-4 text-green-600" />
+                      <div>
+                        <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                          {selectedUnit.item_name || selectedUnit.item_code}
+                        </p>
+                        <p className="text-xs text-green-600">
+                          {selectedUnit.mac_address && `MAC: ${selectedUnit.mac_address}`}
+                          {selectedUnit.mac_address && selectedUnit.serial_number && ' | '}
+                          {selectedUnit.serial_number && `S/N: ${selectedUnit.serial_number}`}
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedUnit(null);
+                        setFormData({ ...formData, modem_mac: '' });
+                      }}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                )}
+                
+                <p className="text-xs text-muted-foreground mt-1">
+                  Search by MAC address or serial number to assign equipment from inventory
+                </p>
               </div>
               
               {/* PPPoE Account Section */}
