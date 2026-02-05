@@ -215,7 +215,8 @@ Build a billing system with the following features:
 1. **Mikrotik Integration:** MOCKED - returns errors until credentials are configured
 2. **Address Data:** Municipality and Barangay data is sample data (not complete)
 3. **SMS/Email:** Not yet implemented
-4. **Backend Code Size:** server.py is 2700+ lines and needs modularization
+4. **Backend Code Size:** server.py is 3000+ lines and needs modularization
+5. **Visual Edits Plugin:** Temporarily disabled in dev mode due to babel stack overflow with large components
 
 ---
 
@@ -224,3 +225,4 @@ Build a billing system with the following features:
 - `/app/test_reports/iteration_2.json` - Centralized payment testing
 - `/app/test_reports/iteration_3.json` - Inventory unit tracking testing (100% pass rate)
 - `/app/test_reports/iteration_4.json` - MAC search & equipment assignment testing (100% pass rate)
+- `/app/test_reports/iteration_5.json` - Purchasing module testing (100% pass rate)
