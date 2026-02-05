@@ -2278,24 +2278,179 @@ async def update_job_order(job_id: str, updates: dict, current_user: dict = Depe
     return {"message": "Job order updated"}
 
 # ========== INVENTORY ==========
+def generate_item_code():
+    """Generate a unique item code"""
+    return f"ITM{uuid.uuid4().hex[:8].upper()}"
+
 @api_router.get("/inventory")
 async def list_inventory(current_user: dict = Depends(get_current_user)):
+    """List all inventory items with low stock alerts"""
     items = await db.inventory.find({}, {"_id": 0}).to_list(1000)
+    
+    # Add low stock flag
+    for item in items:
+        item['low_stock'] = item.get('quantity', 0) <= item.get('restock_level', 0) and item.get('restock_level', 0) > 0
+        # Calculate total value
+        item['total_value'] = round(item.get('quantity', 0) * item.get('cost_per_unit', 0), 2)
+    
     return items
+
+@api_router.get("/inventory/stats")
+async def get_inventory_stats(current_user: dict = Depends(get_current_user)):
+    """Get inventory statistics"""
+    items = await db.inventory.find({}, {"_id": 0}).to_list(1000)
+    
+    total_items = len(items)
+    total_value = sum(item.get('quantity', 0) * item.get('cost_per_unit', 0) for item in items)
+    low_stock_count = sum(1 for item in items if item.get('quantity', 0) <= item.get('restock_level', 0) and item.get('restock_level', 0) > 0)
+    
+    # Group by category
+    categories = {}
+    for item in items:
+        cat = item.get('category', 'Uncategorized')
+        if cat not in categories:
+            categories[cat] = {'count': 0, 'value': 0}
+        categories[cat]['count'] += 1
+        categories[cat]['value'] += item.get('quantity', 0) * item.get('cost_per_unit', 0)
+    
+    return {
+        "total_items": total_items,
+        "total_value": round(total_value, 2),
+        "low_stock_count": low_stock_count,
+        "categories": categories
+    }
+
+@api_router.get("/inventory/low-stock")
+async def get_low_stock_items(current_user: dict = Depends(get_current_user)):
+    """Get items that need restocking"""
+    items = await db.inventory.find({}, {"_id": 0}).to_list(1000)
+    
+    low_stock = []
+    for item in items:
+        if item.get('restock_level', 0) > 0 and item.get('quantity', 0) <= item.get('restock_level', 0):
+            item['shortage'] = item.get('restock_level', 0) - item.get('quantity', 0)
+            low_stock.append(item)
+    
+    return low_stock
+
+@api_router.get("/inventory/{item_code}")
+async def get_inventory_item(item_code: str, current_user: dict = Depends(get_current_user)):
+    """Get a single inventory item"""
+    item = await db.inventory.find_one({"item_code": item_code}, {"_id": 0})
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
 
 @api_router.post("/inventory")
 async def create_inventory_item(item: Inventory, current_user: dict = Depends(get_current_user)):
-    if current_user['role'] != 'admin':
-        raise HTTPException(status_code=403, detail="Admin access required")
-    await db.inventory.insert_one(item.model_dump())
-    return {"message": "Inventory item created"}
+    """Create a new inventory item"""
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    item_dict = item.model_dump()
+    item_dict['item_code'] = generate_item_code()
+    item_dict['created_at'] = datetime.now(timezone.utc)
+    item_dict['updated_at'] = datetime.now(timezone.utc)
+    
+    # For bulk items (cables), set quantity based on total_length if provided
+    if item.is_bulk and item.total_length:
+        item_dict['quantity'] = item.total_length
+    
+    await db.inventory.insert_one(item_dict)
+    return {"message": "Inventory item created", "item_code": item_dict['item_code']}
 
-@api_router.put("/inventory/{name}")
-async def update_inventory(name: str, updates: dict, current_user: dict = Depends(get_current_user)):
+@api_router.put("/inventory/{item_code}")
+async def update_inventory_item(item_code: str, updates: dict, current_user: dict = Depends(get_current_user)):
+    """Update an inventory item"""
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    existing = await db.inventory.find_one({"item_code": item_code})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    updates['updated_at'] = datetime.now(timezone.utc)
+    await db.inventory.update_one({"item_code": item_code}, {"$set": updates})
+    return {"message": "Inventory item updated"}
+
+@api_router.delete("/inventory/{item_code}")
+async def delete_inventory_item(item_code: str, current_user: dict = Depends(get_current_user)):
+    """Delete an inventory item"""
     if current_user['role'] != 'admin':
         raise HTTPException(status_code=403, detail="Admin access required")
-    await db.inventory.update_one({"name": name}, {"$set": updates})
-    return {"message": "Inventory updated"}
+    
+    result = await db.inventory.delete_one({"item_code": item_code})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"message": "Inventory item deleted"}
+
+@api_router.post("/inventory/{item_code}/adjust")
+async def adjust_inventory(item_code: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Adjust inventory quantity (add or deduct stock)
+    Used for: restocking, usage deduction, corrections
+    """
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    item = await db.inventory.find_one({"item_code": item_code})
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    adjustment_type = data.get('type', 'deduct')  # 'add' or 'deduct'
+    amount = float(data.get('amount', 0))
+    reason = data.get('reason', '')
+    job_order_id = data.get('job_order_id')
+    
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+    
+    current_qty = item.get('quantity', 0)
+    
+    if adjustment_type == 'add':
+        new_qty = current_qty + amount
+    else:  # deduct
+        if amount > current_qty:
+            raise HTTPException(status_code=400, detail=f"Insufficient stock. Available: {current_qty} {item.get('unit', 'units')}")
+        new_qty = current_qty - amount
+    
+    # Update inventory
+    await db.inventory.update_one(
+        {"item_code": item_code},
+        {"$set": {"quantity": new_qty, "updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    # Log the adjustment
+    log_entry = {
+        "item_code": item_code,
+        "item_name": item.get('name'),
+        "type": adjustment_type,
+        "amount": amount,
+        "unit": item.get('unit'),
+        "previous_qty": current_qty,
+        "new_qty": new_qty,
+        "reason": reason,
+        "job_order_id": job_order_id,
+        "adjusted_by": current_user['username'],
+        "adjusted_at": datetime.now(timezone.utc)
+    }
+    await db.inventory_logs.insert_one(log_entry)
+    
+    return {
+        "message": f"Inventory adjusted: {adjustment_type} {amount} {item.get('unit', 'units')}",
+        "previous_quantity": current_qty,
+        "new_quantity": new_qty,
+        "low_stock": new_qty <= item.get('restock_level', 0) and item.get('restock_level', 0) > 0
+    }
+
+@api_router.get("/inventory/{item_code}/history")
+async def get_inventory_history(item_code: str, current_user: dict = Depends(get_current_user)):
+    """Get adjustment history for an inventory item"""
+    logs = await db.inventory_logs.find(
+        {"item_code": item_code}, 
+        {"_id": 0}
+    ).sort("adjusted_at", -1).to_list(100)
+    return logs
 
 # ========== EXPENSES ==========
 @api_router.get("/expenses")
