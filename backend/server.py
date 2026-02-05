@@ -1346,6 +1346,26 @@ async def get_subscriber(account_number: str, current_user: dict = Depends(get_c
         raise HTTPException(status_code=404, detail="Subscriber not found")
     return subscriber
 
+@api_router.get("/subscribers/{account_number}/equipment")
+async def get_subscriber_equipment(account_number: str, current_user: dict = Depends(get_current_user)):
+    """Get all equipment assigned to a subscriber"""
+    units = await db.inventory_units.find(
+        {"assigned_to": account_number},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Enrich with item details
+    for unit in units:
+        item = await db.inventory.find_one(
+            {"item_code": unit['item_code']}, 
+            {"_id": 0, "name": 1, "category": 1}
+        )
+        if item:
+            unit['item_name'] = item.get('name')
+            unit['item_category'] = item.get('category')
+    
+    return units
+
 @api_router.get("/payments/today-stats")
 async def get_today_payment_stats(current_user: dict = Depends(get_current_user)):
     """
