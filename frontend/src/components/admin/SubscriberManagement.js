@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw } from 'lucide-react';
+import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw, Wifi, Package } from 'lucide-react';
 
 export default function SubscriberManagement() {
   const [subscribers, setSubscribers] = useState([]);
@@ -26,9 +26,16 @@ export default function SubscriberManagement() {
   const [selectedSubscriberHistory, setSelectedSubscriberHistory] = useState(null);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [invoiceHistory, setInvoiceHistory] = useState([]);
+  const [assignedEquipment, setAssignedEquipment] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubscribers, setSelectedSubscribers] = useState([]);
   const [activating, setActivating] = useState(false);
+  
+  // MAC address search states
+  const [macSearchResults, setMacSearchResults] = useState([]);
+  const [macSearchLoading, setMacSearchLoading] = useState(false);
+  const [showMacDropdown, setShowMacDropdown] = useState(false);
+  const [selectedUnit, setSelectedUnit] = useState(null);
   
   // New dialog states
   const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
