@@ -2886,18 +2886,22 @@ async def create_purchase(purchase: Purchase, current_user: dict = Depends(get_c
         if item.get('is_new_item') or not item.get('item_code'):
             # Create new inventory item
             new_item_code = generate_item_code()
+            # For serialized items, quantity starts at 0 - it will be incremented when units are added
+            # For non-serialized items, use the purchased quantity
+            initial_quantity = 0 if item.get('is_serialized', False) else item['quantity']
             inventory_item = {
                 "item_code": new_item_code,
                 "name": item['name'],
                 "category": item.get('category', 'Equipment'),
                 "description": f"Added via purchase {purchase_dict['purchase_id']}",
-                "quantity": item['quantity'],
+                "quantity": initial_quantity,
                 "unit": item.get('unit', 'pcs'),
                 "cost_per_unit": item['unit_cost'],
                 "restock_level": 0,
                 "is_serialized": item.get('is_serialized', False),
                 "is_bulk": item.get('is_bulk', False),
                 "total_length": item['quantity'] if item.get('is_bulk') else None,
+                "pending_units": item['quantity'] if item.get('is_serialized', False) else 0,  # Track expected units to add
                 "supplier": purchase_dict.get('supplier_name', ''),
                 "created_at": datetime.now(timezone.utc),
                 "updated_at": datetime.now(timezone.utc)
