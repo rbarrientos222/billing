@@ -923,7 +923,7 @@ export default function SubscriberManagement() {
       <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Payment History - {selectedSubscriberHistory?.first_name} {selectedSubscriberHistory?.last_name}</DialogTitle>
+            <DialogTitle>Subscriber Records - {selectedSubscriberHistory?.first_name} {selectedSubscriberHistory?.last_name}</DialogTitle>
             <DialogDescription>
               Account: {selectedSubscriberHistory?.account_number}
             </DialogDescription>
