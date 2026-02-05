@@ -192,6 +192,7 @@ class TestMACSearchAndEquipmentAssignment:
     def test_create_subscriber_without_equipment(self):
         """Test creating subscriber without equipment assignment"""
         subscriber_data = {
+            "account_number": "",  # Will be auto-generated
             "first_name": "TEST",
             "last_name": "NOEQUIP",
             "email": "test.noequip@test.com",
