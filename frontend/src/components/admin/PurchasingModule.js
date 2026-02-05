@@ -460,7 +460,19 @@ export default function PurchasingModule() {
             </div>
           </div>
         </CardHeader>
-        <CardContent><PurchasesList purchases={filtered} loading={loading} onView={handleViewPurchase} onPay={handlePayClick} /></CardContent>
+        <CardContent>
+          <PurchasesList purchases={paginatedPurchases} loading={loading} onView={handleViewPurchase} onPay={handlePayClick} />
+          {!loading && filtered.length > 0 && (
+            <TablePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filtered.length}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          )}
+        </CardContent>
       </Card>
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
