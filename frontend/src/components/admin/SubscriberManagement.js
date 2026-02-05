@@ -1162,6 +1162,52 @@ export default function SubscriberManagement() {
                 </Table>
               </div>
             </div>
+
+            {/* Assigned Equipment */}
+            <div>
+              <h3 className="font-medium mb-3 text-lg flex items-center gap-2">
+                <Package className="h-5 w-5 text-purple-600" />
+                Assigned Equipment
+              </h3>
+              {assignedEquipment.length === 0 ? (
+                <div className="text-center py-6 bg-gray-50 dark:bg-gray-900 rounded-lg border border-dashed">
+                  <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">No equipment assigned to this subscriber</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {assignedEquipment.map((equipment) => (
+                    <div 
+                      key={equipment.unit_id} 
+                      className="p-3 bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                          <Wifi className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-purple-900 dark:text-purple-100">
+                            {equipment.item_name || equipment.item_code}
+                          </p>
+                          <div className="flex items-center gap-3 text-xs text-purple-600 dark:text-purple-400">
+                            {equipment.mac_address && <span>MAC: <span className="font-mono">{equipment.mac_address}</span></span>}
+                            {equipment.serial_number && <span>S/N: <span className="font-mono">{equipment.serial_number}</span></span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge className="bg-purple-600">Assigned</Badge>
+                        {equipment.assigned_date && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(equipment.assigned_date).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
