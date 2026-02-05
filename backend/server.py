@@ -2937,7 +2937,7 @@ async def create_purchase(purchase: Purchase, current_user: dict = Depends(get_c
                     "new_quantity": existing_item.get('quantity', 0) + item['quantity'],
                     "reason": f"Purchase {purchase_dict['purchase_id']}",
                     "reference_id": purchase_dict['purchase_id'],
-                    "performed_by": current_user['sub'],
+                    "performed_by": current_user['username'],
                     "created_at": datetime.now(timezone.utc)
                 }
                 await db.inventory_logs.insert_one(log_entry)
