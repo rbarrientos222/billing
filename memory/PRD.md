@@ -30,33 +30,52 @@ Build a billing system with the following features:
 
 ## What's Been Implemented
 
-### Completed Features (as of Feb 4, 2026)
+### Completed Features (as of Feb 5, 2026)
 
 #### Backend (FastAPI)
 - [x] JWT Authentication with role-based access
 - [x] User Management (admin, cashier, tech, billing roles)
-- [x] Subscription Plans CRUD
+- [x] Subscription Plans CRUD with Edit/Delete
+- [x] User password change functionality
 - [x] Subscriber Management with Philippine address structure
 - [x] PPPoE Account fields integrated in subscriber form
-- [x] Prorated billing on new subscriber creation
+- [x] Prorated billing using installation date
+- [x] Custom billing day (1-31) per subscriber
 - [x] **Automatic Billing Scheduler (APScheduler)**
   - Runs daily at 00:01 AM
-  - Generates invoices for subscribers on their billing day (15th or 30th)
+  - Generates invoices for subscribers on their billing day
   - Billing status API
   - Manual billing trigger
   - Billing logs history
   - Upcoming billing preview
-- [x] **Centralized Payment System** (NEW - Feb 4, 2026)
+- [x] **Centralized Payment System**
   - `/api/payments/centralized` endpoint
   - FIFO allocation to oldest invoices first
   - Partial payment support (invoice status: 'partial')
   - Overpayment handling (excess → wallet credit)
   - Wallet balance tracking per subscriber
 - [x] Payment processing with OR number generation
-- [x] Payment history per subscriber
+- [x] Payment history per subscriber with descriptions
 - [x] Invoice management with remaining_balance calculation
 - [x] Dashboard statistics API (fixed to handle both legacy and centralized payments)
+- [x] Monthly Sales Trend API (12 months data)
 - [x] Mikrotik integration structure (awaiting credentials)
+- [x] **Inventory Management System** (NEW - Feb 5, 2026)
+  - Full CRUD for inventory items
+  - Track by quantity (standard items)
+  - Track by length (cables, wires - bulk mode)
+  - **Unit tracking by MAC/Serial number** (serialized items)
+  - Stock adjustment with reason logging
+  - Low stock alerts and restock levels
+  - Inventory statistics API
+  - Adjustment history per item
+- [x] **Inventory Unit Tracking** (NEW - Feb 5, 2026)
+  - Add individual units with MAC address and/or serial number
+  - Track unit status: available, assigned, defective, returned
+  - Assign units to subscribers
+  - Return units (back to available or mark defective)
+  - Prevent duplicate MAC addresses/serial numbers
+  - Auto-increment parent inventory quantity on unit add
 
 #### Frontend (React)
 - [x] Login page with role-based routing
