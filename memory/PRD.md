@@ -202,7 +202,7 @@ Build a billing system with the following features:
 - Auto-email SOA
 - Automatic SMS triggers for billing events
 - Complete Philippine address data (municipalities/barangays)
-- Backend code refactoring (server.py is 2700+ lines - needs modularization)
+- Backend code refactoring (server.py is 3000+ lines - needs modularization)
 
 ---
 
