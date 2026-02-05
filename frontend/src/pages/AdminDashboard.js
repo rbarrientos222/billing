@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { 
   LayoutDashboard, Users, UserCircle, Wifi, Settings, 
   Package, DollarSign, FileText, LogOut, Menu, X,
-  TrendingUp, TrendingDown, Activity, AlertCircle, CalendarDays, ShoppingCart
+  TrendingUp, TrendingDown, Activity, AlertCircle, CalendarDays, ShoppingCart, CreditCard
 } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
