@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { 
   Plus, Search, Package, AlertTriangle, Edit, Trash2, 
   TrendingDown, TrendingUp, DollarSign, Loader2, History,
-  Cable, Box, Wrench
+  Cable, Box, Wrench, Wifi, HardDrive, List, UserCheck
 } from 'lucide-react';
 
 export default function InventoryManagement() {
@@ -27,8 +27,12 @@ export default function InventoryManagement() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [unitsDialogOpen, setUnitsDialogOpen] = useState(false);
+  const [addUnitDialogOpen, setAddUnitDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [itemHistory, setItemHistory] = useState([]);
+  const [itemUnits, setItemUnits] = useState([]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -38,12 +42,11 @@ export default function InventoryManagement() {
     unit: 'pcs',
     cost_per_unit: '',
     restock_level: '',
+    is_serialized: false,
     is_bulk: false,
     total_length: '',
     supplier: '',
     location: '',
-    mac_address: '',
-    serial_number: '',
     notes: ''
   });
 
@@ -53,8 +56,14 @@ export default function InventoryManagement() {
     reason: ''
   });
 
+  const [unitFormData, setUnitFormData] = useState({
+    mac_address: '',
+    serial_number: '',
+    notes: ''
+  });
+
   const categories = [
-    { value: 'Equipment', label: 'Equipment', icon: Box },
+    { value: 'Equipment', label: 'Equipment (Routers, Modems)', icon: Wifi },
     { value: 'Cable', label: 'Cables & Wires', icon: Cable },
     { value: 'Consumable', label: 'Consumables', icon: Package },
     { value: 'Tool', label: 'Tools', icon: Wrench },
@@ -107,12 +116,24 @@ export default function InventoryManagement() {
     }
   };
 
+  const fetchItemUnits = async (item) => {
+    setLoadingUnits(true);
+    try {
+      const response = await axios.get(`/inventory/${item.item_code}/units`);
+      setItemUnits(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch units');
+    } finally {
+      setLoadingUnits(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const payload = {
         ...formData,
-        quantity: parseFloat(formData.quantity) || 0,
+        quantity: formData.is_serialized ? 0 : (parseFloat(formData.quantity) || 0),
         cost_per_unit: parseFloat(formData.cost_per_unit) || 0,
         restock_level: parseFloat(formData.restock_level) || 0,
         total_length: formData.is_bulk ? parseFloat(formData.total_length) || 0 : null
@@ -120,6 +141,11 @@ export default function InventoryManagement() {
       
       await axios.post('/inventory', payload);
       toast.success('Item added to inventory');
+      
+      if (formData.is_serialized) {
+        toast.info('This item is set for unit tracking. Add individual units with MAC/Serial numbers.');
+      }
+      
       setDialogOpen(false);
       resetForm();
       fetchInventory();
@@ -140,12 +166,11 @@ export default function InventoryManagement() {
       unit: item.unit,
       cost_per_unit: item.cost_per_unit?.toString() || '',
       restock_level: item.restock_level?.toString() || '',
+      is_serialized: item.is_serialized || false,
       is_bulk: item.is_bulk || false,
       total_length: item.total_length?.toString() || '',
       supplier: item.supplier || '',
       location: item.location || '',
-      mac_address: item.mac_address || '',
-      serial_number: item.serial_number || '',
       notes: item.notes || ''
     });
     setEditDialogOpen(true);
@@ -227,6 +252,43 @@ export default function InventoryManagement() {
     }
   };
 
+  const handleViewUnits = async (item) => {
+    setSelectedItem(item);
+    await fetchItemUnits(item);
+    setUnitsDialogOpen(true);
+  };
+
+  const handleAddUnit = async (e) => {
+    e.preventDefault();
+    try {
+      if (!unitFormData.mac_address && !unitFormData.serial_number) {
+        toast.error('Please enter MAC address or Serial number');
+        return;
+      }
+      
+      await axios.post(`/inventory/${selectedItem.item_code}/units`, unitFormData);
+      toast.success('Unit added to inventory');
+      setUnitFormData({ mac_address: '', serial_number: '', notes: '' });
+      setAddUnitDialogOpen(false);
+      await fetchItemUnits(selectedItem);
+      fetchInventory();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to add unit');
+    }
+  };
+
+  const handleDeleteUnit = async (unitId) => {
+    if (!window.confirm('Delete this unit from inventory?')) return;
+    try {
+      await axios.delete(`/inventory/units/${unitId}`);
+      toast.success('Unit deleted');
+      await fetchItemUnits(selectedItem);
+      fetchInventory();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete unit');
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -236,12 +298,11 @@ export default function InventoryManagement() {
       unit: 'pcs',
       cost_per_unit: '',
       restock_level: '',
+      is_serialized: false,
       is_bulk: false,
       total_length: '',
       supplier: '',
       location: '',
-      mac_address: '',
-      serial_number: '',
       notes: ''
     });
     setSelectedItem(null);
@@ -258,6 +319,16 @@ export default function InventoryManagement() {
   const getCategoryIcon = (category) => {
     const cat = categories.find(c => c.value === category);
     return cat ? cat.icon : Package;
+  };
+
+  const getUnitStatusBadge = (status) => {
+    switch (status) {
+      case 'available': return <Badge className="bg-green-600">Available</Badge>;
+      case 'assigned': return <Badge className="bg-blue-600">Assigned</Badge>;
+      case 'defective': return <Badge variant="destructive">Defective</Badge>;
+      case 'returned': return <Badge variant="secondary">Returned</Badge>;
+      default: return <Badge>{status}</Badge>;
+    }
   };
 
   return (
@@ -293,7 +364,7 @@ export default function InventoryManagement() {
                 </div>
                 <div>
                   <Label>Category *</Label>
-                  <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                  <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v, is_serialized: v === 'Equipment' })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -318,14 +389,35 @@ export default function InventoryManagement() {
                   </Select>
                 </div>
                 
-                <div className="col-span-2 flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                {/* Serialized tracking for equipment */}
+                <div className="col-span-2 flex items-center space-x-2 p-3 bg-purple-50 dark:bg-purple-950 rounded-lg border border-purple-200">
+                  <Checkbox 
+                    id="is_serialized"
+                    checked={formData.is_serialized}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_serialized: checked, is_bulk: checked ? false : formData.is_bulk })}
+                  />
+                  <label htmlFor="is_serialized" className="text-sm cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <HardDrive className="h-4 w-4 text-purple-600" />
+                      <strong>Track individual units with MAC/Serial</strong>
+                    </div>
+                    <span className="text-xs text-muted-foreground">For modems, routers, ONUs - each unit tracked separately</span>
+                  </label>
+                </div>
+                
+                {/* Bulk tracking for cables */}
+                <div className="col-span-2 flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
                   <Checkbox 
                     id="is_bulk"
                     checked={formData.is_bulk}
-                    onCheckedChange={(checked) => setFormData({ ...formData, is_bulk: checked })}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_bulk: checked, is_serialized: checked ? false : formData.is_serialized })}
                   />
                   <label htmlFor="is_bulk" className="text-sm cursor-pointer">
-                    <strong>Track by length/measurement</strong> (for cables, wires, etc.)
+                    <div className="flex items-center gap-2">
+                      <Cable className="h-4 w-4 text-blue-600" />
+                      <strong>Track by length/measurement</strong>
+                    </div>
+                    <span className="text-xs text-muted-foreground">For cables, wires - deduct meters as used</span>
                   </label>
                 </div>
 
@@ -339,13 +431,10 @@ export default function InventoryManagement() {
                       placeholder="e.g., 2000 for 2km"
                       required={formData.is_bulk}
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Enter total length in meters. This will be deducted as materials are used.
-                    </p>
                   </div>
                 )}
 
-                {!formData.is_bulk && (
+                {!formData.is_bulk && !formData.is_serialized && (
                   <div>
                     <Label>Quantity *</Label>
                     <Input 
@@ -353,8 +442,17 @@ export default function InventoryManagement() {
                       value={formData.quantity} 
                       onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                       placeholder="0"
-                      required={!formData.is_bulk}
+                      required={!formData.is_bulk && !formData.is_serialized}
                     />
+                  </div>
+                )}
+
+                {formData.is_serialized && (
+                  <div className="col-span-2 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200">
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      <strong>Note:</strong> Quantity will be calculated automatically as you add individual units. 
+                      After creating this item, use "Manage Units" to add each device with its MAC address or serial number.
+                    </p>
                   </div>
                 )}
                 
@@ -389,21 +487,6 @@ export default function InventoryManagement() {
                   <Input 
                     value={formData.location} 
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>MAC Address</Label>
-                  <Input 
-                    value={formData.mac_address} 
-                    onChange={(e) => setFormData({ ...formData, mac_address: e.target.value })}
-                    placeholder="For network equipment"
-                  />
-                </div>
-                <div>
-                  <Label>Serial Number</Label>
-                  <Input 
-                    value={formData.serial_number} 
-                    onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
                   />
                 </div>
                 <div className="col-span-2">
@@ -554,12 +637,20 @@ export default function InventoryManagement() {
                             <div>
                               <p className="font-medium">{item.name}</p>
                               <p className="text-xs text-muted-foreground font-mono">{item.item_code}</p>
-                              {item.is_bulk && (
-                                <Badge variant="outline" className="text-xs mt-1">
-                                  <Cable className="h-3 w-3 mr-1" />
-                                  Bulk/Length
-                                </Badge>
-                              )}
+                              <div className="flex gap-1 mt-1">
+                                {item.is_serialized && (
+                                  <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                                    <HardDrive className="h-3 w-3 mr-1" />
+                                    MAC/Serial
+                                  </Badge>
+                                )}
+                                {item.is_bulk && (
+                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                    <Cable className="h-3 w-3 mr-1" />
+                                    Bulk/Length
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -594,14 +685,27 @@ export default function InventoryManagement() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => handleAdjust(item)}
-                                title="Adjust Stock"
-                              >
-                                <TrendingDown className="h-4 w-4" />
-                              </Button>
+                              {item.is_serialized && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleViewUnits(item)}
+                                  title="Manage Units (MAC/Serial)"
+                                  className="text-purple-600 border-purple-300"
+                                >
+                                  <List className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {!item.is_serialized && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleAdjust(item)}
+                                  title="Adjust Stock"
+                                >
+                                  <TrendingDown className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button 
                                 variant="ghost" 
                                 size="icon"
@@ -656,14 +760,16 @@ export default function InventoryManagement() {
                   required 
                 />
               </div>
-              <div>
-                <Label>Quantity</Label>
-                <Input 
-                  type="number"
-                  value={formData.quantity} 
-                  onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                />
-              </div>
+              {!formData.is_serialized && (
+                <div>
+                  <Label>Quantity</Label>
+                  <Input 
+                    type="number"
+                    value={formData.quantity} 
+                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                  />
+                </div>
+              )}
               <div>
                 <Label>Cost per Unit (₱)</Label>
                 <Input 
@@ -739,11 +845,6 @@ export default function InventoryManagement() {
                 placeholder={`e.g., 100 ${selectedItem?.unit}`}
                 required
               />
-              {selectedItem?.is_bulk && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  For cables: Enter length in meters used during installation
-                </p>
-              )}
             </div>
             <div>
               <Label>Reason</Label>
@@ -807,6 +908,131 @@ export default function InventoryManagement() {
               </Table>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Units Management Dialog */}
+      <Dialog open={unitsDialogOpen} onOpenChange={setUnitsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HardDrive className="h-5 w-5 text-purple-600" />
+              Unit Tracking: {selectedItem?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Manage individual units with MAC addresses and serial numbers
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-sm">
+              <span className="text-muted-foreground">Total Units: </span>
+              <span className="font-bold">{itemUnits.length}</span>
+              <span className="mx-2">|</span>
+              <span className="text-green-600">Available: {itemUnits.filter(u => u.status === 'available').length}</span>
+              <span className="mx-2">|</span>
+              <span className="text-blue-600">Assigned: {itemUnits.filter(u => u.status === 'assigned').length}</span>
+            </div>
+            <Button size="sm" onClick={() => setAddUnitDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Unit
+            </Button>
+          </div>
+
+          {loadingUnits ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : itemUnits.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <HardDrive className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No units added yet</p>
+              <p className="text-sm">Add individual units with their MAC addresses or serial numbers</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Unit ID</TableHead>
+                  <TableHead>MAC Address</TableHead>
+                  <TableHead>Serial Number</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Assigned To</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {itemUnits.map((unit) => (
+                  <TableRow key={unit.unit_id}>
+                    <TableCell className="font-mono text-xs">{unit.unit_id}</TableCell>
+                    <TableCell className="font-mono text-sm">{unit.mac_address || '-'}</TableCell>
+                    <TableCell className="font-mono text-sm">{unit.serial_number || '-'}</TableCell>
+                    <TableCell>{getUnitStatusBadge(unit.status)}</TableCell>
+                    <TableCell>
+                      {unit.assigned_to ? (
+                        <div className="flex items-center gap-1">
+                          <UserCheck className="h-4 w-4 text-blue-600" />
+                          <span className="font-mono text-xs">{unit.assigned_to}</span>
+                        </div>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteUnit(unit.unit_id)}
+                        disabled={unit.status === 'assigned'}
+                        title={unit.status === 'assigned' ? 'Cannot delete assigned unit' : 'Delete unit'}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Unit Dialog */}
+      <Dialog open={addUnitDialogOpen} onOpenChange={setAddUnitDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Unit to {selectedItem?.name}</DialogTitle>
+            <DialogDescription>Enter MAC address and/or serial number</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddUnit} className="space-y-4">
+            <div>
+              <Label>MAC Address</Label>
+              <Input 
+                value={unitFormData.mac_address} 
+                onChange={(e) => setUnitFormData({ ...unitFormData, mac_address: e.target.value.toUpperCase() })}
+                placeholder="e.g., AA:BB:CC:DD:EE:FF"
+                style={{ textTransform: 'uppercase' }}
+              />
+              <p className="text-xs text-muted-foreground mt-1">For network equipment (routers, modems, ONUs)</p>
+            </div>
+            <div>
+              <Label>Serial Number</Label>
+              <Input 
+                value={unitFormData.serial_number} 
+                onChange={(e) => setUnitFormData({ ...unitFormData, serial_number: e.target.value.toUpperCase() })}
+                placeholder="e.g., SN123456789"
+                style={{ textTransform: 'uppercase' }}
+              />
+              <p className="text-xs text-muted-foreground mt-1">For equipment without MAC address</p>
+            </div>
+            <div>
+              <Label>Notes (optional)</Label>
+              <Input 
+                value={unitFormData.notes} 
+                onChange={(e) => setUnitFormData({ ...unitFormData, notes: e.target.value })}
+                placeholder="Any additional notes"
+              />
+            </div>
+            <Button type="submit" className="w-full">Add Unit</Button>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
