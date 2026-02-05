@@ -384,6 +384,7 @@ export default function AdminDashboard({ user, onLogout }) {
             <Route path="/mikrotik" element={<MikrotikManagement />} />
             <Route path="/plans" element={<SubscriptionPlans />} />
             <Route path="/inventory" element={<InventoryManagement />} />
+            <Route path="/purchasing" element={<PurchasingModule />} />
             <Route path="/expenses" element={<ExpenseManagement />} />
             <Route path="/settings" element={<CompanySettings />} />
           </Routes>
