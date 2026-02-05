@@ -2463,6 +2463,172 @@ async def get_inventory_history(item_code: str, current_user: dict = Depends(get
     ).sort("adjusted_at", -1).to_list(100)
     return logs
 
+# ========== INVENTORY UNITS (MAC/Serial Tracking) ==========
+def generate_unit_id():
+    """Generate a unique unit ID"""
+    return f"UNIT{uuid.uuid4().hex[:8].upper()}"
+
+@api_router.get("/inventory/{item_code}/units")
+async def list_inventory_units(item_code: str, current_user: dict = Depends(get_current_user)):
+    """List all individual units for a serialized inventory item"""
+    units = await db.inventory_units.find(
+        {"item_code": item_code}, 
+        {"_id": 0}
+    ).to_list(1000)
+    return units
+
+@api_router.post("/inventory/{item_code}/units")
+async def add_inventory_unit(item_code: str, unit: InventoryUnit, current_user: dict = Depends(get_current_user)):
+    """Add an individual unit with MAC/Serial to inventory"""
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Verify item exists and is serialized
+    item = await db.inventory.find_one({"item_code": item_code})
+    if not item:
+        raise HTTPException(status_code=404, detail="Inventory item not found")
+    
+    if not item.get('is_serialized'):
+        raise HTTPException(status_code=400, detail="This item is not configured for unit tracking")
+    
+    # Check for duplicate MAC or Serial
+    if unit.mac_address:
+        existing = await db.inventory_units.find_one({"mac_address": unit.mac_address})
+        if existing:
+            raise HTTPException(status_code=400, detail=f"MAC address already exists in inventory")
+    
+    if unit.serial_number:
+        existing = await db.inventory_units.find_one({"serial_number": unit.serial_number})
+        if existing:
+            raise HTTPException(status_code=400, detail=f"Serial number already exists in inventory")
+    
+    unit_dict = unit.model_dump()
+    unit_dict['unit_id'] = generate_unit_id()
+    unit_dict['item_code'] = item_code
+    unit_dict['created_at'] = datetime.now(timezone.utc)
+    
+    await db.inventory_units.insert_one(unit_dict)
+    
+    # Update the parent inventory count
+    await db.inventory.update_one(
+        {"item_code": item_code},
+        {"$inc": {"quantity": 1}, "$set": {"updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    return {"message": "Unit added to inventory", "unit_id": unit_dict['unit_id']}
+
+@api_router.put("/inventory/units/{unit_id}")
+async def update_inventory_unit(unit_id: str, updates: dict, current_user: dict = Depends(get_current_user)):
+    """Update an individual unit's details"""
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    existing = await db.inventory_units.find_one({"unit_id": unit_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    
+    await db.inventory_units.update_one({"unit_id": unit_id}, {"$set": updates})
+    return {"message": "Unit updated"}
+
+@api_router.post("/inventory/units/{unit_id}/assign")
+async def assign_unit_to_subscriber(unit_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """Assign a unit to a subscriber"""
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    unit = await db.inventory_units.find_one({"unit_id": unit_id})
+    if not unit:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    
+    if unit.get('status') == 'assigned':
+        raise HTTPException(status_code=400, detail=f"Unit already assigned to {unit.get('assigned_to')}")
+    
+    subscriber_id = data.get('subscriber_id')
+    if not subscriber_id:
+        raise HTTPException(status_code=400, detail="Subscriber ID required")
+    
+    await db.inventory_units.update_one(
+        {"unit_id": unit_id},
+        {"$set": {
+            "status": "assigned",
+            "assigned_to": subscriber_id,
+            "assigned_date": datetime.now(timezone.utc)
+        }}
+    )
+    
+    return {"message": f"Unit assigned to {subscriber_id}"}
+
+@api_router.post("/inventory/units/{unit_id}/return")
+async def return_unit_from_subscriber(unit_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """Return a unit from a subscriber"""
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    unit = await db.inventory_units.find_one({"unit_id": unit_id})
+    if not unit:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    
+    new_status = data.get('status', 'available')  # available or defective
+    
+    await db.inventory_units.update_one(
+        {"unit_id": unit_id},
+        {"$set": {
+            "status": new_status,
+            "assigned_to": None,
+            "assigned_date": None,
+            "notes": data.get('notes', '')
+        }}
+    )
+    
+    return {"message": f"Unit returned and marked as {new_status}"}
+
+@api_router.delete("/inventory/units/{unit_id}")
+async def delete_inventory_unit(unit_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete an individual unit from inventory"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    unit = await db.inventory_units.find_one({"unit_id": unit_id})
+    if not unit:
+        raise HTTPException(status_code=404, detail="Unit not found")
+    
+    if unit.get('status') == 'assigned':
+        raise HTTPException(status_code=400, detail="Cannot delete assigned unit. Return it first.")
+    
+    # Delete the unit
+    await db.inventory_units.delete_one({"unit_id": unit_id})
+    
+    # Update parent inventory count
+    await db.inventory.update_one(
+        {"item_code": unit['item_code']},
+        {"$inc": {"quantity": -1}, "$set": {"updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    return {"message": "Unit deleted from inventory"}
+
+@api_router.get("/inventory/units/search")
+async def search_inventory_units(
+    q: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Search units by MAC address or serial number"""
+    query = {
+        "$or": [
+            {"mac_address": {"$regex": q, "$options": "i"}},
+            {"serial_number": {"$regex": q, "$options": "i"}}
+        ]
+    }
+    units = await db.inventory_units.find(query, {"_id": 0}).to_list(50)
+    
+    # Enrich with item details
+    for unit in units:
+        item = await db.inventory.find_one({"item_code": unit['item_code']}, {"_id": 0, "name": 1, "category": 1})
+        if item:
+            unit['item_name'] = item.get('name')
+            unit['item_category'] = item.get('category')
+    
+    return units
+
 # ========== EXPENSES ==========
 @api_router.get("/expenses")
 async def list_expenses(current_user: dict = Depends(get_current_user)):
