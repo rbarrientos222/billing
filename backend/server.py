@@ -369,6 +369,15 @@ def generate_account_number() -> str:
 def generate_invoice_number() -> str:
     return f"INV{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
 
+def generate_purchase_id() -> str:
+    return f"PO{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
+
+def generate_supplier_id() -> str:
+    return f"SUP{str(uuid.uuid4())[:8].upper()}"
+
+def generate_payment_id() -> str:
+    return f"PAY{str(uuid.uuid4())[:8].upper()}"
+
 def get_billing_period_description(billing_day: int, reference_date: datetime = None) -> dict:
     """
     Generate billing period description based on billing day (1-31).
