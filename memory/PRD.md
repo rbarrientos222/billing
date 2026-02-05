@@ -126,6 +126,13 @@ Build a billing system with the following features:
     - Assign/Available/Defective status badges
     - Add new units with MAC/Serial
     - Delete available units
+- [x] **Equipment Assignment Integration** (NEW - Feb 5, 2026)
+  - MAC address search field in subscriber registration form
+  - Search dropdown showing available inventory units
+  - Auto-populate MAC on selection with item details
+  - Selected equipment info card with "Remove" option
+  - **Assigned Equipment** section in View Records dialog
+  - Equipment display with MAC, Serial, Item name, status badge, date
 
 ---
 
