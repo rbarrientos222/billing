@@ -2741,6 +2741,333 @@ async def search_inventory_units(
     
     return units
 
+# ========== SUPPLIERS ==========
+@api_router.get("/suppliers")
+async def list_suppliers(current_user: dict = Depends(get_current_user)):
+    """List all suppliers"""
+    suppliers = await db.suppliers.find({}, {"_id": 0}).to_list(1000)
+    return suppliers
+
+@api_router.get("/suppliers/{supplier_id}")
+async def get_supplier(supplier_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a single supplier"""
+    supplier = await db.suppliers.find_one({"supplier_id": supplier_id}, {"_id": 0})
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    return supplier
+
+@api_router.post("/suppliers")
+async def create_supplier(supplier: Supplier, current_user: dict = Depends(get_current_user)):
+    """Create a new supplier"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    supplier_dict = supplier.model_dump()
+    supplier_dict['supplier_id'] = generate_supplier_id()
+    supplier_dict['created_at'] = datetime.now(timezone.utc)
+    
+    await db.suppliers.insert_one(supplier_dict)
+    return {"message": "Supplier created", "supplier_id": supplier_dict['supplier_id']}
+
+@api_router.put("/suppliers/{supplier_id}")
+async def update_supplier(supplier_id: str, updates: dict, current_user: dict = Depends(get_current_user)):
+    """Update a supplier"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    existing = await db.suppliers.find_one({"supplier_id": supplier_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    
+    updates.pop('supplier_id', None)
+    updates.pop('created_at', None)
+    
+    await db.suppliers.update_one({"supplier_id": supplier_id}, {"$set": updates})
+    return {"message": "Supplier updated"}
+
+@api_router.delete("/suppliers/{supplier_id}")
+async def delete_supplier(supplier_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a supplier"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    result = await db.suppliers.delete_one({"supplier_id": supplier_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    return {"message": "Supplier deleted"}
+
+# ========== PURCHASES ==========
+@api_router.get("/purchases")
+async def list_purchases(
+    current_user: dict = Depends(get_current_user),
+    status: Optional[str] = None,
+    supplier_id: Optional[str] = None
+):
+    """List all purchases with optional filters"""
+    query = {}
+    if status:
+        query["payment_status"] = status
+    if supplier_id:
+        query["supplier_id"] = supplier_id
+    
+    purchases = await db.purchases.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return purchases
+
+@api_router.get("/purchases/stats")
+async def get_purchase_stats(current_user: dict = Depends(get_current_user)):
+    """Get purchase statistics"""
+    total_purchases = await db.purchases.count_documents({})
+    
+    # Total spent
+    pipeline = [{"$group": {"_id": None, "total": {"$sum": "$total_amount"}}}]
+    result = await db.purchases.aggregate(pipeline).to_list(1)
+    total_spent = result[0]['total'] if result else 0
+    
+    # Unpaid amount
+    pipeline = [
+        {"$match": {"payment_status": {"$ne": "paid"}}},
+        {"$group": {"_id": None, "total": {"$sum": {"$subtract": ["$total_amount", "$amount_paid"]}}}}
+    ]
+    result = await db.purchases.aggregate(pipeline).to_list(1)
+    unpaid_amount = result[0]['total'] if result else 0
+    
+    # This month's purchases
+    start_of_month = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    pipeline = [
+        {"$match": {"purchase_date": {"$gte": start_of_month}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total_amount"}, "count": {"$sum": 1}}}
+    ]
+    result = await db.purchases.aggregate(pipeline).to_list(1)
+    monthly_total = result[0]['total'] if result else 0
+    monthly_count = result[0]['count'] if result else 0
+    
+    return {
+        "total_purchases": total_purchases,
+        "total_spent": total_spent,
+        "unpaid_amount": unpaid_amount,
+        "monthly_total": monthly_total,
+        "monthly_count": monthly_count
+    }
+
+@api_router.get("/purchases/{purchase_id}")
+async def get_purchase(purchase_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a single purchase with full details"""
+    purchase = await db.purchases.find_one({"purchase_id": purchase_id}, {"_id": 0})
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+    
+    # Get supplier details if supplier_id exists
+    if purchase.get('supplier_id'):
+        supplier = await db.suppliers.find_one({"supplier_id": purchase['supplier_id']}, {"_id": 0})
+        purchase['supplier'] = supplier
+    
+    return purchase
+
+@api_router.post("/purchases")
+async def create_purchase(purchase: Purchase, current_user: dict = Depends(get_current_user)):
+    """Create a new purchase and update inventory"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    purchase_dict = purchase.model_dump()
+    purchase_dict['purchase_id'] = generate_purchase_id()
+    purchase_dict['created_by'] = current_user['sub']
+    purchase_dict['created_at'] = datetime.now(timezone.utc)
+    
+    # Calculate totals
+    subtotal = 0
+    items_processed = []
+    
+    for item in purchase_dict['items']:
+        item['total_cost'] = item['quantity'] * item['unit_cost']
+        subtotal += item['total_cost']
+        
+        # Create or update inventory item
+        if item.get('is_new_item') or not item.get('item_code'):
+            # Create new inventory item
+            new_item_code = generate_item_code()
+            inventory_item = {
+                "item_code": new_item_code,
+                "name": item['name'],
+                "category": item.get('category', 'Equipment'),
+                "description": f"Added via purchase {purchase_dict['purchase_id']}",
+                "quantity": item['quantity'],
+                "unit": item.get('unit', 'pcs'),
+                "cost_per_unit": item['unit_cost'],
+                "restock_level": 0,
+                "is_serialized": item.get('is_serialized', False),
+                "is_bulk": item.get('is_bulk', False),
+                "total_length": item['quantity'] if item.get('is_bulk') else None,
+                "supplier": purchase_dict.get('supplier_name', ''),
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc)
+            }
+            await db.inventory.insert_one(inventory_item)
+            item['item_code'] = new_item_code
+            logger.info(f"Created new inventory item {new_item_code} from purchase")
+        else:
+            # Update existing inventory item quantity
+            existing_item = await db.inventory.find_one({"item_code": item['item_code']})
+            if existing_item:
+                if existing_item.get('is_bulk'):
+                    # For bulk items, add to total_length
+                    await db.inventory.update_one(
+                        {"item_code": item['item_code']},
+                        {
+                            "$inc": {"quantity": item['quantity'], "total_length": item['quantity']},
+                            "$set": {"updated_at": datetime.now(timezone.utc)}
+                        }
+                    )
+                else:
+                    # For regular items, just add quantity
+                    await db.inventory.update_one(
+                        {"item_code": item['item_code']},
+                        {
+                            "$inc": {"quantity": item['quantity']},
+                            "$set": {"updated_at": datetime.now(timezone.utc)}
+                        }
+                    )
+                
+                # Log inventory adjustment
+                log_entry = {
+                    "item_code": item['item_code'],
+                    "adjustment_type": "purchase",
+                    "quantity_change": item['quantity'],
+                    "previous_quantity": existing_item.get('quantity', 0),
+                    "new_quantity": existing_item.get('quantity', 0) + item['quantity'],
+                    "reason": f"Purchase {purchase_dict['purchase_id']}",
+                    "reference_id": purchase_dict['purchase_id'],
+                    "performed_by": current_user['sub'],
+                    "created_at": datetime.now(timezone.utc)
+                }
+                await db.inventory_logs.insert_one(log_entry)
+        
+        items_processed.append(item)
+    
+    purchase_dict['items'] = items_processed
+    purchase_dict['subtotal'] = subtotal
+    purchase_dict['total_amount'] = subtotal  # Can add tax/shipping later
+    
+    # Handle initial payment if any
+    if purchase_dict.get('payments') and len(purchase_dict['payments']) > 0:
+        total_paid = sum(p.get('amount', 0) for p in purchase_dict['payments'])
+        purchase_dict['amount_paid'] = total_paid
+        for payment in purchase_dict['payments']:
+            payment['payment_id'] = generate_payment_id()
+        
+        if total_paid >= purchase_dict['total_amount']:
+            purchase_dict['payment_status'] = 'paid'
+        elif total_paid > 0:
+            purchase_dict['payment_status'] = 'partial'
+    
+    # Save purchase
+    await db.purchases.insert_one(purchase_dict)
+    
+    # Create expense entry
+    expense_entry = {
+        "category": "Inventory Purchase",
+        "description": f"Purchase from {purchase_dict.get('supplier_name', 'Supplier')} - {len(items_processed)} item(s)",
+        "amount": purchase_dict['total_amount'],
+        "is_recurring": False,
+        "reference_type": "purchase",
+        "reference_id": purchase_dict['purchase_id'],
+        "expense_date": purchase_dict['purchase_date']
+    }
+    await db.expenses.insert_one(expense_entry)
+    logger.info(f"Created expense entry for purchase {purchase_dict['purchase_id']}")
+    
+    return {
+        "message": "Purchase created successfully",
+        "purchase_id": purchase_dict['purchase_id'],
+        "total_amount": purchase_dict['total_amount'],
+        "items_added": len(items_processed),
+        "expense_created": True
+    }
+
+@api_router.post("/purchases/{purchase_id}/payment")
+async def add_purchase_payment(purchase_id: str, payment: PurchasePayment, current_user: dict = Depends(get_current_user)):
+    """Add a payment to a purchase"""
+    if current_user['role'] not in ['admin', 'billing', 'cashier']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    purchase = await db.purchases.find_one({"purchase_id": purchase_id})
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+    
+    if purchase.get('payment_status') == 'paid':
+        raise HTTPException(status_code=400, detail="Purchase is already fully paid")
+    
+    payment_dict = payment.model_dump()
+    payment_dict['payment_id'] = generate_payment_id()
+    payment_dict['payment_date'] = datetime.now(timezone.utc)
+    
+    # Calculate new totals
+    new_amount_paid = purchase.get('amount_paid', 0) + payment_dict['amount']
+    remaining = purchase['total_amount'] - new_amount_paid
+    
+    if remaining <= 0:
+        new_status = 'paid'
+    elif new_amount_paid > 0:
+        new_status = 'partial'
+    else:
+        new_status = 'unpaid'
+    
+    await db.purchases.update_one(
+        {"purchase_id": purchase_id},
+        {
+            "$push": {"payments": payment_dict},
+            "$set": {
+                "amount_paid": new_amount_paid,
+                "payment_status": new_status
+            }
+        }
+    )
+    
+    return {
+        "message": "Payment added",
+        "payment_id": payment_dict['payment_id'],
+        "amount_paid": new_amount_paid,
+        "remaining": max(0, remaining),
+        "status": new_status
+    }
+
+@api_router.put("/purchases/{purchase_id}")
+async def update_purchase(purchase_id: str, updates: dict, current_user: dict = Depends(get_current_user)):
+    """Update a purchase (limited fields)"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    existing = await db.purchases.find_one({"purchase_id": purchase_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+    
+    # Only allow updating certain fields
+    allowed_fields = ['notes', 'delivery_date', 'invoice_number', 'supplier_name']
+    filtered_updates = {k: v for k, v in updates.items() if k in allowed_fields}
+    
+    if filtered_updates:
+        await db.purchases.update_one({"purchase_id": purchase_id}, {"$set": filtered_updates})
+    
+    return {"message": "Purchase updated"}
+
+@api_router.delete("/purchases/{purchase_id}")
+async def delete_purchase(purchase_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a purchase (admin only, should be used carefully)"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    purchase = await db.purchases.find_one({"purchase_id": purchase_id})
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+    
+    # Note: This does NOT reverse inventory changes - that would need separate logic
+    await db.purchases.delete_one({"purchase_id": purchase_id})
+    
+    # Also delete associated expense
+    await db.expenses.delete_one({"reference_id": purchase_id, "reference_type": "purchase"})
+    
+    return {"message": "Purchase deleted"}
+
 # ========== EXPENSES ==========
 @api_router.get("/expenses")
 async def list_expenses(current_user: dict = Depends(get_current_user)):
