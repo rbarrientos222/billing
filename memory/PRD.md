@@ -150,6 +150,7 @@ Build a billing system with the following features:
 - [x] **Purchasing Module UI** (NEW - Feb 5, 2026)
   - Stats cards (Total Spent, This Month, Unpaid, Suppliers)
   - Purchase orders list with search and status filter
+  - **Table Pagination** (10/20/50/100 per page) - NEW Feb 2026
   - Status badges (Unpaid red, Partial amber, Paid green)
   - Add Supplier dialog (name, contact, phone, email, address)
   - New Purchase dialog with:
@@ -161,6 +162,13 @@ Build a billing system with the following features:
     - Real-time total calculation
   - View Purchase dialog with item details and payment summary
   - Add Payment dialog with amount, mode, reference
+
+- [x] **UI/UX Improvements** (NEW - Feb 2026)
+  - Reusable TablePagination component with page size selector (10/20/50/100)
+  - First/Prev/Next/Last navigation buttons
+  - Current page and total pages indicator ("Page X of Y")
+  - Total items display ("Showing X-Y of Z")
+  - Reset to page 1 on search/filter changes
 
 ---
 
