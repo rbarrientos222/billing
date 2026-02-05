@@ -2913,7 +2913,17 @@ async def create_purchase(purchase: Purchase, current_user: dict = Depends(get_c
             # Update existing inventory item quantity
             existing_item = await db.inventory.find_one({"item_code": item['item_code']})
             if existing_item:
-                if existing_item.get('is_bulk'):
+                if existing_item.get('is_serialized'):
+                    # For serialized items, don't auto-increment quantity
+                    # Instead, track pending units to be added with serial numbers
+                    await db.inventory.update_one(
+                        {"item_code": item['item_code']},
+                        {
+                            "$inc": {"pending_units": item['quantity']},
+                            "$set": {"updated_at": datetime.now(timezone.utc)}
+                        }
+                    )
+                elif existing_item.get('is_bulk'):
                     # For bulk items, add to total_length
                     await db.inventory.update_one(
                         {"item_code": item['item_code']},
@@ -2938,7 +2948,7 @@ async def create_purchase(purchase: Purchase, current_user: dict = Depends(get_c
                     "adjustment_type": "purchase",
                     "quantity_change": item['quantity'],
                     "previous_quantity": existing_item.get('quantity', 0),
-                    "new_quantity": existing_item.get('quantity', 0) + item['quantity'],
+                    "new_quantity": existing_item.get('quantity', 0) + (0 if existing_item.get('is_serialized') else item['quantity']),
                     "reason": f"Purchase {purchase_dict['purchase_id']}",
                     "reference_id": purchase_dict['purchase_id'],
                     "performed_by": current_user['username'],
