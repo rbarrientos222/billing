@@ -1295,6 +1295,9 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
         "prorated_bill_generated": subscriber.generate_prorated_bill
     }
     
+    if assigned_equipment:
+        response_data["assigned_equipment"] = assigned_equipment
+    
     if prorated_invoice:
         response_data["prorated_invoice"] = {
             "invoice_number": prorated_invoice["invoice_number"],
