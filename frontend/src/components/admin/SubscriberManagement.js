@@ -964,14 +964,14 @@ export default function SubscriberManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredSubscribers.length === 0 ? (
+                  {paginatedSubscribers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                         No subscribers found
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredSubscribers.map((sub) => (
+                    paginatedSubscribers.map((sub) => (
                       <TableRow key={sub.account_number}>
                         <TableCell>
                           <input
