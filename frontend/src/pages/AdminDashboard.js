@@ -385,7 +385,11 @@ export default function AdminDashboard({ user, onLogout }) {
             <Route path="/mikrotik" element={<MikrotikManagement />} />
             <Route path="/plans" element={<SubscriptionPlans />} />
             <Route path="/inventory" element={<InventoryManagement />} />
-            <Route path="/purchasing" element={<PurchasingModule />} />
+            <Route path="/purchasing" element={
+              <React.Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <PurchasingModule />
+              </React.Suspense>
+            } />
             <Route path="/expenses" element={<ExpenseManagement />} />
             <Route path="/settings" element={<CompanySettings />} />
           </Routes>
