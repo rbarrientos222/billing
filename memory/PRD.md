@@ -145,6 +145,20 @@ Build a billing system with the following features:
   - Selected equipment info card with "Remove" option
   - **Assigned Equipment** section in View Records dialog
   - Equipment display with MAC, Serial, Item name, status badge, date
+- [x] **Purchasing Module UI** (NEW - Feb 5, 2026)
+  - Stats cards (Total Spent, This Month, Unpaid, Suppliers)
+  - Purchase orders list with search and status filter
+  - Status badges (Unpaid red, Partial amber, Paid green)
+  - Add Supplier dialog (name, contact, phone, email, address)
+  - New Purchase dialog with:
+    - Supplier selection or manual entry
+    - PO number, invoice number, dates
+    - Add multiple items (new or existing inventory)
+    - Item options: category, quantity, unit, cost
+    - New item options: MAC/Serial tracking, length tracking
+    - Real-time total calculation
+  - View Purchase dialog with item details and payment summary
+  - Add Payment dialog with amount, mode, reference
 
 ---
 
