@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,9 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TablePagination, useTablePagination } from '@/components/ui/table-pagination';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw, Wifi, Package } from 'lucide-react';
+import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw, Wifi, Package, FileText, Receipt, ChevronDown } from 'lucide-react';
 
 export default function SubscriberManagement() {
   const [subscribers, setSubscribers] = useState([]);
