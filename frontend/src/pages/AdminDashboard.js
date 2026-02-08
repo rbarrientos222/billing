@@ -28,21 +28,36 @@ import BillingCalendar from '@/components/admin/BillingCalendar';
 export default function AdminDashboard({ user, onLogout }) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [stats, setStats] = useState({});
   const [mikrotikStats, setMikrotikStats] = useState(null);
   const [monthlySales, setMonthlySales] = useState([]);
 
   const navigation = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-    { name: 'Users', path: '/admin/users', icon: Users },
     { name: 'Subscribers', path: '/admin/subscribers', icon: UserCircle },
-    { name: 'Plans', path: '/admin/plans', icon: CreditCard },
+    { name: 'Job Orders', path: '/admin/joborders', icon: ClipboardList },
     { name: 'Mikrotik', path: '/admin/mikrotik', icon: Wifi },
     { name: 'Purchasing', path: '/admin/purchasing', icon: ShoppingCart },
     { name: 'Inventory', path: '/admin/inventory', icon: Package },
     { name: 'Expenses', path: '/admin/expenses', icon: DollarSign },
-    { name: 'Settings', path: '/admin/settings', icon: Settings },
   ];
+
+  const settingsSubMenu = [
+    { name: 'Users', path: '/admin/settings/users', icon: Users },
+    { name: 'Plans', path: '/admin/settings/plans', icon: CreditCard },
+    { name: 'Rebates', path: '/admin/settings/rebates', icon: Percent },
+    { name: 'Printer Setup', path: '/admin/settings/printer', icon: Printer },
+    { name: 'SOA Setup', path: '/admin/settings/soa', icon: FileSpreadsheet },
+    { name: 'Company', path: '/admin/settings/company', icon: Settings },
+  ];
+
+  // Open settings sub-menu if on a settings page
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin/settings')) {
+      setSettingsOpen(true);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     fetchDashboardStats();
