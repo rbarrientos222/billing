@@ -3053,11 +3053,23 @@ async def list_inventory(current_user: dict = Depends(get_current_user)):
     """List all inventory items with low stock alerts"""
     items = await db.inventory.find({}, {"_id": 0}).to_list(1000)
     
-    # Add low stock flag
+    # Add low stock flag and available count for serialized items
     for item in items:
         item['low_stock'] = item.get('quantity', 0) <= item.get('restock_level', 0) and item.get('restock_level', 0) > 0
         # Calculate total value
         item['total_value'] = round(item.get('quantity', 0) * item.get('cost_per_unit', 0), 2)
+        
+        # For serialized items, count available units
+        if item.get('is_serialized'):
+            available_count = await db.inventory_units.count_documents({
+                "item_code": item['item_code'],
+                "status": "available"
+            })
+            total_units = await db.inventory_units.count_documents({
+                "item_code": item['item_code']
+            })
+            item['available_units'] = available_count
+            item['total_units'] = total_units
     
     return items
 
