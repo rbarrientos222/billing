@@ -2661,6 +2661,10 @@ async def create_job_order(job_data: JobOrderCreate, current_user: dict = Depend
         "sla_breached": False
     }
     
+    # Add new address for relocation jobs
+    if job_data.type == "Relocation" and job_data.new_address:
+        job_order["new_address"] = job_data.new_address.model_dump()
+    
     await db.job_orders.insert_one(job_order)
     del job_order["_id"]
     
