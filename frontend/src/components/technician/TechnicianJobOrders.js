@@ -710,7 +710,7 @@ export default function TechnicianJobOrders({ user }) {
 
       {/* Complete Job Dialog */}
       <Dialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Complete Job Order</DialogTitle>
             <DialogDescription>
@@ -724,6 +724,97 @@ export default function TechnicianJobOrders({ user }) {
               <p className="text-sm mt-1"><strong>Description:</strong> {selectedJobOrder?.description}</p>
             </div>
             
+            {/* Relocation - Show new address */}
+            {selectedJobOrder?.type === 'Relocation' && selectedJobOrder?.new_address && (
+              <div className="p-4 border border-amber-200 bg-amber-50 rounded-lg">
+                <Label className="text-amber-700 font-medium">New Address (will be updated)</Label>
+                <p className="text-sm mt-1">
+                  {selectedJobOrder.new_address.street}, {selectedJobOrder.new_address.barangay}, {selectedJobOrder.new_address.municipality}, {selectedJobOrder.new_address.province}
+                </p>
+              </div>
+            )}
+            
+            {/* Pull Out Modem - Select equipment to return */}
+            {selectedJobOrder?.type === 'Pull Out Modem' && (
+              <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg space-y-3">
+                <Label className="text-blue-700 font-medium">Select Equipment to Pull Out</Label>
+                <Select value={selectedEquipmentId} onValueChange={setSelectedEquipmentId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select equipment to return" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subscriberEquipment.length === 0 ? (
+                      <SelectItem value="none" disabled>No equipment found</SelectItem>
+                    ) : (
+                      subscriberEquipment.map(equip => (
+                        <SelectItem key={equip.unit_id} value={equip.unit_id}>
+                          {equip.item_name} - {equip.mac_address || equip.serial_number}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-blue-600">Equipment will be returned to inventory as available.</p>
+              </div>
+            )}
+            
+            {/* Replace Modem - Select old (defective) and new equipment */}
+            {selectedJobOrder?.type === 'Replace Modem' && (
+              <div className="p-4 border border-red-200 bg-red-50 rounded-lg space-y-4">
+                <div>
+                  <Label className="text-red-700 font-medium">Select Defective Equipment</Label>
+                  <Select value={selectedEquipmentId} onValueChange={setSelectedEquipmentId}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select defective equipment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subscriberEquipment.length === 0 ? (
+                        <SelectItem value="none" disabled>No equipment found</SelectItem>
+                      ) : (
+                        subscriberEquipment.map(equip => (
+                          <SelectItem key={equip.unit_id} value={equip.unit_id}>
+                            {equip.item_name} - {equip.mac_address || equip.serial_number}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2 mt-2">
+                    <input 
+                      type="checkbox" 
+                      id="mark-defective"
+                      checked={markDefective}
+                      onChange={(e) => setMarkDefective(e.target.checked)}
+                      className="rounded"
+                    />
+                    <Label htmlFor="mark-defective" className="text-xs text-red-600 cursor-pointer">
+                      Mark as defective (will not be available in inventory)
+                    </Label>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-green-700 font-medium">Select New Replacement Equipment</Label>
+                  <Select value={newEquipmentId} onValueChange={setNewEquipmentId}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select new equipment to assign" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableUnits.length === 0 ? (
+                        <SelectItem value="none" disabled>No available units</SelectItem>
+                      ) : (
+                        availableUnits.map(unit => (
+                          <SelectItem key={unit.unit_id} value={unit.unit_id}>
+                            {unit.item_name} - {unit.mac_address || unit.serial_number}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            
             <div>
               <Label htmlFor="completion-remarks">Completion Remarks / Notes</Label>
               <Textarea
@@ -731,7 +822,7 @@ export default function TechnicianJobOrders({ user }) {
                 placeholder="Enter any remarks or notes about the completed work..."
                 value={completionRemarks}
                 onChange={(e) => setCompletionRemarks(e.target.value)}
-                rows={4}
+                rows={3}
                 className="mt-2"
               />
               <p className="text-xs text-muted-foreground mt-1">Optional: Add details about what was done, issues encountered, etc.</p>
@@ -743,7 +834,10 @@ export default function TechnicianJobOrders({ user }) {
             <Button 
               className="bg-green-600 hover:bg-green-700" 
               onClick={() => handleCompleteJob(selectedJobOrder?.job_order_id)}
-              disabled={submitting}
+              disabled={submitting || 
+                (selectedJobOrder?.type === 'Pull Out Modem' && !selectedEquipmentId) ||
+                (selectedJobOrder?.type === 'Replace Modem' && (!selectedEquipmentId || !newEquipmentId))
+              }
             >
               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               <CheckCircle className="h-4 w-4 mr-2" />
