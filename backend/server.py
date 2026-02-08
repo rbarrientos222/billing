@@ -2495,6 +2495,9 @@ async def get_job_order_stats(current_user: dict = Depends(get_current_user)):
             if isinstance(created_at, str):
                 created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
             if created_at:
+                # Ensure created_at is timezone-aware
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=timezone.utc)
                 sla_hours = jo.get("sla_target_hours") or get_sla_hours(priority, sla_settings)
                 elapsed_hours = (now - created_at).total_seconds() / 3600
                 if elapsed_hours > sla_hours:
