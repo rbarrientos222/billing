@@ -267,6 +267,9 @@ class MaterialEntry(BaseModel):
     quantity: float
     unit_id: Optional[str] = None  # For serialized items
 
+class JobOrderComplete(BaseModel):
+    completion_remarks: Optional[str] = None
+
 class SLASettings(BaseModel):
     critical_hours: float = 2
     high_hours: float = 8
