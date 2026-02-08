@@ -1455,6 +1455,9 @@ async def get_subscriber(account_number: str, current_user: dict = Depends(get_c
 @api_router.get("/subscribers/{account_number}/equipment")
 async def get_subscriber_equipment(account_number: str, current_user: dict = Depends(get_current_user)):
     """Get all equipment assigned to a subscriber"""
+    equipment_list = []
+    
+    # Get equipment from inventory_units (assigned during registration)
     units = await db.inventory_units.find(
         {"assigned_to": account_number},
         {"_id": 0}
@@ -1469,8 +1472,22 @@ async def get_subscriber_equipment(account_number: str, current_user: dict = Dep
         if item:
             unit['item_name'] = item.get('name')
             unit['item_category'] = item.get('category')
+        unit['assigned_via'] = unit.get('assigned_via', 'registration')
+        equipment_list.append(unit)
     
-    return units
+    # Get equipment from subscriber_equipment (assigned via job orders)
+    job_order_equipment = await db.subscriber_equipment.find(
+        {"account_number": account_number},
+        {"_id": 0}
+    ).to_list(100)
+    
+    # Add job order equipment (avoid duplicates based on unit_id)
+    existing_unit_ids = {e.get('unit_id') for e in equipment_list if e.get('unit_id')}
+    for equip in job_order_equipment:
+        if equip.get('unit_id') not in existing_unit_ids:
+            equipment_list.append(equip)
+    
+    return equipment_list
 
 @api_router.get("/payments/today-stats")
 async def get_today_payment_stats(current_user: dict = Depends(get_current_user)):
