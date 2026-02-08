@@ -42,8 +42,10 @@ export default function TechnicianJobOrders({ user }) {
   
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
+  const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [selectedJobOrder, setSelectedJobOrder] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [completionRemarks, setCompletionRemarks] = useState('');
   
   // Material entry state
   const [selectedItem, setSelectedItem] = useState('');
