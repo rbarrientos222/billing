@@ -242,6 +242,12 @@ class JobOrder(BaseModel):
     sla_target_hours: Optional[float] = None  # SLA target in hours based on priority
     sla_breached: bool = False
 
+class NewAddress(BaseModel):
+    province: Optional[str] = None
+    municipality: Optional[str] = None
+    barangay: Optional[str] = None
+    street: Optional[str] = None
+
 class JobOrderCreate(BaseModel):
     subscriber_id: str
     type: str
@@ -251,6 +257,7 @@ class JobOrderCreate(BaseModel):
     scheduled_date: Optional[datetime] = None
     scheduled_time_slot: Optional[str] = None
     notes: Optional[str] = None
+    new_address: Optional[NewAddress] = None  # For relocation jobs
 
 class JobOrderUpdate(BaseModel):
     type: Optional[str] = None
@@ -269,6 +276,9 @@ class MaterialEntry(BaseModel):
 
 class JobOrderComplete(BaseModel):
     completion_remarks: Optional[str] = None
+    equipment_unit_id: Optional[str] = None  # For Pull Out Modem / Replace Modem
+    new_equipment_unit_id: Optional[str] = None  # For Replace Modem (new modem)
+    mark_defective: bool = False  # For Replace Modem (mark old as defective)
 
 class SLASettings(BaseModel):
     critical_hours: float = 2
