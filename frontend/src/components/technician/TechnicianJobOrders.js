@@ -118,11 +118,19 @@ export default function TechnicianJobOrders({ user }) {
   const handleCompleteJob = async (jobOrderId) => {
     setSubmitting(true);
     try {
-      const payload = completionRemarks ? { completion_remarks: completionRemarks } : {};
+      const payload = { 
+        completion_remarks: completionRemarks || null,
+        equipment_unit_id: selectedEquipmentId || null,
+        new_equipment_unit_id: newEquipmentId || null,
+        mark_defective: markDefective
+      };
       const response = await axios.post(`/joborders/${jobOrderId}/complete`, payload);
       toast.success(`Job completed! Time rendered: ${formatTime(response.data.time_rendered_minutes)}`);
       setCompleteDialogOpen(false);
       setCompletionRemarks('');
+      setSelectedEquipmentId('');
+      setNewEquipmentId('');
+      setMarkDefective(true);
       fetchData();
       setViewDialogOpen(false);
     } catch (error) {
@@ -132,9 +140,43 @@ export default function TechnicianJobOrders({ user }) {
     }
   };
 
-  const openCompleteDialog = (jo) => {
+  const openCompleteDialog = async (jo) => {
     setSelectedJobOrder(jo);
     setCompletionRemarks('');
+    setSelectedEquipmentId('');
+    setNewEquipmentId('');
+    setMarkDefective(true);
+    
+    // Fetch subscriber equipment for Pull Out / Replace Modem jobs
+    if (['Pull Out Modem', 'Replace Modem'].includes(jo.type)) {
+      try {
+        const equipRes = await axios.get(`/subscribers/${jo.subscriber_id}/equipment`);
+        setSubscriberEquipment(equipRes.data.filter(e => e.item_type === 'equipment' || e.mac_address || e.serial_number) || []);
+      } catch (error) {
+        setSubscriberEquipment([]);
+      }
+    }
+    
+    // Fetch available units for Replace Modem
+    if (jo.type === 'Replace Modem') {
+      try {
+        // Get all serialized inventory items and their available units
+        const invRes = await axios.get('/inventory');
+        const serializedItems = invRes.data.filter(i => i.is_serialized);
+        let allUnits = [];
+        for (const item of serializedItems) {
+          try {
+            const unitsRes = await axios.get(`/inventory/${item.item_code}/units`);
+            const available = unitsRes.data.filter(u => u.status === 'available').map(u => ({...u, item_name: item.name}));
+            allUnits = [...allUnits, ...available];
+          } catch (e) {}
+        }
+        setAvailableUnits(allUnits);
+      } catch (error) {
+        setAvailableUnits([]);
+      }
+    }
+    
     setCompleteDialogOpen(true);
   };
 
