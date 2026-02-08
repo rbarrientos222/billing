@@ -2458,6 +2458,9 @@ async def list_job_orders(
             if isinstance(created_at, str):
                 created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
             if created_at:
+                # Ensure created_at is timezone-aware
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=timezone.utc)
                 sla_hours = jo.get("sla_target_hours") or get_sla_hours(jo.get("priority", "Medium"), sla_settings)
                 elapsed_hours = (now - created_at).total_seconds() / 3600
                 jo["sla_breached"] = elapsed_hours > sla_hours
@@ -2543,6 +2546,9 @@ async def get_technician_job_orders(username: str, current_user: dict = Depends(
             if isinstance(created_at, str):
                 created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
             if created_at:
+                # Ensure created_at is timezone-aware
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=timezone.utc)
                 sla_hours = jo.get("sla_target_hours") or get_sla_hours(jo.get("priority", "Medium"), sla_settings)
                 elapsed_hours = (now - created_at).total_seconds() / 3600
                 jo["sla_breached"] = elapsed_hours > sla_hours
