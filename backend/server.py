@@ -2689,6 +2689,10 @@ async def complete_job_order(job_order_id: str, current_user: dict = Depends(get
     if isinstance(started_at, str):
         started_at = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
     
+    # Ensure started_at is timezone-aware
+    if started_at and started_at.tzinfo is None:
+        started_at = started_at.replace(tzinfo=timezone.utc)
+    
     time_rendered_minutes = int((completed_at - started_at).total_seconds() / 60) if started_at else 0
     
     await db.job_orders.update_one(
