@@ -292,20 +292,41 @@ export default function JobOrderManagement() {
               <DialogDescription>Create a new service request or installation job</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
-              <div>
+              <div className="relative">
                 <Label>Subscriber *</Label>
-                <Select value={formData.subscriber_id} onValueChange={(v) => setFormData({...formData, subscriber_id: v})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select subscriber" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {subscribers.map(sub => (
-                      <SelectItem key={sub.account_number} value={sub.account_number}>
-                        {sub.account_number} - {sub.first_name} {sub.last_name}
-                      </SelectItem>
+                <Input
+                  placeholder="Type to search subscriber (name or account number)..."
+                  value={subscriberSearch}
+                  onChange={(e) => {
+                    setSubscriberSearch(e.target.value);
+                    setShowSubscriberSuggestions(true);
+                    if (!e.target.value) {
+                      setFormData({...formData, subscriber_id: ''});
+                      setSelectedSubscriberInfo(null);
+                    }
+                  }}
+                  onFocus={() => setShowSubscriberSuggestions(true)}
+                />
+                {showSubscriberSuggestions && subscriberSuggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {subscriberSuggestions.map(sub => (
+                      <div
+                        key={sub.account_number}
+                        className="px-3 py-2 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                        onClick={() => selectSubscriber(sub)}
+                      >
+                        <p className="font-medium">{sub.first_name} {sub.last_name}</p>
+                        <p className="text-xs text-muted-foreground">{sub.account_number} • {sub.street}, {sub.barangay}</p>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                )}
+                {selectedSubscriberInfo && (
+                  <div className="mt-2 p-2 bg-green-50 rounded-md text-sm">
+                    <p className="font-medium text-green-700">{selectedSubscriberInfo.first_name} {selectedSubscriberInfo.last_name}</p>
+                    <p className="text-green-600 text-xs">{selectedSubscriberInfo.street}, {selectedSubscriberInfo.barangay}, {selectedSubscriberInfo.municipality}</p>
+                  </div>
+                )}
               </div>
               
               <div className="grid grid-cols-2 gap-4">
