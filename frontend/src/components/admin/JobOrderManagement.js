@@ -833,6 +833,16 @@ export default function JobOrderManagement() {
                   <p className="text-sm">{selectedJobOrder.notes}</p>
                 </div>
               )}
+              
+              {selectedJobOrder.completion_remarks && (
+                <div>
+                  <Label className="text-muted-foreground">Completion Remarks</Label>
+                  <p className="text-sm bg-green-50 p-3 rounded-lg border border-green-200">{selectedJobOrder.completion_remarks}</p>
+                  {selectedJobOrder.completed_by && (
+                    <p className="text-xs text-muted-foreground mt-1">Completed by: {selectedJobOrder.completed_by}</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
