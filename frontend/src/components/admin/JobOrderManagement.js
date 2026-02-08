@@ -24,6 +24,8 @@ const JOB_TYPES = [
   'Disconnection',
   'Reactivation',
   'Equipment Replacement',
+  'Replace Modem',
+  'Pull Out Modem',
   'Others'
 ];
 
