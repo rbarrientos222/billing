@@ -109,16 +109,26 @@ export default function TechnicianJobOrders({ user }) {
   };
 
   const handleCompleteJob = async (jobOrderId) => {
-    if (!window.confirm('Are you sure you want to mark this job as completed?')) return;
-    
+    setSubmitting(true);
     try {
-      const response = await axios.post(`/joborders/${jobOrderId}/complete`);
+      const payload = completionRemarks ? { completion_remarks: completionRemarks } : {};
+      const response = await axios.post(`/joborders/${jobOrderId}/complete`, payload);
       toast.success(`Job completed! Time rendered: ${formatTime(response.data.time_rendered_minutes)}`);
+      setCompleteDialogOpen(false);
+      setCompletionRemarks('');
       fetchData();
       setViewDialogOpen(false);
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to complete job order');
+    } finally {
+      setSubmitting(false);
     }
+  };
+
+  const openCompleteDialog = (jo) => {
+    setSelectedJobOrder(jo);
+    setCompletionRemarks('');
+    setCompleteDialogOpen(true);
   };
 
   const handlePutOnHold = async (jobOrderId) => {
