@@ -165,14 +165,28 @@ export default function JobOrderManagement() {
       assigned_technicians: [],
       scheduled_date: '',
       scheduled_time_slot: '',
-      notes: ''
+      notes: '',
+      new_address: {
+        province: '',
+        municipality: '',
+        barangay: '',
+        street: ''
+      }
     });
+    setSubscriberSearch('');
+    setSelectedSubscriberInfo(null);
   };
 
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!formData.subscriber_id || !formData.description) {
       toast.error('Please fill in required fields');
+      return;
+    }
+    
+    // Validate new address for relocation
+    if (formData.type === 'Relocation' && !formData.new_address?.street) {
+      toast.error('Please enter the new address for relocation');
       return;
     }
     
