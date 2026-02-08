@@ -1217,45 +1217,104 @@ export default function SubscriberManagement() {
               </div>
             </TabsContent>
 
-            {/* Equipment Tab */}
+            {/* Equipment & Materials Tab */}
             <TabsContent value="equipment" className="mt-4">
               {assignedEquipment.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-lg border border-dashed">
                   <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3 opacity-50" />
-                  <p className="text-muted-foreground">No equipment assigned to this subscriber</p>
+                  <p className="text-muted-foreground">No equipment or materials assigned to this subscriber</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {assignedEquipment.map((equipment) => (
-                    <div 
-                      key={equipment.unit_id} 
-                      className="p-4 bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
-                          <Wifi className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-purple-900 dark:text-purple-100 text-lg">
-                            {equipment.item_name || equipment.item_code}
-                          </p>
-                          <div className="flex items-center gap-4 text-sm text-purple-600 dark:text-purple-400 mt-1">
-                            {equipment.mac_address && <span>MAC: <span className="font-mono">{equipment.mac_address}</span></span>}
-                            {equipment.mac_address && equipment.serial_number && <span className="text-purple-300">|</span>}
-                            {equipment.serial_number && <span>S/N: <span className="font-mono">{equipment.serial_number}</span></span>}
+                  {/* Serialized Equipment */}
+                  {assignedEquipment.filter(e => e.item_type === 'equipment' || e.mac_address || e.serial_number || e.unit_id).length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                        <Wifi className="h-4 w-4" /> Equipment
+                      </p>
+                      <div className="space-y-2">
+                        {assignedEquipment
+                          .filter(e => e.item_type === 'equipment' || e.mac_address || e.serial_number || e.unit_id)
+                          .map((equipment, idx) => (
+                          <div 
+                            key={equipment.unit_id || idx} 
+                            className="p-4 bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 rounded-lg flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+                                <Wifi className="h-6 w-6 text-white" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-purple-900 dark:text-purple-100 text-lg">
+                                  {equipment.item_name || equipment.item_code}
+                                </p>
+                                <div className="flex items-center gap-4 text-sm text-purple-600 dark:text-purple-400 mt-1">
+                                  {equipment.mac_address && <span>MAC: <span className="font-mono">{equipment.mac_address}</span></span>}
+                                  {equipment.mac_address && equipment.serial_number && <span className="text-purple-300">|</span>}
+                                  {equipment.serial_number && <span>S/N: <span className="font-mono">{equipment.serial_number}</span></span>}
+                                </div>
+                                {equipment.assigned_via === 'job_order' && equipment.job_order_id && (
+                                  <p className="text-xs text-purple-500 mt-1">Job Order: {equipment.job_order_id}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <Badge className="bg-purple-600">
+                                {equipment.assigned_via === 'registration' ? 'Registration' : 'Job Order'}
+                              </Badge>
+                              {equipment.assigned_date && (
+                                <p className="text-xs text-muted-foreground mt-2">
+                                  {new Date(equipment.assigned_date).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge className="bg-purple-600">Assigned</Badge>
-                        {equipment.assigned_date && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {new Date(equipment.assigned_date).toLocaleDateString()}
-                          </p>
-                        )}
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Non-Serialized Materials */}
+                  {assignedEquipment.filter(e => e.item_type === 'material').length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                        <Package className="h-4 w-4" /> Materials Used
+                      </p>
+                      <div className="rounded-md border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Item</TableHead>
+                              <TableHead>Quantity</TableHead>
+                              <TableHead>Job Order</TableHead>
+                              <TableHead>Date</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {assignedEquipment
+                              .filter(e => e.item_type === 'material')
+                              .map((material, idx) => (
+                              <TableRow key={idx}>
+                                <TableCell className="font-medium">{material.item_name || material.item_code}</TableCell>
+                                <TableCell>{material.quantity} {material.unit}</TableCell>
+                                <TableCell>
+                                  <div>
+                                    <span className="font-mono text-xs">{material.job_order_id}</span>
+                                    {material.job_order_type && (
+                                      <p className="text-xs text-muted-foreground">{material.job_order_type}</p>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-xs">
+                                  {material.assigned_date ? new Date(material.assigned_date).toLocaleDateString() : '-'}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </TabsContent>
