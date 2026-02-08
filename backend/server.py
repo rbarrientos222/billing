@@ -2691,7 +2691,11 @@ async def start_job_order(job_order_id: str, current_user: dict = Depends(get_cu
     return {"message": "Job order started"}
 
 @api_router.post("/joborders/{job_order_id}/complete")
-async def complete_job_order(job_order_id: str, current_user: dict = Depends(get_current_user)):
+async def complete_job_order(
+    job_order_id: str, 
+    completion_data: Optional[JobOrderComplete] = None,
+    current_user: dict = Depends(get_current_user)
+):
     """Complete a job order (technician)"""
     if current_user['role'] not in ['admin', 'tech']:
         raise HTTPException(status_code=403, detail="Only admin or technician can complete job orders")
@@ -2715,12 +2719,23 @@ async def complete_job_order(job_order_id: str, current_user: dict = Depends(get
     
     time_rendered_minutes = int((completed_at - started_at).total_seconds() / 60) if started_at else 0
     
+    update_data = {
+        "status": "Completed",
+        "completed_at": completed_at,
+        "time_rendered_minutes": time_rendered_minutes,
+        "completed_by": current_user['username']
+    }
+    
+    # Add completion remarks if provided
+    if completion_data and completion_data.completion_remarks:
+        update_data["completion_remarks"] = completion_data.completion_remarks
+    
     await db.job_orders.update_one(
         {"job_order_id": job_order_id},
-        {"$set": {
-            "status": "Completed",
-            "completed_at": completed_at,
-            "time_rendered_minutes": time_rendered_minutes
+        {"$set": update_data}
+    )
+    
+    return {"message": "Job order completed", "time_rendered_minutes": time_rendered_minutes}
         }}
     )
     
