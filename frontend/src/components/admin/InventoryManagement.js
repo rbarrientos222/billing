@@ -685,10 +685,21 @@ export default function InventoryManagement() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <span className={`font-bold ${item.low_stock ? 'text-red-600' : ''}`}>
-                              {item.quantity?.toLocaleString()} {item.unit}
-                            </span>
-                            {item.restock_level > 0 && (
+                            {item.is_serialized ? (
+                              <div>
+                                <span className={`font-bold ${item.available_units === 0 ? 'text-red-600' : ''}`}>
+                                  {item.available_units ?? 0} / {item.total_units ?? item.quantity} {item.unit}
+                                </span>
+                                <p className="text-xs text-muted-foreground">
+                                  Available / Total
+                                </p>
+                              </div>
+                            ) : (
+                              <span className={`font-bold ${item.low_stock ? 'text-red-600' : ''}`}>
+                                {item.quantity?.toLocaleString()} {item.unit}
+                              </span>
+                            )}
+                            {!item.is_serialized && item.restock_level > 0 && (
                               <p className="text-xs text-muted-foreground">
                                 Min: {item.restock_level}
                               </p>
