@@ -348,6 +348,47 @@ export default function AdminDashboard({ user, onLogout }) {
                   </Link>
                 );
               })}
+              
+              {/* Settings with Sub-menu */}
+              <div>
+                <button
+                  onClick={() => setSettingsOpen(!settingsOpen)}
+                  className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    location.pathname.startsWith('/admin/settings')
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Settings className="h-5 w-5" />
+                    Settings
+                  </div>
+                  {settingsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                </button>
+                
+                {settingsOpen && (
+                  <div className="ml-4 mt-1 space-y-1 border-l-2 border-muted pl-3">
+                    {settingsSubMenu.map((item) => {
+                      const isActive = location.pathname === item.path;
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          data-testid={`nav-settings-${item.name.toLowerCase().replace(' ', '-')}`}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
+                            isActive
+                              ? 'bg-primary text-primary-foreground shadow-sm'
+                              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          }`}
+                        >
+                          <item.icon className="h-4 w-4" />
+                          {item.name}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </nav>
 
