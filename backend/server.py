@@ -1457,10 +1457,10 @@ async def get_subscriber(account_number: str, current_user: dict = Depends(get_c
 
 @api_router.get("/subscribers/{account_number}/equipment")
 async def get_subscriber_equipment(account_number: str, current_user: dict = Depends(get_current_user)):
-    """Get all equipment assigned to a subscriber"""
-    equipment_list = []
+    """Get all equipment and materials assigned to a subscriber"""
+    items_list = []
     
-    # Get equipment from inventory_units (assigned during registration)
+    # Get serialized equipment from inventory_units (assigned during registration)
     units = await db.inventory_units.find(
         {"assigned_to": account_number},
         {"_id": 0}
@@ -1476,21 +1476,50 @@ async def get_subscriber_equipment(account_number: str, current_user: dict = Dep
             unit['item_name'] = item.get('name')
             unit['item_category'] = item.get('category')
         unit['assigned_via'] = unit.get('assigned_via', 'registration')
-        equipment_list.append(unit)
+        unit['item_type'] = 'equipment'  # Serialized equipment
+        items_list.append(unit)
     
-    # Get equipment from subscriber_equipment (assigned via job orders)
+    # Get serialized equipment from subscriber_equipment (assigned via job orders)
     job_order_equipment = await db.subscriber_equipment.find(
         {"account_number": account_number},
         {"_id": 0}
     ).to_list(100)
     
     # Add job order equipment (avoid duplicates based on unit_id)
-    existing_unit_ids = {e.get('unit_id') for e in equipment_list if e.get('unit_id')}
+    existing_unit_ids = {e.get('unit_id') for e in items_list if e.get('unit_id')}
     for equip in job_order_equipment:
         if equip.get('unit_id') not in existing_unit_ids:
-            equipment_list.append(equip)
+            equip['item_type'] = 'equipment'
+            items_list.append(equip)
     
-    return equipment_list
+    # Get ALL materials used from job orders for this subscriber (including non-serialized)
+    job_orders = await db.job_orders.find(
+        {"subscriber_id": account_number, "materials_used": {"$exists": True, "$ne": []}},
+        {"_id": 0, "job_order_id": 1, "materials_used": 1, "type": 1, "completed_at": 1}
+    ).to_list(100)
+    
+    # Add non-serialized materials from job orders
+    for jo in job_orders:
+        for mat in jo.get('materials_used', []):
+            # Skip if it's a serialized item (already added above)
+            if mat.get('unit_id'):
+                continue
+            
+            material_entry = {
+                'item_code': mat.get('item_code'),
+                'item_name': mat.get('name'),
+                'quantity': mat.get('quantity'),
+                'unit': mat.get('unit'),
+                'item_type': 'material',  # Non-serialized material
+                'assigned_via': 'job_order',
+                'job_order_id': jo.get('job_order_id'),
+                'job_order_type': jo.get('type'),
+                'assigned_date': mat.get('added_at') or jo.get('completed_at'),
+                'added_by': mat.get('added_by')
+            }
+            items_list.append(material_entry)
+    
+    return items_list
 
 @api_router.get("/payments/today-stats")
 async def get_today_payment_stats(current_user: dict = Depends(get_current_user)):
