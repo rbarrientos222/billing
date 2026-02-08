@@ -221,15 +221,57 @@ class Payment(BaseModel):
     payment_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class JobOrder(BaseModel):
+    job_order_id: Optional[str] = None
+    subscriber_id: str
+    subscriber_name: Optional[str] = None
+    subscriber_address: Optional[str] = None
+    type: str  # Installation, Repair, Relocation, Disconnection, Reactivation, Equipment Replacement, Others
+    description: str
+    status: str = "Open"  # Open, In Progress, On Hold, Completed, Cancelled
+    priority: str = "Medium"  # Critical, High, Medium, Low
+    assigned_technicians: List[str] = []  # List of technician usernames
+    scheduled_date: Optional[datetime] = None
+    scheduled_time_slot: Optional[str] = None  # e.g., "09:00-12:00"
+    materials_used: List[Dict[str, Any]] = []  # [{item_code, name, quantity, unit, unit_id (if serialized)}]
+    notes: Optional[str] = None
+    created_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    time_rendered_minutes: Optional[int] = None
+    sla_target_hours: Optional[float] = None  # SLA target in hours based on priority
+    sla_breached: bool = False
+
+class JobOrderCreate(BaseModel):
     subscriber_id: str
     type: str
     description: str
-    status: str = "Open"
-    priority: str = "Normal"
-    assigned_to: Optional[str] = None
-    materials_used: List[Dict[str, Any]] = []
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    completed_at: Optional[datetime] = None
+    priority: str = "Medium"
+    assigned_technicians: List[str] = []
+    scheduled_date: Optional[datetime] = None
+    scheduled_time_slot: Optional[str] = None
+    notes: Optional[str] = None
+
+class JobOrderUpdate(BaseModel):
+    type: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    assigned_technicians: Optional[List[str]] = None
+    scheduled_date: Optional[datetime] = None
+    scheduled_time_slot: Optional[str] = None
+    notes: Optional[str] = None
+
+class MaterialEntry(BaseModel):
+    item_code: str
+    quantity: float
+    unit_id: Optional[str] = None  # For serialized items
+
+class SLASettings(BaseModel):
+    critical_hours: float = 2
+    high_hours: float = 8
+    medium_hours: float = 12
+    low_hours: float = 24
 
 class Inventory(BaseModel):
     item_code: Optional[str] = None
