@@ -385,7 +385,7 @@ export default function TechnicianJobOrders({ user }) {
                               <Package className="h-4 w-4 mr-1" />
                               Materials
                             </Button>
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleCompleteJob(jo.job_order_id)}>
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => openCompleteDialog(jo)}>
                               <CheckCircle className="h-4 w-4 mr-1" />
                               Complete
                             </Button>
