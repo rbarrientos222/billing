@@ -170,6 +170,40 @@ Build a billing system with the following features:
   - Total items display ("Showing X-Y of Z")
   - Reset to page 1 on search/filter changes
 
+- [x] **Admin Sidebar Reorganization** (NEW - Feb 2026)
+  - Job Orders menu item between Subscribers and Mikrotik
+  - Settings with expandable sub-menu containing:
+    - Users
+    - Plans
+    - Rebates (placeholder)
+    - Printer Setup (placeholder)
+    - SOA Setup (placeholder)
+    - Company
+
+- [x] **Job Order Management** (NEW - Feb 2026)
+  - Full CRUD for job orders
+  - Job types: Installation, Repair/Troubleshooting, Relocation, Disconnection, Reactivation, Equipment Replacement, Others
+  - Priority levels: Critical, High, Medium, Low
+  - SLA tracking with configurable target hours (Critical: 2h, High: 8h, Medium: 12h, Low: 24h)
+  - SLA breach detection and display
+  - Multiple technician assignment
+  - Scheduling with date and time slots
+  - Stats dashboard (Open, In Progress, On Hold, Completed, Cancelled, SLA Breached, Avg Time)
+
+- [x] **Technician Module** (NEW - Feb 2026)
+  - Technician login and role-based access
+  - Technician dashboard with personal job order stats
+  - My Job Orders page with assigned jobs only
+  - Job workflow: Start → In Progress → Complete
+  - Put on Hold / Resume functionality
+  - Material entry from inventory:
+    - Select items from inventory
+    - Select specific units for serialized items (MAC/Serial)
+    - Set quantity for non-serialized items
+    - Materials deducted from inventory automatically
+    - Materials added to subscriber equipment records
+  - Time tracking (started_at, completed_at, time_rendered_minutes)
+
 ---
 
 ## Pending Issues
@@ -184,16 +218,15 @@ Build a billing system with the following features:
 
 ## Upcoming Tasks (P0-P1)
 
-1. **Technician Module** - Login, dashboard, job order fulfillment with material entry from inventory
-2. **Subscriber Portal** - Login (account number) and dashboard for subscribers
-3. **Billing PDF/SOA Generation** - Generate PDF statements
-4. **Mikrotik Management Page** - UI for admin to configure Mikrotik credentials
+1. **Subscriber Portal** - Login (account number) and dashboard for subscribers
+2. **Billing PDF/SOA Generation** - Generate PDF statements
+3. **Mikrotik Management Page** - UI for admin to configure Mikrotik credentials
 
 ---
 
 ## Future/Backlog Tasks
 
-- Admin Settings (discounts, import/export)
+- Admin Settings (discounts/rebates configuration, import/export)
 - Company Setup page
 - Expenses module
 - Wallet Management UI (admin manual add/deduct credits)
@@ -202,7 +235,9 @@ Build a billing system with the following features:
 - Auto-email SOA
 - Automatic SMS triggers for billing events
 - Complete Philippine address data (municipalities/barangays)
-- Backend code refactoring (server.py is 3000+ lines - needs modularization)
+- Backend code refactoring (server.py is 3500+ lines - needs modularization)
+- Printer Setup configuration
+- SOA Template configuration
 
 ---
 
