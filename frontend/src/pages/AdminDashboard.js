@@ -438,10 +438,9 @@ export default function AdminDashboard({ user, onLogout }) {
         <main className="flex-1 overflow-y-auto p-8">
           <Routes>
             <Route path="/" element={<DashboardHome />} />
-            <Route path="/users" element={<UserManagement />} />
             <Route path="/subscribers" element={<SubscriberManagement />} />
+            <Route path="/joborders" element={<JobOrderManagement />} />
             <Route path="/mikrotik" element={<MikrotikManagement />} />
-            <Route path="/plans" element={<SubscriptionPlans />} />
             <Route path="/inventory" element={<InventoryManagement />} />
             <Route path="/purchasing" element={
               <React.Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
@@ -449,6 +448,16 @@ export default function AdminDashboard({ user, onLogout }) {
               </React.Suspense>
             } />
             <Route path="/expenses" element={<ExpenseManagement />} />
+            {/* Settings Sub-routes */}
+            <Route path="/settings/users" element={<UserManagement />} />
+            <Route path="/settings/plans" element={<SubscriptionPlans />} />
+            <Route path="/settings/rebates" element={<RebatesSettings />} />
+            <Route path="/settings/printer" element={<PrinterSettings />} />
+            <Route path="/settings/soa" element={<SOASettings />} />
+            <Route path="/settings/company" element={<CompanySettings />} />
+            {/* Legacy routes for backwards compatibility */}
+            <Route path="/users" element={<UserManagement />} />
+            <Route path="/plans" element={<SubscriptionPlans />} />
             <Route path="/settings" element={<CompanySettings />} />
           </Routes>
         </main>
