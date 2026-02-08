@@ -63,6 +63,11 @@ export default function JobOrderManagement() {
   const [selectedJobOrder, setSelectedJobOrder] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   
+  // Subscriber search autocomplete
+  const [subscriberSearch, setSubscriberSearch] = useState('');
+  const [showSubscriberSuggestions, setShowSubscriberSuggestions] = useState(false);
+  const [selectedSubscriberInfo, setSelectedSubscriberInfo] = useState(null);
+  
   const [formData, setFormData] = useState({
     subscriber_id: '',
     type: 'Installation',
@@ -71,7 +76,13 @@ export default function JobOrderManagement() {
     assigned_technicians: [],
     scheduled_date: '',
     scheduled_time_slot: '',
-    notes: ''
+    notes: '',
+    new_address: {
+      province: '',
+      municipality: '',
+      barangay: '',
+      street: ''
+    }
   });
 
   // Pagination
