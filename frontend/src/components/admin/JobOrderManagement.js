@@ -373,6 +373,47 @@ export default function JobOrderManagement() {
                 />
               </div>
               
+              {/* Relocation New Address */}
+              {formData.type === 'Relocation' && (
+                <div className="p-4 border border-amber-200 bg-amber-50 rounded-lg space-y-3">
+                  <Label className="text-amber-700 font-medium">New Address for Relocation *</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Province</Label>
+                      <Input
+                        placeholder="Province"
+                        value={formData.new_address?.province || ''}
+                        onChange={(e) => setFormData({...formData, new_address: {...formData.new_address, province: e.target.value}})}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Municipality</Label>
+                      <Input
+                        placeholder="Municipality"
+                        value={formData.new_address?.municipality || ''}
+                        onChange={(e) => setFormData({...formData, new_address: {...formData.new_address, municipality: e.target.value}})}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Barangay</Label>
+                      <Input
+                        placeholder="Barangay"
+                        value={formData.new_address?.barangay || ''}
+                        onChange={(e) => setFormData({...formData, new_address: {...formData.new_address, barangay: e.target.value}})}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Street / House No. *</Label>
+                      <Input
+                        placeholder="Street address"
+                        value={formData.new_address?.street || ''}
+                        onChange={(e) => setFormData({...formData, new_address: {...formData.new_address, street: e.target.value}})}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div>
                 <Label>Assign Technicians</Label>
                 <div className="flex flex-wrap gap-2 mt-2 p-3 border rounded-lg min-h-[60px]">
