@@ -180,15 +180,20 @@ Build a billing system with the following features:
     - SOA Setup (placeholder)
     - Company
 
-- [x] **Job Order Management** (NEW - Feb 2026)
+- [x] **Job Order Management** (NEW - Feb 8, 2026)
   - Full CRUD for job orders
-  - Job types: Installation, Repair/Troubleshooting, Relocation, Disconnection, Reactivation, Equipment Replacement, Others
+  - Job types: Installation, Repair/Troubleshooting, Relocation, Disconnection, Reactivation, Equipment Replacement, **Replace Modem**, **Pull Out Modem**, Others
   - Priority levels: Critical, High, Medium, Low
   - SLA tracking with configurable target hours (Critical: 2h, High: 8h, Medium: 12h, Low: 24h)
   - SLA breach detection and display
   - Multiple technician assignment
   - Scheduling with date and time slots
   - Stats dashboard (Open, In Progress, On Hold, Completed, Cancelled, SLA Breached, Avg Time)
+  - **Subscriber autocomplete search** (type to search by name/account number)
+  - **Relocation job type** - Captures new address, updates subscriber address on completion
+  - **Pull Out Modem** - Returns equipment to inventory as available
+  - **Replace Modem** - Marks old equipment as defective, assigns new equipment
+  - Completion remarks/notes for technicians
 
 - [x] **Technician Module** (NEW - Feb 2026)
   - Technician login and role-based access
@@ -203,6 +208,13 @@ Build a billing system with the following features:
     - Materials deducted from inventory automatically
     - Materials added to subscriber equipment records
   - Time tracking (started_at, completed_at, time_rendered_minutes)
+  - **Equipment selection for Pull Out / Replace Modem jobs**
+
+- [x] **Inventory Improvements** (Feb 8, 2026)
+  - **"Available / Total" display** for serialized items (e.g., "1 / 5 pcs")
+  - Clear distinction between available and assigned units
+  - Low stock alerts show available count for serialized items
+  - **Equipment & Materials tab** in subscriber records (shows both equipment and materials used from job orders)
 
 ---
 
