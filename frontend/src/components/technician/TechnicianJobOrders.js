@@ -658,6 +658,51 @@ export default function TechnicianJobOrders({ user }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Complete Job Dialog */}
+      <Dialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Complete Job Order</DialogTitle>
+            <DialogDescription>
+              {selectedJobOrder?.job_order_id} - {selectedJobOrder?.subscriber_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm"><strong>Type:</strong> {selectedJobOrder?.type}</p>
+              <p className="text-sm mt-1"><strong>Description:</strong> {selectedJobOrder?.description}</p>
+            </div>
+            
+            <div>
+              <Label htmlFor="completion-remarks">Completion Remarks / Notes</Label>
+              <Textarea
+                id="completion-remarks"
+                placeholder="Enter any remarks or notes about the completed work..."
+                value={completionRemarks}
+                onChange={(e) => setCompletionRemarks(e.target.value)}
+                rows={4}
+                className="mt-2"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Optional: Add details about what was done, issues encountered, etc.</p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCompleteDialogOpen(false)}>Cancel</Button>
+            <Button 
+              className="bg-green-600 hover:bg-green-700" 
+              onClick={() => handleCompleteJob(selectedJobOrder?.job_order_id)}
+              disabled={submitting}
+            >
+              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Complete Job
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
