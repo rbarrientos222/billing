@@ -137,6 +137,25 @@ export default function JobOrderManagement() {
     return filteredJobOrders.slice(start, start + pageSize);
   }, [filteredJobOrders, currentPage, pageSize]);
 
+  // Subscriber autocomplete suggestions
+  const subscriberSuggestions = useMemo(() => {
+    if (!subscriberSearch || subscriberSearch.length < 2) return [];
+    const search = subscriberSearch.toLowerCase();
+    return subscribers.filter(sub => 
+      sub.account_number?.toLowerCase().includes(search) ||
+      sub.first_name?.toLowerCase().includes(search) ||
+      sub.last_name?.toLowerCase().includes(search) ||
+      `${sub.first_name} ${sub.last_name}`.toLowerCase().includes(search)
+    ).slice(0, 10);
+  }, [subscribers, subscriberSearch]);
+
+  const selectSubscriber = (sub) => {
+    setFormData({...formData, subscriber_id: sub.account_number});
+    setSubscriberSearch(`${sub.account_number} - ${sub.first_name} ${sub.last_name}`);
+    setSelectedSubscriberInfo(sub);
+    setShowSubscriberSuggestions(false);
+  };
+
   const resetForm = () => {
     setFormData({
       subscriber_id: '',
