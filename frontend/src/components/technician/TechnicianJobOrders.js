@@ -47,6 +47,13 @@ export default function TechnicianJobOrders({ user }) {
   const [submitting, setSubmitting] = useState(false);
   const [completionRemarks, setCompletionRemarks] = useState('');
   
+  // Equipment selection for Pull Out / Replace Modem
+  const [subscriberEquipment, setSubscriberEquipment] = useState([]);
+  const [selectedEquipmentId, setSelectedEquipmentId] = useState('');
+  const [newEquipmentId, setNewEquipmentId] = useState('');
+  const [markDefective, setMarkDefective] = useState(true);
+  const [availableUnits, setAvailableUnits] = useState([]);
+  
   // Material entry state
   const [selectedItem, setSelectedItem] = useState('');
   const [selectedUnit, setSelectedUnit] = useState('');
