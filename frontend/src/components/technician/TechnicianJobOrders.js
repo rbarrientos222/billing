@@ -513,13 +513,20 @@ export default function TechnicianJobOrders({ user }) {
                 </div>
               )}
               
+              {selectedJobOrder.completion_remarks && (
+                <div>
+                  <Label className="text-muted-foreground">Completion Remarks</Label>
+                  <p className="text-sm bg-green-50 p-2 rounded">{selectedJobOrder.completion_remarks}</p>
+                </div>
+              )}
+              
               {selectedJobOrder.status === 'In Progress' && (
                 <div className="flex gap-2 pt-4 border-t">
                   <Button variant="outline" className="flex-1" onClick={() => openMaterialDialog(selectedJobOrder)}>
                     <Package className="h-4 w-4 mr-2" />
                     Add Materials
                   </Button>
-                  <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleCompleteJob(selectedJobOrder.job_order_id)}>
+                  <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => { setViewDialogOpen(false); openCompleteDialog(selectedJobOrder); }}>
                     <CheckCircle className="h-4 w-4 mr-2" />
                     Complete Job
                   </Button>
