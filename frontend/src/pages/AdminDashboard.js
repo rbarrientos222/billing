@@ -7,7 +7,8 @@ import { toast } from 'sonner';
 import { 
   LayoutDashboard, Users, UserCircle, Wifi, Settings, 
   Package, DollarSign, FileText, LogOut, Menu, X,
-  TrendingUp, TrendingDown, Activity, AlertCircle, CalendarDays, ShoppingCart, CreditCard
+  TrendingUp, TrendingDown, Activity, AlertCircle, CalendarDays, ShoppingCart, CreditCard,
+  ClipboardList, ChevronDown, ChevronRight, Percent, Printer, FileSpreadsheet
 } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -16,6 +17,7 @@ import UserManagement from '@/components/admin/UserManagement';
 import SubscriberManagement from '@/components/admin/SubscriberManagement';
 import MikrotikManagement from '@/components/admin/MikrotikManagement';
 import InventoryManagement from '@/components/admin/InventoryManagement';
+import JobOrderManagement from '@/components/admin/JobOrderManagement';
 // Lazy load PurchasingModule to avoid babel stack overflow
 const PurchasingModule = React.lazy(() => import('@/components/admin/PurchasingModule'));
 import ExpenseManagement from '@/components/admin/ExpenseManagement';
