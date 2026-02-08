@@ -589,7 +589,10 @@ export default function InventoryManagement() {
             <div className="flex flex-wrap gap-2">
               {lowStockItems.map(item => (
                 <Badge key={item.item_code} variant="destructive" className="text-sm py-1 px-3">
-                  {item.name}: {item.quantity} {item.unit} (min: {item.restock_level})
+                  {item.name}: {item.is_serialized 
+                    ? `${item.available_units ?? 0}/${item.total_units ?? item.quantity} available` 
+                    : `${item.quantity} ${item.unit}`} 
+                  {!item.is_serialized && `(min: ${item.restock_level})`}
                 </Badge>
               ))}
             </div>
