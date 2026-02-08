@@ -1126,7 +1126,7 @@ export default function SubscriberManagement() {
               </TabsTrigger>
               <TabsTrigger value="equipment" className="flex items-center gap-2" data-testid="tab-equipment">
                 <Package className="h-4 w-4" />
-                Equipment ({assignedEquipment.length})
+                Equipment & Materials ({assignedEquipment.length})
               </TabsTrigger>
             </TabsList>
 
