@@ -2416,31 +2416,448 @@ async def generate_receipt(or_number: str):
     })
 
 # ========== JOB ORDERS ==========
+def generate_job_order_id():
+    """Generate a unique job order ID"""
+    return f"JO{datetime.now().strftime('%Y%m%d')}{uuid.uuid4().hex[:6].upper()}"
+
+def get_sla_hours(priority: str, sla_settings: dict) -> float:
+    """Get SLA target hours based on priority"""
+    mapping = {
+        "Critical": sla_settings.get("critical_hours", 2),
+        "High": sla_settings.get("high_hours", 8),
+        "Medium": sla_settings.get("medium_hours", 12),
+        "Low": sla_settings.get("low_hours", 24)
+    }
+    return mapping.get(priority, 24)
+
 @api_router.get("/joborders")
-async def list_job_orders(current_user: dict = Depends(get_current_user)):
-    job_orders = await db.job_orders.find({}, {"_id": 0}).to_list(1000)
+async def list_job_orders(
+    status: Optional[str] = None,
+    priority: Optional[str] = None,
+    technician: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """List all job orders with optional filters"""
+    query = {}
+    if status:
+        query["status"] = status
+    if priority:
+        query["priority"] = priority
+    if technician:
+        query["assigned_technicians"] = technician
+    
+    job_orders = await db.job_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Check SLA breach for each job order
+    sla_settings = await db.settings.find_one({"type": "sla"}, {"_id": 0}) or {}
+    now = datetime.now(timezone.utc)
+    
+    for jo in job_orders:
+        if jo.get("status") not in ["Completed", "Cancelled"]:
+            created_at = jo.get("created_at")
+            if isinstance(created_at, str):
+                created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+            if created_at:
+                sla_hours = jo.get("sla_target_hours") or get_sla_hours(jo.get("priority", "Medium"), sla_settings)
+                elapsed_hours = (now - created_at).total_seconds() / 3600
+                jo["sla_breached"] = elapsed_hours > sla_hours
+                jo["elapsed_hours"] = round(elapsed_hours, 2)
+    
     return job_orders
 
-@api_router.post("/joborders")
-async def create_job_order(job: JobOrder, current_user: dict = Depends(get_current_user)):
-    await db.job_orders.insert_one(job.model_dump())
-    return {"message": "Job order created"}
+@api_router.get("/joborders/stats")
+async def get_job_order_stats(current_user: dict = Depends(get_current_user)):
+    """Get job order statistics for dashboard"""
+    job_orders = await db.job_orders.find({}, {"_id": 0}).to_list(10000)
+    
+    # Count by status
+    status_counts = {"Open": 0, "In Progress": 0, "On Hold": 0, "Completed": 0, "Cancelled": 0}
+    priority_counts = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0}
+    sla_breached_count = 0
+    total_time_rendered = 0
+    completed_count = 0
+    
+    sla_settings = await db.settings.find_one({"type": "sla"}, {"_id": 0}) or {}
+    now = datetime.now(timezone.utc)
+    
+    for jo in job_orders:
+        status = jo.get("status", "Open")
+        if status in status_counts:
+            status_counts[status] += 1
+        
+        priority = jo.get("priority", "Medium")
+        if priority in priority_counts:
+            priority_counts[priority] += 1
+        
+        # Check SLA breach
+        if status not in ["Completed", "Cancelled"]:
+            created_at = jo.get("created_at")
+            if isinstance(created_at, str):
+                created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+            if created_at:
+                sla_hours = jo.get("sla_target_hours") or get_sla_hours(priority, sla_settings)
+                elapsed_hours = (now - created_at).total_seconds() / 3600
+                if elapsed_hours > sla_hours:
+                    sla_breached_count += 1
+        
+        # Time rendered for completed jobs
+        if status == "Completed" and jo.get("time_rendered_minutes"):
+            total_time_rendered += jo.get("time_rendered_minutes", 0)
+            completed_count += 1
+    
+    avg_time_rendered = round(total_time_rendered / completed_count, 2) if completed_count > 0 else 0
+    
+    # Today's job orders
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    today_orders = await db.job_orders.count_documents({
+        "created_at": {"$gte": today_start}
+    })
+    
+    return {
+        "status_counts": status_counts,
+        "priority_counts": priority_counts,
+        "sla_breached_count": sla_breached_count,
+        "total_job_orders": len(job_orders),
+        "today_job_orders": today_orders,
+        "avg_time_rendered_minutes": avg_time_rendered,
+        "completed_count": completed_count
+    }
 
-@api_router.put("/joborders/{job_id}")
-async def update_job_order(job_id: str, updates: dict, current_user: dict = Depends(get_current_user)):
-    if current_user['role'] not in ['admin', 'tech']:
+@api_router.get("/joborders/technician/{username}")
+async def get_technician_job_orders(username: str, current_user: dict = Depends(get_current_user)):
+    """Get job orders assigned to a specific technician"""
+    job_orders = await db.job_orders.find(
+        {"assigned_technicians": username},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
+    
+    sla_settings = await db.settings.find_one({"type": "sla"}, {"_id": 0}) or {}
+    now = datetime.now(timezone.utc)
+    
+    for jo in job_orders:
+        if jo.get("status") not in ["Completed", "Cancelled"]:
+            created_at = jo.get("created_at")
+            if isinstance(created_at, str):
+                created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+            if created_at:
+                sla_hours = jo.get("sla_target_hours") or get_sla_hours(jo.get("priority", "Medium"), sla_settings)
+                elapsed_hours = (now - created_at).total_seconds() / 3600
+                jo["sla_breached"] = elapsed_hours > sla_hours
+                jo["elapsed_hours"] = round(elapsed_hours, 2)
+    
+    return job_orders
+
+@api_router.get("/joborders/{job_order_id}")
+async def get_job_order(job_order_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific job order"""
+    job_order = await db.job_orders.find_one({"job_order_id": job_order_id}, {"_id": 0})
+    if not job_order:
+        raise HTTPException(status_code=404, detail="Job order not found")
+    return job_order
+
+@api_router.post("/joborders")
+async def create_job_order(job_data: JobOrderCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new job order"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Only admin or billing can create job orders")
+    
+    # Get subscriber info
+    subscriber = await db.subscribers.find_one({"account_number": job_data.subscriber_id}, {"_id": 0})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    # Get SLA settings
+    sla_settings = await db.settings.find_one({"type": "sla"}, {"_id": 0}) or {}
+    sla_hours = get_sla_hours(job_data.priority, sla_settings)
+    
+    job_order = {
+        "job_order_id": generate_job_order_id(),
+        "subscriber_id": job_data.subscriber_id,
+        "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
+        "subscriber_address": f"{subscriber.get('street', '')}, {subscriber.get('barangay', '')}, {subscriber.get('municipality', '')}, {subscriber.get('province', '')}".strip(", "),
+        "type": job_data.type,
+        "description": job_data.description,
+        "status": "Open",
+        "priority": job_data.priority,
+        "assigned_technicians": job_data.assigned_technicians,
+        "scheduled_date": job_data.scheduled_date,
+        "scheduled_time_slot": job_data.scheduled_time_slot,
+        "notes": job_data.notes,
+        "materials_used": [],
+        "created_by": current_user['username'],
+        "created_at": datetime.now(timezone.utc),
+        "started_at": None,
+        "completed_at": None,
+        "time_rendered_minutes": None,
+        "sla_target_hours": sla_hours,
+        "sla_breached": False
+    }
+    
+    await db.job_orders.insert_one(job_order)
+    del job_order["_id"]
+    
+    return {"message": "Job order created", "job_order_id": job_order["job_order_id"], "job_order": job_order}
+
+@api_router.put("/joborders/{job_order_id}")
+async def update_job_order(job_order_id: str, updates: JobOrderUpdate, current_user: dict = Depends(get_current_user)):
+    """Update a job order (admin can update all fields)"""
+    if current_user['role'] not in ['admin', 'billing', 'tech']:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    # Update inventory if materials used
-    if 'materials_used' in updates:
-        for material in updates['materials_used']:
-            await db.inventory.update_one(
-                {"name": material['name']},
-                {"$inc": {"quantity": -material['quantity']}}
-            )
+    job_order = await db.job_orders.find_one({"job_order_id": job_order_id})
+    if not job_order:
+        raise HTTPException(status_code=404, detail="Job order not found")
     
-    await db.job_orders.update_one({"job_id": job_id}, {"$set": updates})
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    
+    # If priority changes, update SLA target
+    if "priority" in update_data:
+        sla_settings = await db.settings.find_one({"type": "sla"}, {"_id": 0}) or {}
+        update_data["sla_target_hours"] = get_sla_hours(update_data["priority"], sla_settings)
+    
+    # Track status changes
+    if "status" in update_data:
+        if update_data["status"] == "In Progress" and not job_order.get("started_at"):
+            update_data["started_at"] = datetime.now(timezone.utc)
+        elif update_data["status"] == "Completed":
+            update_data["completed_at"] = datetime.now(timezone.utc)
+            # Calculate time rendered
+            started_at = job_order.get("started_at")
+            if started_at:
+                if isinstance(started_at, str):
+                    started_at = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+                time_diff = datetime.now(timezone.utc) - started_at
+                update_data["time_rendered_minutes"] = int(time_diff.total_seconds() / 60)
+    
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    await db.job_orders.update_one({"job_order_id": job_order_id}, {"$set": update_data})
+    
     return {"message": "Job order updated"}
+
+@api_router.post("/joborders/{job_order_id}/start")
+async def start_job_order(job_order_id: str, current_user: dict = Depends(get_current_user)):
+    """Start working on a job order (technician)"""
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Only admin or technician can start job orders")
+    
+    job_order = await db.job_orders.find_one({"job_order_id": job_order_id})
+    if not job_order:
+        raise HTTPException(status_code=404, detail="Job order not found")
+    
+    if job_order.get("status") != "Open":
+        raise HTTPException(status_code=400, detail="Job order is not in Open status")
+    
+    await db.job_orders.update_one(
+        {"job_order_id": job_order_id},
+        {"$set": {
+            "status": "In Progress",
+            "started_at": datetime.now(timezone.utc)
+        }}
+    )
+    
+    return {"message": "Job order started"}
+
+@api_router.post("/joborders/{job_order_id}/complete")
+async def complete_job_order(job_order_id: str, current_user: dict = Depends(get_current_user)):
+    """Complete a job order (technician)"""
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Only admin or technician can complete job orders")
+    
+    job_order = await db.job_orders.find_one({"job_order_id": job_order_id})
+    if not job_order:
+        raise HTTPException(status_code=404, detail="Job order not found")
+    
+    if job_order.get("status") not in ["Open", "In Progress"]:
+        raise HTTPException(status_code=400, detail="Job order cannot be completed from current status")
+    
+    completed_at = datetime.now(timezone.utc)
+    started_at = job_order.get("started_at") or job_order.get("created_at")
+    
+    if isinstance(started_at, str):
+        started_at = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+    
+    time_rendered_minutes = int((completed_at - started_at).total_seconds() / 60) if started_at else 0
+    
+    await db.job_orders.update_one(
+        {"job_order_id": job_order_id},
+        {"$set": {
+            "status": "Completed",
+            "completed_at": completed_at,
+            "time_rendered_minutes": time_rendered_minutes
+        }}
+    )
+    
+    return {"message": "Job order completed", "time_rendered_minutes": time_rendered_minutes}
+
+@api_router.post("/joborders/{job_order_id}/materials")
+async def add_materials_to_job_order(
+    job_order_id: str,
+    materials: List[MaterialEntry],
+    current_user: dict = Depends(get_current_user)
+):
+    """Add materials used to a job order and update inventory"""
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Only admin or technician can add materials")
+    
+    job_order = await db.job_orders.find_one({"job_order_id": job_order_id})
+    if not job_order:
+        raise HTTPException(status_code=404, detail="Job order not found")
+    
+    materials_added = []
+    
+    for material in materials:
+        # Get inventory item
+        item = await db.inventory.find_one({"item_code": material.item_code}, {"_id": 0})
+        if not item:
+            raise HTTPException(status_code=404, detail=f"Item {material.item_code} not found")
+        
+        # Check if serialized item
+        if item.get("is_serialized") and material.unit_id:
+            # Update specific unit
+            unit = await db.inventory_units.find_one({"unit_id": material.unit_id})
+            if not unit:
+                raise HTTPException(status_code=404, detail=f"Unit {material.unit_id} not found")
+            if unit.get("status") != "available":
+                raise HTTPException(status_code=400, detail=f"Unit {material.unit_id} is not available")
+            
+            # Mark unit as assigned to job order
+            await db.inventory_units.update_one(
+                {"unit_id": material.unit_id},
+                {"$set": {
+                    "status": "assigned",
+                    "assigned_to": job_order.get("subscriber_id"),
+                    "assigned_date": datetime.now(timezone.utc),
+                    "assigned_job_order": job_order_id
+                }}
+            )
+            
+            material_entry = {
+                "item_code": material.item_code,
+                "name": item.get("name"),
+                "quantity": 1,
+                "unit": item.get("unit"),
+                "unit_id": material.unit_id,
+                "mac_address": unit.get("mac_address"),
+                "serial_number": unit.get("serial_number"),
+                "added_at": datetime.now(timezone.utc).isoformat(),
+                "added_by": current_user['username']
+            }
+        else:
+            # Non-serialized item - deduct quantity
+            if item.get("quantity", 0) < material.quantity:
+                raise HTTPException(status_code=400, detail=f"Insufficient stock for {item.get('name')}")
+            
+            await db.inventory.update_one(
+                {"item_code": material.item_code},
+                {"$inc": {"quantity": -material.quantity}}
+            )
+            
+            # Log inventory adjustment
+            await db.inventory_logs.insert_one({
+                "item_code": material.item_code,
+                "type": "deduct",
+                "amount": material.quantity,
+                "unit": item.get("unit"),
+                "new_qty": item.get("quantity", 0) - material.quantity,
+                "reason": f"Job Order: {job_order_id}",
+                "adjusted_by": current_user['username'],
+                "adjusted_at": datetime.now(timezone.utc)
+            })
+            
+            material_entry = {
+                "item_code": material.item_code,
+                "name": item.get("name"),
+                "quantity": material.quantity,
+                "unit": item.get("unit"),
+                "added_at": datetime.now(timezone.utc).isoformat(),
+                "added_by": current_user['username']
+            }
+        
+        materials_added.append(material_entry)
+    
+    # Add to job order
+    await db.job_orders.update_one(
+        {"job_order_id": job_order_id},
+        {"$push": {"materials_used": {"$each": materials_added}}}
+    )
+    
+    # Also add to subscriber's equipment record if serialized
+    subscriber_id = job_order.get("subscriber_id")
+    for mat in materials_added:
+        if mat.get("unit_id"):
+            await db.subscriber_equipment.insert_one({
+                "account_number": subscriber_id,
+                "unit_id": mat.get("unit_id"),
+                "item_code": mat.get("item_code"),
+                "item_name": mat.get("name"),
+                "mac_address": mat.get("mac_address"),
+                "serial_number": mat.get("serial_number"),
+                "assigned_date": datetime.now(timezone.utc),
+                "assigned_via": "job_order",
+                "job_order_id": job_order_id
+            })
+    
+    return {"message": f"Added {len(materials_added)} materials to job order", "materials": materials_added}
+
+@api_router.delete("/joborders/{job_order_id}")
+async def delete_job_order(job_order_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a job order (admin only)"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Only admin can delete job orders")
+    
+    result = await db.job_orders.delete_one({"job_order_id": job_order_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Job order not found")
+    
+    return {"message": "Job order deleted"}
+
+# ========== SLA SETTINGS ==========
+@api_router.get("/settings/sla")
+async def get_sla_settings(current_user: dict = Depends(get_current_user)):
+    """Get SLA settings"""
+    settings = await db.settings.find_one({"type": "sla"}, {"_id": 0})
+    if not settings:
+        # Return defaults
+        return {
+            "type": "sla",
+            "critical_hours": 2,
+            "high_hours": 8,
+            "medium_hours": 12,
+            "low_hours": 24
+        }
+    return settings
+
+@api_router.put("/settings/sla")
+async def update_sla_settings(sla: SLASettings, current_user: dict = Depends(get_current_user)):
+    """Update SLA settings"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Only admin can update SLA settings")
+    
+    await db.settings.update_one(
+        {"type": "sla"},
+        {"$set": {
+            "type": "sla",
+            "critical_hours": sla.critical_hours,
+            "high_hours": sla.high_hours,
+            "medium_hours": sla.medium_hours,
+            "low_hours": sla.low_hours,
+            "updated_at": datetime.now(timezone.utc)
+        }},
+        upsert=True
+    )
+    
+    return {"message": "SLA settings updated"}
+
+# ========== TECHNICIANS LIST ==========
+@api_router.get("/technicians")
+async def list_technicians(current_user: dict = Depends(get_current_user)):
+    """Get list of users with tech role"""
+    technicians = await db.users.find(
+        {"role": "tech"},
+        {"_id": 0, "password": 0}
+    ).to_list(100)
+    return technicians
 
 # ========== INVENTORY ==========
 def generate_item_code():
