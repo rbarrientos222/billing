@@ -2736,10 +2736,6 @@ async def complete_job_order(
     )
     
     return {"message": "Job order completed", "time_rendered_minutes": time_rendered_minutes}
-        }}
-    )
-    
-    return {"message": "Job order completed", "time_rendered_minutes": time_rendered_minutes}
 
 @api_router.post("/joborders/{job_order_id}/materials")
 async def add_materials_to_job_order(
