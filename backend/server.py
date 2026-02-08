@@ -2773,6 +2773,100 @@ async def complete_job_order(
     if completion_data and completion_data.completion_remarks:
         update_data["completion_remarks"] = completion_data.completion_remarks
     
+    subscriber_id = job_order.get("subscriber_id")
+    job_type = job_order.get("type")
+    
+    # Handle Relocation - Update subscriber address
+    if job_type == "Relocation" and job_order.get("new_address"):
+        new_addr = job_order.get("new_address")
+        await db.subscribers.update_one(
+            {"account_number": subscriber_id},
+            {"$set": {
+                "province": new_addr.get("province", ""),
+                "municipality": new_addr.get("municipality", ""),
+                "barangay": new_addr.get("barangay", ""),
+                "street": new_addr.get("street", ""),
+                "address_updated_at": completed_at,
+                "address_updated_via": job_order_id
+            }}
+        )
+        update_data["address_updated"] = True
+    
+    # Handle Pull Out Modem - Return equipment to inventory
+    if job_type == "Pull Out Modem" and completion_data and completion_data.equipment_unit_id:
+        unit_id = completion_data.equipment_unit_id
+        # Update inventory unit to available
+        await db.inventory_units.update_one(
+            {"unit_id": unit_id},
+            {"$set": {
+                "status": "available",
+                "assigned_to": None,
+                "assigned_date": None,
+                "assigned_via": None,
+                "assigned_job_order": None,
+                "returned_at": completed_at,
+                "returned_via": job_order_id
+            }}
+        )
+        # Remove from subscriber_equipment
+        await db.subscriber_equipment.delete_one({
+            "account_number": subscriber_id,
+            "unit_id": unit_id
+        })
+        update_data["equipment_returned"] = unit_id
+    
+    # Handle Replace Modem - Mark old as defective, assign new
+    if job_type == "Replace Modem" and completion_data:
+        # Mark old modem as defective
+        if completion_data.equipment_unit_id and completion_data.mark_defective:
+            old_unit_id = completion_data.equipment_unit_id
+            await db.inventory_units.update_one(
+                {"unit_id": old_unit_id},
+                {"$set": {
+                    "status": "defective",
+                    "assigned_to": None,
+                    "assigned_date": None,
+                    "defective_date": completed_at,
+                    "defective_via": job_order_id
+                }}
+            )
+            # Remove from subscriber_equipment
+            await db.subscriber_equipment.delete_one({
+                "account_number": subscriber_id,
+                "unit_id": old_unit_id
+            })
+            update_data["old_equipment_defective"] = old_unit_id
+        
+        # Assign new modem
+        if completion_data.new_equipment_unit_id:
+            new_unit_id = completion_data.new_equipment_unit_id
+            new_unit = await db.inventory_units.find_one({"unit_id": new_unit_id})
+            if new_unit:
+                # Update inventory unit
+                await db.inventory_units.update_one(
+                    {"unit_id": new_unit_id},
+                    {"$set": {
+                        "status": "assigned",
+                        "assigned_to": subscriber_id,
+                        "assigned_date": completed_at,
+                        "assigned_via": "job_order",
+                        "assigned_job_order": job_order_id
+                    }}
+                )
+                # Add to subscriber_equipment
+                await db.subscriber_equipment.insert_one({
+                    "account_number": subscriber_id,
+                    "unit_id": new_unit_id,
+                    "item_code": new_unit.get("item_code"),
+                    "item_name": new_unit.get("item_name"),
+                    "mac_address": new_unit.get("mac_address"),
+                    "serial_number": new_unit.get("serial_number"),
+                    "assigned_date": completed_at,
+                    "assigned_via": "job_order",
+                    "job_order_id": job_order_id
+                })
+                update_data["new_equipment_assigned"] = new_unit_id
+    
     await db.job_orders.update_one(
         {"job_order_id": job_order_id},
         {"$set": update_data}
