@@ -3991,6 +3991,132 @@ async def get_expense_stats(current_user: dict = Depends(get_current_user)):
         "expense_count": len(all_expenses)
     }
 
+@api_router.get("/expenses/analytics")
+async def get_expense_analytics(current_user: dict = Depends(get_current_user)):
+    """Get expense analytics for reports and charts"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    now = datetime.now(timezone.utc)
+    
+    # Get all expenses
+    all_expenses = await db.expenses.find({}, {"_id": 0}).to_list(10000)
+    
+    # 1. Monthly trend (last 12 months)
+    monthly_trend = []
+    for i in range(11, -1, -1):
+        # Calculate month start and end
+        target_date = now - timedelta(days=i*30)
+        month_start = target_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if target_date.month == 12:
+            month_end = month_start.replace(year=month_start.year + 1, month=1)
+        else:
+            month_end = month_start.replace(month=month_start.month + 1)
+        
+        # Sum expenses for this month
+        month_total = sum(
+            e['amount'] for e in all_expenses 
+            if e.get('expense_date') and month_start <= e['expense_date'].replace(tzinfo=timezone.utc) < month_end
+        )
+        
+        monthly_trend.append({
+            "month": month_start.strftime("%b %Y"),
+            "month_short": month_start.strftime("%b"),
+            "amount": month_total
+        })
+    
+    # 2. Category breakdown with percentages
+    category_totals = {}
+    for e in all_expenses:
+        cat = e.get('category', 'Uncategorized')
+        category_totals[cat] = category_totals.get(cat, 0) + e['amount']
+    
+    total_amount = sum(category_totals.values()) or 1  # Avoid division by zero
+    category_breakdown = [
+        {
+            "category": cat,
+            "amount": amount,
+            "percentage": round((amount / total_amount) * 100, 1)
+        }
+        for cat, amount in sorted(category_totals.items(), key=lambda x: x[1], reverse=True)
+    ]
+    
+    # 3. Recurring vs One-time comparison
+    recurring_total = sum(e['amount'] for e in all_expenses if e.get('is_recurring'))
+    onetime_total = sum(e['amount'] for e in all_expenses if not e.get('is_recurring'))
+    purchase_total = sum(e['amount'] for e in all_expenses if e.get('reference_type') == 'purchase')
+    manual_total = total_amount - purchase_total
+    
+    expense_types = [
+        {"type": "Recurring", "amount": recurring_total, "count": sum(1 for e in all_expenses if e.get('is_recurring'))},
+        {"type": "One-time", "amount": onetime_total, "count": sum(1 for e in all_expenses if not e.get('is_recurring'))}
+    ]
+    
+    expense_sources = [
+        {"source": "Manual Entry", "amount": manual_total, "count": sum(1 for e in all_expenses if e.get('reference_type') != 'purchase')},
+        {"source": "Purchases", "amount": purchase_total, "count": sum(1 for e in all_expenses if e.get('reference_type') == 'purchase')}
+    ]
+    
+    # 4. Top 5 expenses
+    sorted_expenses = sorted(all_expenses, key=lambda x: x.get('amount', 0), reverse=True)[:5]
+    top_expenses = [
+        {
+            "description": e.get('description', 'Unknown'),
+            "category": e.get('category', 'Uncategorized'),
+            "amount": e.get('amount', 0),
+            "date": e.get('expense_date').strftime("%Y-%m-%d") if e.get('expense_date') else None
+        }
+        for e in sorted_expenses
+    ]
+    
+    # 5. This month vs last month comparison
+    this_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if now.month == 1:
+        last_month_start = this_month_start.replace(year=now.year - 1, month=12)
+    else:
+        last_month_start = this_month_start.replace(month=now.month - 1)
+    
+    this_month_total = sum(
+        e['amount'] for e in all_expenses 
+        if e.get('expense_date') and e['expense_date'].replace(tzinfo=timezone.utc) >= this_month_start
+    )
+    last_month_total = sum(
+        e['amount'] for e in all_expenses 
+        if e.get('expense_date') and last_month_start <= e['expense_date'].replace(tzinfo=timezone.utc) < this_month_start
+    )
+    
+    month_comparison = {
+        "this_month": this_month_total,
+        "last_month": last_month_total,
+        "change": this_month_total - last_month_total,
+        "change_percentage": round(((this_month_total - last_month_total) / last_month_total * 100), 1) if last_month_total > 0 else 0
+    }
+    
+    # 6. Average daily expense
+    if all_expenses:
+        dates = [e['expense_date'] for e in all_expenses if e.get('expense_date')]
+        if dates:
+            min_date = min(dates)
+            max_date = max(dates)
+            days_span = (max_date - min_date).days or 1
+            avg_daily = total_amount / days_span
+        else:
+            avg_daily = 0
+    else:
+        avg_daily = 0
+    
+    return {
+        "monthly_trend": monthly_trend,
+        "category_breakdown": category_breakdown,
+        "expense_types": expense_types,
+        "expense_sources": expense_sources,
+        "top_expenses": top_expenses,
+        "month_comparison": month_comparison,
+        "avg_daily_expense": round(avg_daily, 2),
+        "total_expenses": total_amount,
+        "expense_count": len(all_expenses)
+    }
+
 # ========== EXPENSE CATEGORIES ==========
 @api_router.get("/expense-categories")
 async def list_expense_categories(current_user: dict = Depends(get_current_user)):
