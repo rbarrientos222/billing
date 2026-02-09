@@ -28,7 +28,13 @@ export default function CashierDashboard({ user, onLogout }) {
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  
+  // Advance payment (wallet deposit) state
+  const [showAdvancePayment, setShowAdvancePayment] = useState(false);
+  const [advanceAmount, setAdvanceAmount] = useState('');
+  const [advancePaymentMode, setAdvancePaymentMode] = useState('cash');
+  const [processingAdvance, setProcessingAdvance] = useState(false);
   // Fetch today's payment stats on load
   useEffect(() => {
     fetchTodayStats();
