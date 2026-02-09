@@ -340,8 +340,22 @@ export default function ExpenseManagement() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
+      {/* Tabs for Expenses and Reports */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="expenses" data-testid="expenses-tab">
+            <Receipt className="h-4 w-4 mr-2" />
+            Expenses
+          </TabsTrigger>
+          <TabsTrigger value="reports" data-testid="reports-tab">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Reports & Analytics
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="expenses" className="space-y-4">
+          {/* Filters */}
+          <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-3 items-end">
             <div className="flex-1 min-w-[200px]">
