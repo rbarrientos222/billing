@@ -678,7 +678,7 @@ export default function SubscriberManagement() {
               </div>
               
               <div>
-                <Label>Subscription Plan</Label>
+                <Label>Subscription Plan <span className="text-red-500">*</span></Label>
                 <Select value={formData.plan_id} onValueChange={(value) => setFormData({ ...formData, plan_id: value })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select plan" />
