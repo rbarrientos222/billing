@@ -602,36 +602,129 @@ export default function CashierDashboard({ user, onLogout }) {
                 </div>
               )}
 
-              {/* Payment History */}
-              {selectedSubscriber && paymentHistory.length > 0 && (
-                <div className="mt-6 space-y-2">
-                  <h4 className="font-medium">Payment History</h4>
-                  <div className="rounded-md border max-h-72 overflow-y-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted sticky top-0">
-                        <tr>
-                          <th className="text-left p-2">OR Number</th>
-                          <th className="text-left p-2">Description</th>
-                          <th className="text-left p-2">Amount</th>
-                          <th className="text-left p-2">Mode</th>
-                          <th className="text-left p-2">Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paymentHistory.map((payment) => (
-                          <tr key={payment.or_number} className="border-t hover:bg-muted/50">
-                            <td className="p-2 font-mono text-xs">{payment.or_number}</td>
-                            <td className="p-2 text-xs max-w-[200px] truncate" title={payment.description || 'Payment'}>
-                              {payment.description || payment.invoice_id || 'Payment'}
-                            </td>
-                            <td className="p-2 font-bold text-green-600">₱{(payment.total_amount || payment.amount || 0).toLocaleString()}</td>
-                            <td className="p-2 capitalize">{payment.mode}</td>
-                            <td className="p-2 text-xs">{new Date(payment.payment_date).toLocaleDateString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+              {/* Payment History - Hidden by default */}
+              {selectedSubscriber && (
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      Payment History
+                    </h4>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (!showPaymentHistory) {
+                          fetchPaymentHistory(dateFrom, dateTo);
+                        }
+                        setShowPaymentHistory(!showPaymentHistory);
+                      }}
+                      data-testid="toggle-payment-history-btn"
+                    >
+                      {showPaymentHistory ? (
+                        <>
+                          <ChevronUp className="h-4 w-4 mr-1" />
+                          Hide History
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4 mr-1" />
+                          Show History ({paymentHistory.length})
+                        </>
+                      )}
+                    </Button>
                   </div>
+                  
+                  {showPaymentHistory && (
+                    <div className="space-y-3">
+                      {/* Date Range Filter */}
+                      <div className="flex flex-wrap gap-2 items-end p-3 bg-muted rounded-lg" data-testid="date-filter-section">
+                        <div className="flex-1 min-w-[140px]">
+                          <Label className="text-xs text-muted-foreground">From Date</Label>
+                          <Input
+                            type="date"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            className="h-9"
+                            data-testid="date-from-input"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-[140px]">
+                          <Label className="text-xs text-muted-foreground">To Date</Label>
+                          <Input
+                            type="date"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            className="h-9"
+                            data-testid="date-to-input"
+                          />
+                        </div>
+                        <Button 
+                          size="sm" 
+                          onClick={handleApplyDateFilter}
+                          disabled={loadingHistory}
+                          className="h-9"
+                          data-testid="apply-date-filter-btn"
+                        >
+                          <Filter className="h-4 w-4 mr-1" />
+                          Apply
+                        </Button>
+                        {(dateFrom || dateTo) && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={handleClearDateFilter}
+                            className="h-9"
+                            data-testid="clear-date-filter-btn"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Clear
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {/* Payment History Table */}
+                      {loadingHistory ? (
+                        <div className="text-center py-4 text-muted-foreground">
+                          Loading payment history...
+                        </div>
+                      ) : paymentHistory.length > 0 ? (
+                        <div className="rounded-md border max-h-72 overflow-y-auto" data-testid="payment-history-table">
+                          <table className="w-full text-sm">
+                            <thead className="bg-muted sticky top-0">
+                              <tr>
+                                <th className="text-left p-2">OR Number</th>
+                                <th className="text-left p-2">Description</th>
+                                <th className="text-left p-2">Amount</th>
+                                <th className="text-left p-2">Mode</th>
+                                <th className="text-left p-2">Date</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {paymentHistory.map((payment) => (
+                                <tr key={payment.or_number} className="border-t hover:bg-muted/50">
+                                  <td className="p-2 font-mono text-xs">{payment.or_number}</td>
+                                  <td className="p-2 text-xs max-w-[200px] truncate" title={payment.description || 'Payment'}>
+                                    {payment.description || payment.invoice_id || 'Payment'}
+                                    {payment.is_advance_payment && (
+                                      <Badge variant="outline" className="ml-1 text-xs border-blue-500 text-blue-600">Advance</Badge>
+                                    )}
+                                  </td>
+                                  <td className="p-2 font-bold text-green-600">₱{(payment.total_amount || payment.amount || 0).toLocaleString()}</td>
+                                  <td className="p-2 capitalize">{payment.mode}</td>
+                                  <td className="p-2 text-xs">{new Date(payment.payment_date).toLocaleDateString()}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-muted-foreground border rounded-lg">
+                          {(dateFrom || dateTo) ? 'No payments found for the selected date range' : 'No payment history found'}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
