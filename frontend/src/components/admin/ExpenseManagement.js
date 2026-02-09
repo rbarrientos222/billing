@@ -66,14 +66,16 @@ export default function ExpenseManagement() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [expensesRes, categoriesRes, statsRes] = await Promise.all([
+      const [expensesRes, categoriesRes, statsRes, analyticsRes] = await Promise.all([
         axios.get('/expenses'),
         axios.get('/expense-categories'),
-        axios.get('/expenses/stats')
+        axios.get('/expenses/stats'),
+        axios.get('/expenses/analytics')
       ]);
       setExpenses(expensesRes.data);
       setCategories(categoriesRes.data);
       setStats(statsRes.data);
+      setAnalytics(analyticsRes.data);
     } catch (error) {
       toast.error('Failed to load expenses');
     } finally {
