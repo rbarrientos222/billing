@@ -74,7 +74,7 @@ export default function ExpenseManagement() {
     try {
       let url = '/expenses?';
       const params = new URLSearchParams();
-      if (filterCategory) params.append('category', filterCategory);
+      if (filterCategory && filterCategory !== 'all') params.append('category', filterCategory);
       if (filterRecurring === 'yes') params.append('is_recurring', 'true');
       if (filterRecurring === 'no') params.append('is_recurring', 'false');
       if (dateFrom) params.append('start_date', dateFrom);
@@ -92,8 +92,8 @@ export default function ExpenseManagement() {
   };
 
   const handleClearFilters = () => {
-    setFilterCategory('');
-    setFilterRecurring('');
+    setFilterCategory('all');
+    setFilterRecurring('all');
     setDateFrom('');
     setDateTo('');
     setSearchTerm('');
