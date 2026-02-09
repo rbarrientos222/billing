@@ -187,17 +187,17 @@ class Subscriber(BaseModel):
     barangay: Optional[str] = None
     municipality: Optional[str] = None
     province: Optional[str] = None
-    pppoe_username: Optional[str] = None
-    pppoe_password: Optional[str] = None
-    pppoe_profile: Optional[str] = None
+    pppoe_username: str  # Required
+    pppoe_password: str  # Required
+    pppoe_profile: str   # Required
     activate_pppoe: bool = False
     pppoe_activated: bool = False  # Track if PPPoE is actually activated in Mikrotik
-    plan_id: Optional[str] = None
+    plan_id: str  # Required - Subscription Plan
     billing_day: int = 30  # Day of month (1-31)
     installation_date: Optional[str] = None  # ISO date string
     is_active: bool = True
     modem_mac: Optional[str] = None
-    assigned_unit_id: Optional[str] = None  # Inventory unit ID to assign on registration
+    assigned_unit_id: str  # Required - Modem/Equipment
     generate_prorated_bill: bool = True  # If False, wait for next billing cycle
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
