@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { LogOut, Search, Receipt, DollarSign, Wallet, CreditCard, Check, AlertCircle } from 'lucide-react';
+import { LogOut, Search, Receipt, DollarSign, Wallet, CreditCard, Check, AlertCircle, History, Calendar, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 
 export default function CashierDashboard({ user, onLogout }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +15,7 @@ export default function CashierDashboard({ user, onLogout }) {
   const [selectedSubscriber, setSelectedSubscriber] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [paymentHistory, setPaymentHistory] = useState([]);
+  const [filteredPaymentHistory, setFilteredPaymentHistory] = useState([]);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMode, setPaymentMode] = useState('cash');
   const [todayStats, setTodayStats] = useState({ total: 0, count: 0 });
@@ -22,6 +23,11 @@ export default function CashierDashboard({ user, onLogout }) {
   const [walletBalance, setWalletBalance] = useState(0);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
+  
+  // Payment history visibility and date filter
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   // Fetch today's payment stats on load
   useEffect(() => {
