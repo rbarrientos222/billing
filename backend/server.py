@@ -3850,18 +3850,212 @@ async def delete_purchase(purchase_id: str, current_user: dict = Depends(get_cur
 
 # ========== EXPENSES ==========
 @api_router.get("/expenses")
-async def list_expenses(current_user: dict = Depends(get_current_user)):
-    if current_user['role'] != 'admin':
-        raise HTTPException(status_code=403, detail="Admin access required")
-    expenses = await db.expenses.find({}, {"_id": 0}).to_list(1000)
+async def list_expenses(
+    current_user: dict = Depends(get_current_user),
+    category: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    is_recurring: Optional[bool] = None
+):
+    """List expenses with optional filters"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    query = {}
+    
+    # Category filter
+    if category:
+        query["category"] = category
+    
+    # Recurring filter
+    if is_recurring is not None:
+        query["is_recurring"] = is_recurring
+    
+    # Date range filter
+    if start_date or end_date:
+        date_filter = {}
+        if start_date:
+            try:
+                start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                start_dt = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+                date_filter["$gte"] = start_dt
+            except ValueError:
+                pass
+        if end_date:
+            try:
+                end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+                end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+                date_filter["$lte"] = end_dt
+            except ValueError:
+                pass
+        if date_filter:
+            query["expense_date"] = date_filter
+    
+    expenses = await db.expenses.find(query, {"_id": 0}).sort("expense_date", -1).to_list(1000)
     return expenses
 
 @api_router.post("/expenses")
 async def create_expense(expense: Expense, current_user: dict = Depends(get_current_user)):
-    if current_user['role'] != 'admin':
-        raise HTTPException(status_code=403, detail="Admin access required")
-    await db.expenses.insert_one(expense.model_dump())
-    return {"message": "Expense created"}
+    """Create a new expense entry"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    expense_dict = expense.model_dump()
+    expense_dict['expense_id'] = f"EXP{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
+    expense_dict['created_by'] = current_user['username']
+    
+    await db.expenses.insert_one(expense_dict)
+    return {"message": "Expense created", "expense_id": expense_dict['expense_id']}
+
+@api_router.put("/expenses/{expense_id}")
+async def update_expense(expense_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """Update an existing expense"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    existing = await db.expenses.find_one({"expense_id": expense_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    
+    # Don't allow editing purchase-linked expenses
+    if existing.get('reference_type') == 'purchase':
+        raise HTTPException(status_code=400, detail="Cannot edit purchase-linked expenses")
+    
+    update_data = {k: v for k, v in data.items() if k not in ['expense_id', 'created_at', 'created_by', 'reference_type', 'reference_id']}
+    update_data['updated_at'] = datetime.now(timezone.utc)
+    update_data['updated_by'] = current_user['username']
+    
+    await db.expenses.update_one(
+        {"expense_id": expense_id},
+        {"$set": update_data}
+    )
+    return {"message": "Expense updated"}
+
+@api_router.delete("/expenses/{expense_id}")
+async def delete_expense(expense_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete an expense"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    existing = await db.expenses.find_one({"expense_id": expense_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    
+    # Don't allow deleting purchase-linked expenses
+    if existing.get('reference_type') == 'purchase':
+        raise HTTPException(status_code=400, detail="Cannot delete purchase-linked expenses. Delete the purchase instead.")
+    
+    await db.expenses.delete_one({"expense_id": expense_id})
+    return {"message": "Expense deleted"}
+
+@api_router.get("/expenses/stats")
+async def get_expense_stats(current_user: dict = Depends(get_current_user)):
+    """Get expense statistics"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    # Total expenses
+    all_expenses = await db.expenses.find({}, {"_id": 0}).to_list(10000)
+    total_expenses = sum(e['amount'] for e in all_expenses)
+    
+    # This month's expenses
+    this_month = await db.expenses.find({"expense_date": {"$gte": month_start}}, {"_id": 0}).to_list(10000)
+    monthly_expenses = sum(e['amount'] for e in this_month)
+    
+    # Recurring expenses total
+    recurring = await db.expenses.find({"is_recurring": True}, {"_id": 0}).to_list(10000)
+    recurring_total = sum(e['amount'] for e in recurring)
+    recurring_count = len(recurring)
+    
+    # Category breakdown
+    category_totals = {}
+    for e in all_expenses:
+        cat = e.get('category', 'Uncategorized')
+        category_totals[cat] = category_totals.get(cat, 0) + e['amount']
+    
+    # Get categories count
+    categories = await db.expense_categories.count_documents({})
+    
+    return {
+        "total_expenses": total_expenses,
+        "monthly_expenses": monthly_expenses,
+        "recurring_total": recurring_total,
+        "recurring_count": recurring_count,
+        "category_breakdown": category_totals,
+        "categories_count": categories,
+        "expense_count": len(all_expenses)
+    }
+
+# ========== EXPENSE CATEGORIES ==========
+@api_router.get("/expense-categories")
+async def list_expense_categories(current_user: dict = Depends(get_current_user)):
+    """List all expense categories"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    categories = await db.expense_categories.find({}, {"_id": 0}).sort("name", 1).to_list(100)
+    
+    # Initialize with preset categories if empty
+    if not categories:
+        preset_categories = [
+            {"category_id": "CAT001", "name": "Utilities", "description": "Electricity, water, etc.", "is_preset": True},
+            {"category_id": "CAT002", "name": "Salaries", "description": "Employee wages and salaries", "is_preset": True},
+            {"category_id": "CAT003", "name": "Supplies", "description": "Office and operational supplies", "is_preset": True},
+            {"category_id": "CAT004", "name": "Maintenance", "description": "Equipment and facility maintenance", "is_preset": True},
+            {"category_id": "CAT005", "name": "Fuel", "description": "Vehicle and generator fuel", "is_preset": True},
+            {"category_id": "CAT006", "name": "Internet", "description": "Internet service costs", "is_preset": True},
+            {"category_id": "CAT007", "name": "Rent", "description": "Office/facility rent", "is_preset": True},
+            {"category_id": "CAT008", "name": "Purchase", "description": "Inventory purchases", "is_preset": True},
+        ]
+        for cat in preset_categories:
+            cat['created_at'] = datetime.now(timezone.utc)
+        await db.expense_categories.insert_many(preset_categories)
+        categories = preset_categories
+    
+    return categories
+
+@api_router.post("/expense-categories")
+async def create_expense_category(category: ExpenseCategory, current_user: dict = Depends(get_current_user)):
+    """Create a custom expense category"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Check for duplicate name
+    existing = await db.expense_categories.find_one({"name": {"$regex": f"^{category.name}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Category with this name already exists")
+    
+    category_dict = category.model_dump()
+    category_dict['category_id'] = f"CAT{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:4].upper()}"
+    category_dict['is_preset'] = False
+    category_dict['created_at'] = datetime.now(timezone.utc)
+    
+    await db.expense_categories.insert_one(category_dict)
+    return {"message": "Category created", "category_id": category_dict['category_id']}
+
+@api_router.delete("/expense-categories/{category_id}")
+async def delete_expense_category(category_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a custom expense category (preset categories cannot be deleted)"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    category = await db.expense_categories.find_one({"category_id": category_id})
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    
+    if category.get('is_preset'):
+        raise HTTPException(status_code=400, detail="Cannot delete preset categories")
+    
+    # Check if category is in use
+    expenses_using = await db.expenses.count_documents({"category": category['name']})
+    if expenses_using > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete category. {expenses_using} expense(s) are using this category.")
+    
+    await db.expense_categories.delete_one({"category_id": category_id})
+    return {"message": "Category deleted"}
 
 # ========== COMPANY SETTINGS ==========
 @api_router.get("/settings/company")
