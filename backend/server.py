@@ -1002,9 +1002,26 @@ async def activate_subscriber_pppoe(account_number: str, current_user: dict = De
     if not mikrotik_config:
         raise HTTPException(status_code=404, detail="Mikrotik not configured")
     
-    # Create PPPoE account
+    # Connect to Mikrotik
     service = MikrotikService(mikrotik_config)
     if service.connect():
+        # First, check if the PPPoE account already exists
+        account_exists = service.pppoe_account_exists(subscriber['pppoe_username'])
+        
+        if account_exists:
+            # Account already exists in Mikrotik - just update our database status
+            service.disconnect()
+            await db.subscribers.update_one(
+                {"account_number": account_number},
+                {"$set": {"pppoe_activated": True}}
+            )
+            return {
+                "message": f"PPPoE account '{subscriber['pppoe_username']}' already exists in Mikrotik. Status updated to Active.",
+                "success": True,
+                "already_exists": True
+            }
+        
+        # Account doesn't exist, create it
         pppoe_account = PPPoEAccount(
             username=subscriber['pppoe_username'],
             password=subscriber['pppoe_password'],
@@ -1022,8 +1039,8 @@ async def activate_subscriber_pppoe(account_number: str, current_user: dict = De
                 {"account_number": account_number},
                 {"$set": {"pppoe_activated": True}}
             )
-            return {"message": "PPPoE account activated in Mikrotik", "success": True}
-        raise HTTPException(status_code=500, detail="Failed to create PPPoE account")
+            return {"message": "PPPoE account created and activated in Mikrotik", "success": True, "already_exists": False}
+        raise HTTPException(status_code=500, detail="Failed to create PPPoE account in Mikrotik")
     raise HTTPException(status_code=500, detail="Failed to connect to Mikrotik")
 
 @api_router.get("/subscribers/{account_number}/pppoe-status")
