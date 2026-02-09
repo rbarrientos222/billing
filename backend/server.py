@@ -4013,7 +4013,8 @@ async def list_expense_categories(current_user: dict = Depends(get_current_user)
         for cat in preset_categories:
             cat['created_at'] = datetime.now(timezone.utc)
         await db.expense_categories.insert_many(preset_categories)
-        categories = preset_categories
+        # Re-fetch after insert to avoid ObjectId in response
+        categories = await db.expense_categories.find({}, {"_id": 0}).sort("name", 1).to_list(100)
     
     return categories
 
