@@ -1359,13 +1359,33 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
             logger.info(f"Assigned unit {subscriber.assigned_unit_id} to subscriber {subscriber.account_number}")
     
     # Create initial job order for installation
+    # Build full address for job order
+    address_parts = [
+        subscriber.street,
+        subscriber.barangay,
+        subscriber.municipality,
+        subscriber.province
+    ]
+    full_address = ', '.join(filter(None, address_parts)) or subscriber.address or ''
+    
     job = {
+        "job_order_id": f"JO{datetime.now().strftime('%Y%m%d')}{uuid.uuid4().hex[:6].upper()}",
         "subscriber_id": sub_id,
+        "subscriber_name": f"{subscriber.first_name} {subscriber.last_name}",
+        "subscriber_address": full_address,
         "type": "Installation",
-        "description": f"Installation for {subscriber.first_name} {subscriber.last_name}",
+        "description": f"New installation for {subscriber.first_name} {subscriber.last_name}",
         "status": "Open",
         "priority": "High",
-        "created_at": datetime.now(timezone.utc)
+        "assigned_technicians": [],
+        "scheduled_date": None,
+        "scheduled_time_slot": "",
+        "notes": "",
+        "materials_used": [],
+        "created_by": current_user['username'],
+        "created_at": datetime.now(timezone.utc),
+        "sla_target_hours": 8,
+        "sla_breached": False
     }
     await db.job_orders.insert_one(job)
     
