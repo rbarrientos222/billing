@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TablePagination, useTablePagination } from '@/components/ui/table-pagination';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw, Wifi, Package, FileText, Receipt, ChevronDown } from 'lucide-react';
+import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw, Wifi, Package, FileText, Receipt, ChevronDown, User } from 'lucide-react';
 
 export default function SubscriberManagement() {
   const [subscribers, setSubscribers] = useState([]);
