@@ -250,14 +250,13 @@ Build a billing system with the following features:
 
 - Admin Settings (discounts/rebates configuration, import/export)
 - Company Setup page
-- Expenses module
 - Wallet Management UI (admin manual add/deduct credits)
 - Receipt printing
 - OR/SI numbering logic
 - Auto-email SOA
 - Automatic SMS triggers for billing events
 - Complete Philippine address data (municipalities/barangays)
-- Backend code refactoring (server.py is 3500+ lines - needs modularization)
+- Backend code refactoring (server.py is 4000+ lines - needs modularization)
 - Printer Setup configuration
 - SOA Template configuration
 
