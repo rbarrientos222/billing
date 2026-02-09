@@ -352,7 +352,7 @@ export default function ExpenseManagement() {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories.map(cat => (
                     <SelectItem key={cat.category_id} value={cat.name}>{cat.name}</SelectItem>
                   ))}
@@ -367,7 +367,7 @@ export default function ExpenseManagement() {
                   <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="yes">Recurring Only</SelectItem>
                   <SelectItem value="no">Non-Recurring</SelectItem>
                 </SelectContent>
