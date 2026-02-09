@@ -239,13 +239,36 @@ export default function SubscriberManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.plan_id) {
+      toast.error('Please select a Subscription Plan');
+      return;
+    }
+    if (!selectedUnit?.unit_id) {
+      toast.error('Please select a Modem/Equipment');
+      return;
+    }
+    if (!formData.pppoe_username) {
+      toast.error('PPPoE Username is required');
+      return;
+    }
+    if (!formData.pppoe_password) {
+      toast.error('PPPoE Password is required');
+      return;
+    }
+    if (!formData.pppoe_profile) {
+      toast.error('PPPoE Profile is required');
+      return;
+    }
+    
     try {
       const response = await axios.post('/subscribers', {
         ...formData,
         account_number: '',
         is_active: true,
         installation_date: new Date().toISOString(),
-        assigned_unit_id: selectedUnit?.unit_id || null
+        assigned_unit_id: selectedUnit?.unit_id
       });
       
       let successMessage = `Subscriber created with account number: ${response.data.account_number}`;
