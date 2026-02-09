@@ -528,6 +528,258 @@ export default function ExpenseManagement() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        {/* Reports & Analytics Tab */}
+        <TabsContent value="reports" className="space-y-6">
+          {analytics ? (
+            <>
+              {/* Month Comparison Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">This Month</p>
+                        <p className="text-2xl font-bold">₱{(analytics.month_comparison?.this_month || 0).toLocaleString()}</p>
+                      </div>
+                      <Calendar className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Last Month</p>
+                        <p className="text-2xl font-bold">₱{(analytics.month_comparison?.last_month || 0).toLocaleString()}</p>
+                      </div>
+                      <Calendar className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Change</p>
+                        <div className="flex items-center gap-2">
+                          <p className={`text-2xl font-bold ${analytics.month_comparison?.change >= 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {analytics.month_comparison?.change >= 0 ? '+' : ''}₱{Math.abs(analytics.month_comparison?.change || 0).toLocaleString()}
+                          </p>
+                          {analytics.month_comparison?.change >= 0 ? (
+                            <ArrowUpRight className="h-5 w-5 text-red-600" />
+                          ) : (
+                            <ArrowDownRight className="h-5 w-5 text-green-600" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {analytics.month_comparison?.change_percentage >= 0 ? '+' : ''}{analytics.month_comparison?.change_percentage}% from last month
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Avg Daily Expense</p>
+                        <p className="text-2xl font-bold">₱{(analytics.avg_daily_expense || 0).toLocaleString()}</p>
+                      </div>
+                      <TrendingUp className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 1: Monthly Trend */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Monthly Expense Trend
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={analytics.monthly_trend || []}>
+                        <defs>
+                          <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis dataKey="month_short" className="text-xs" />
+                        <YAxis 
+                          tickFormatter={(value) => `₱${(value/1000).toFixed(0)}k`}
+                          className="text-xs"
+                        />
+                        <Tooltip 
+                          formatter={(value) => [`₱${value.toLocaleString()}`, 'Expenses']}
+                          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="amount" 
+                          stroke="#ef4444" 
+                          fillOpacity={1}
+                          fill="url(#expenseGradient)"
+                          strokeWidth={2}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Charts Row 2: Category Breakdown & Expense Types */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Category Breakdown Pie Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <PieChart className="h-5 w-5" />
+                      Expenses by Category
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsPie>
+                          <Pie
+                            data={analytics.category_breakdown || []}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={2}
+                            dataKey="amount"
+                            nameKey="category"
+                            label={({ category, percentage }) => `${category} (${percentage}%)`}
+                            labelLine={false}
+                          >
+                            {(analytics.category_breakdown || []).map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            formatter={(value) => `₱${value.toLocaleString()}`}
+                            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                          />
+                        </RechartsPie>
+                      </ResponsiveContainer>
+                    </div>
+                    {/* Legend */}
+                    <div className="flex flex-wrap justify-center gap-3 mt-4">
+                      {(analytics.category_breakdown || []).slice(0, 6).map((item, index) => (
+                        <div key={item.category} className="flex items-center gap-2 text-sm">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                          <span>{item.category}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Expense Types & Sources */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      Expense Breakdown
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Recurring vs One-time */}
+                    <div>
+                      <p className="text-sm font-medium mb-3">By Type</p>
+                      <div className="h-[100px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={analytics.expense_types || []} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                            <XAxis type="number" tickFormatter={(value) => `₱${(value/1000).toFixed(0)}k`} />
+                            <YAxis type="category" dataKey="type" width={80} />
+                            <Tooltip 
+                              formatter={(value) => `₱${value.toLocaleString()}`}
+                              contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                            />
+                            <Bar dataKey="amount" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    
+                    {/* Manual vs Purchase */}
+                    <div>
+                      <p className="text-sm font-medium mb-3">By Source</p>
+                      <div className="h-[100px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={analytics.expense_sources || []} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                            <XAxis type="number" tickFormatter={(value) => `₱${(value/1000).toFixed(0)}k`} />
+                            <YAxis type="category" dataKey="source" width={100} />
+                            <Tooltip 
+                              formatter={(value) => `₱${value.toLocaleString()}`}
+                              contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                            />
+                            <Bar dataKey="amount" fill="#22c55e" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Top Expenses Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Top 5 Expenses
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="text-left p-3">#</th>
+                          <th className="text-left p-3">Description</th>
+                          <th className="text-left p-3">Category</th>
+                          <th className="text-left p-3">Date</th>
+                          <th className="text-right p-3">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(analytics.top_expenses || []).map((expense, index) => (
+                          <tr key={index} className="border-t">
+                            <td className="p-3 font-bold text-muted-foreground">{index + 1}</td>
+                            <td className="p-3">{expense.description}</td>
+                            <td className="p-3"><Badge variant="outline">{expense.category}</Badge></td>
+                            <td className="p-3 text-muted-foreground">{expense.date || '-'}</td>
+                            <td className="p-3 text-right font-bold text-red-600">₱{expense.amount?.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              Loading analytics...
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Add Expense Dialog */}
       <Dialog open={showAddExpense} onOpenChange={setShowAddExpense}>
