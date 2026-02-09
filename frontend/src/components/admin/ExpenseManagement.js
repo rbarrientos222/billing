@@ -8,17 +8,28 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { 
   DollarSign, Plus, Search, Filter, X, Edit2, Trash2, 
-  Calendar, RefreshCw, Tag, TrendingUp, Receipt, FolderPlus
+  Calendar, RefreshCw, Tag, TrendingUp, Receipt, FolderPlus,
+  BarChart3, PieChart, TrendingDown, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
+import { 
+  AreaChart, Area, BarChart, Bar, PieChart as RechartsPie, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
+} from 'recharts';
+
+// Chart colors
+const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 export default function ExpenseManagement() {
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState({});
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('expenses');
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
