@@ -1948,17 +1948,26 @@ async def deactivate_subscriber(account_number: str, data: dict, current_user: d
                     "days_charged": days_used
                 }
     
-    # Update PPPoE profile on Mikrotik to disconnection profile
+    # Update PPPoE profile on Mikrotik to disconnection profile and disconnect active session
     mikrotik_config = await db.mikrotik_configs.find_one({})
     if mikrotik_config and subscriber.get('pppoe_username'):
         try:
             service = MikrotikService(mikrotik_config)
             if service.connect():
-                resource = service.api.get_resource('/ppp/secret')
-                secrets = resource.get(name=subscriber['pppoe_username'])
-                if secrets:
-                    resource.set(id=secrets[0]['id'], profile=disconnection_profile)
+                # Update profile to DEACTIVATED
+                profile_updated = service.update_pppoe_profile(subscriber['pppoe_username'], disconnection_profile)
+                if profile_updated:
                     response["mikrotik_profile_changed"] = disconnection_profile
+                    
+                    # Disconnect active session so new profile takes effect immediately
+                    session_disconnected = service.disconnect_active_session(subscriber['pppoe_username'])
+                    if session_disconnected:
+                        response["active_session_disconnected"] = True
+                    else:
+                        response["active_session_disconnected"] = False
+                        response["session_note"] = "No active session found or already disconnected"
+                else:
+                    response["mikrotik_error"] = "Failed to update PPPoE profile"
                 service.disconnect()
         except Exception as e:
             logger.error(f"Failed to update Mikrotik profile: {e}")
