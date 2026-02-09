@@ -792,7 +792,7 @@ export default function SubscriberManagement() {
               </div>
 
               <div className="relative">
-                <Label>Modem MAC Address / Equipment</Label>
+                <Label>Modem MAC Address / Equipment <span className="text-red-500">*</span></Label>
                 <div className="relative">
                   <Input 
                     value={formData.modem_mac} 
