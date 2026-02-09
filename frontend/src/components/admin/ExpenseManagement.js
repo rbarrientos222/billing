@@ -399,12 +399,12 @@ export default function ExpenseManagement() {
               Apply
             </Button>
             
-            {(filterCategory || filterRecurring || dateFrom || dateTo) && (
+            {(filterCategory && filterCategory !== 'all') || (filterRecurring && filterRecurring !== 'all') || dateFrom || dateTo ? (
               <Button variant="ghost" onClick={handleClearFilters} data-testid="clear-filters-btn">
                 <X className="h-4 w-4 mr-1" />
                 Clear
               </Button>
-            )}
+            ) : null}
           </div>
         </CardContent>
       </Card>
