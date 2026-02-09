@@ -377,8 +377,12 @@ export default function SubscriberManagement() {
 
   const handleActivateSingle = async (accountNumber) => {
     try {
-      await axios.post(`/subscribers/${accountNumber}/activate-pppoe`);
-      toast.success('PPPoE account activated in Mikrotik');
+      const response = await axios.post(`/subscribers/${accountNumber}/activate-pppoe`);
+      if (response.data.already_exists) {
+        toast.success('PPPoE account already exists in Mikrotik. Status updated to Active.', { duration: 5000 });
+      } else {
+        toast.success('PPPoE account created and activated in Mikrotik');
+      }
       fetchSubscribers();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to activate PPPoE');
