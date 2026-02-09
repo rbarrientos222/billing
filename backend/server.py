@@ -650,6 +650,62 @@ class MikrotikService:
             logger.error(f"Failed to create account: {e}")
             return False
 
+    def update_pppoe_profile(self, username: str, new_profile: str) -> bool:
+        """Update the profile of an existing PPPoE account"""
+        try:
+            resource = self.api.get_resource('/ppp/secret')
+            secrets = resource.get()
+            
+            # Find the account by username
+            for secret in secrets:
+                if secret.get('name') == username:
+                    secret_id = secret.get('id')
+                    if secret_id:
+                        resource.set(id=secret_id, profile=new_profile)
+                        logger.info(f"Updated PPPoE profile for {username} to {new_profile}")
+                        return True
+            
+            logger.warning(f"PPPoE account {username} not found for profile update")
+            return False
+        except Exception as e:
+            logger.error(f"Failed to update PPPoE profile: {e}")
+            return False
+
+    def disconnect_active_session(self, username: str) -> bool:
+        """Disconnect an active PPPoE session to force reconnection with new profile"""
+        try:
+            resource = self.api.get_resource('/ppp/active')
+            active_sessions = resource.get()
+            
+            # Find active session by username
+            for session in active_sessions:
+                if session.get('name') == username:
+                    session_id = session.get('id')
+                    if session_id:
+                        resource.remove(id=session_id)
+                        logger.info(f"Disconnected active session for {username}")
+                        return True
+            
+            logger.info(f"No active session found for {username}")
+            return False  # No active session, but not an error
+        except Exception as e:
+            logger.error(f"Failed to disconnect session: {e}")
+            return False
+
+    def get_pppoe_account_profile(self, username: str) -> str:
+        """Get the current profile of a PPPoE account"""
+        try:
+            resource = self.api.get_resource('/ppp/secret')
+            secrets = resource.get()
+            
+            for secret in secrets:
+                if secret.get('name') == username:
+                    return secret.get('profile', '')
+            return ''
+        except Exception as e:
+            logger.error(f"Failed to get PPPoE profile: {e}")
+            return ''
+
 # ========== AUTH ENDPOINTS ==========
 @api_router.post("/auth/register")
 async def register_user(user: UserCreate):
