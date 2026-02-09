@@ -2420,9 +2420,105 @@ async def use_wallet_for_payment(data: dict, current_user: dict = Depends(get_cu
     return {"message": "Payment processed", "or_number": payment_dict['or_number'], "id": str(result.inserted_id)}
 
 @api_router.get("/payments/subscriber/{account_number}")
-async def get_subscriber_payments(account_number: str):
-    payments = await db.payments.find({"subscriber_id": account_number}, {"_id": 0}).to_list(1000)
+async def get_subscriber_payments(
+    account_number: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Get subscriber payment history with optional date range filter"""
+    query = {"subscriber_id": account_number}
+    
+    # Add date range filter if provided
+    if start_date or end_date:
+        date_filter = {}
+        if start_date:
+            try:
+                start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                # Set to start of day
+                start_dt = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+                date_filter["$gte"] = start_dt
+            except ValueError:
+                pass
+        if end_date:
+            try:
+                end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+                # Set to end of day
+                end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+                date_filter["$lte"] = end_dt
+            except ValueError:
+                pass
+        if date_filter:
+            query["payment_date"] = date_filter
+    
+    payments = await db.payments.find(query, {"_id": 0}).sort("payment_date", -1).to_list(1000)
     return payments
+
+
+@api_router.post("/subscribers/{account_number}/wallet")
+async def add_wallet_credit(account_number: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Add advance payment directly to subscriber's wallet credit.
+    Used when subscriber has no outstanding invoices but wants to pay in advance.
+    """
+    if current_user['role'] not in ['admin', 'cashier', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    amount = float(data.get('amount', 0))
+    mode = data.get('mode', 'cash')
+    
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be greater than 0")
+    
+    subscriber = await db.subscribers.find_one({"account_number": account_number})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    now = datetime.now(timezone.utc)
+    or_number = f"OR{now.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
+    
+    # Update subscriber wallet
+    current_wallet = subscriber.get('wallet_balance', 0)
+    new_wallet = current_wallet + amount
+    
+    await db.subscribers.update_one(
+        {"account_number": account_number},
+        {"$set": {"wallet_balance": new_wallet}}
+    )
+    
+    # Log wallet credit transaction
+    await db.wallet_transactions.insert_one({
+        "subscriber_id": account_number,
+        "type": "credit",
+        "amount": amount,
+        "description": f"Advance payment deposit - OR# {or_number}",
+        "or_number": or_number,
+        "created_at": now
+    })
+    
+    # Create payment record for audit trail
+    payment_record = {
+        "or_number": or_number,
+        "subscriber_id": account_number,
+        "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
+        "total_amount": amount,
+        "mode": mode,
+        "payment_date": now,
+        "received_by": current_user['username'],
+        "invoices_settled": [],
+        "invoices_partial": [],
+        "description": "Advance payment - Wallet deposit",
+        "wallet_credit": amount,
+        "is_advance_payment": True
+    }
+    await db.payments.insert_one(payment_record)
+    
+    return {
+        "message": "Wallet credit added successfully",
+        "or_number": or_number,
+        "amount_added": amount,
+        "previous_balance": current_wallet,
+        "new_balance": new_wallet
+    }
 
 @api_router.get("/payments/receipt/{or_number}")
 async def generate_receipt(or_number: str):
