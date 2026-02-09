@@ -117,6 +117,20 @@ Build a billing system with the following features:
   - **Reactivate Subscriber** with prorated billing
   - **Delete Subscriber** with admin password confirmation
   - **Add Manual Charges** (equipment, service fees, etc.)
+- [x] **Expense Management** (NEW - Feb 9, 2026)
+  - Stats cards: Total Expenses, This Month, Recurring count/amount, Categories count
+  - Expense table with Date, Category, Description, Reference, Amount, Type, Actions
+  - Filters: Search, Category dropdown, Recurring (All/Yes/No), Date range
+  - Add/Edit/Delete expenses with Category, Description, Amount, Date, Reference
+  - **Recurring flag** with type (daily/weekly/monthly) - for manual tracking
+  - **Expense Categories**: 8 preset categories + custom categories
+  - Preset: Utilities, Salaries, Supplies, Maintenance, Fuel, Internet, Rent, Purchase
+  - Custom categories can be added/deleted; preset categories protected
+  - **Purchase integration**: Auto-creates expense when purchase is made
+  - Purchase-linked expenses marked "Auto-created" and protected from edit/delete
+  - Dashboard integration: Expenses reflected in Net Sales calculation
+  - Access: Admin + Billing role
+
 - [x] **Cashier Dashboard**
   - Universal search (by account number, name, or phone)
   - **Centralized Payment Form** with FIFO allocation
