@@ -4368,11 +4368,13 @@ async def startup_event():
     # Create default admin user
     existing_admin = await db.users.find_one({"username": "admin"})
     if not existing_admin:
+        # Get admin password from environment variable
+        admin_password = os.environ.get('ADMIN_PASSWORD', 'changeme')
         admin_user = {
             "username": "admin",
             "full_name": "Administrator",
             "role": "admin",
-            "password": hash_password("@Gello1006"),
+            "password": hash_password(admin_password),
             "is_active": True,
             "created_at": datetime.now(timezone.utc)
         }
