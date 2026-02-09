@@ -124,6 +124,16 @@ Build a billing system with the following features:
   - Payment history with descriptions
   - Today's Collections (live updated)
   - Wallet Balance display
+  - **Payment History Enhancements** (NEW - Feb 9, 2026)
+    - Hidden by default with "Show History (X)" toggle button
+    - Date range filter (From Date, To Date) with Apply/Clear
+    - API supports `?start_date=X&end_date=Y` query params
+  - **Advance Payment to Wallet** (NEW - Feb 9, 2026)
+    - "Add Advance Payment to Wallet" button when no outstanding invoices
+    - Amount input with Payment Mode selection (Cash, GCash, Bank, Card)
+    - Creates payment record with `is_advance_payment: true`
+    - Wallet balance updates immediately
+    - `/api/subscribers/{account_number}/wallet` POST endpoint
 - [x] **Subscription Plans Management**
   - Full CRUD (Create, Edit, Delete)
 - [x] **User Management**
