@@ -3745,13 +3745,15 @@ async def create_purchase(purchase: Purchase, current_user: dict = Depends(get_c
     
     # Create expense entry
     expense_entry = {
-        "category": "Inventory Purchase",
+        "expense_id": f"EXP{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}",
+        "category": "Purchase",
         "description": f"Purchase from {purchase_dict.get('supplier_name', 'Supplier')} - {len(items_processed)} item(s)",
         "amount": purchase_dict['total_amount'],
         "is_recurring": False,
         "reference_type": "purchase",
         "reference_id": purchase_dict['purchase_id'],
-        "expense_date": purchase_dict['purchase_date']
+        "expense_date": purchase_dict['purchase_date'],
+        "created_at": datetime.now(timezone.utc)
     }
     await db.expenses.insert_one(expense_entry)
     logger.info(f"Created expense entry for purchase {purchase_dict['purchase_id']}")
