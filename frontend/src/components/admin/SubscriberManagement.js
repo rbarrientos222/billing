@@ -50,7 +50,7 @@ export default function SubscriberManagement() {
   
   // Form states for actions
   const [changePlanForm, setChangePlanForm] = useState({ new_plan_id: '', new_pppoe_profile: '', generate_prorated_bill: true });
-  const [deactivateForm, setDeactivateForm] = useState({ disconnection_profile: 'NON-PAYMENTS', reason: '', generate_final_bill: true });
+  const [deactivateForm, setDeactivateForm] = useState({ disconnection_profile: 'DEACTIVATED', reason: '', generate_final_bill: true });
   const [reactivateForm, setReactivateForm] = useState({ pppoe_profile: '', plan_id: '', generate_prorated_bill: true });
   const [deleteForm, setDeleteForm] = useState({ admin_password: '' });
   const [chargeForm, setChargeForm] = useState({ description: '', amount: '', charge_type: 'Equipment' });
