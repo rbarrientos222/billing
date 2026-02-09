@@ -37,8 +37,16 @@ db = client[os.environ['DB_NAME']]
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
-SECRET_KEY = os.environ.get('SECRET_KEY', 'billing-secret-key-change-in-production')
-ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY', 'encryption-key-change-in-production-32b').encode()
+
+# Security: Require SECRET_KEY and ENCRYPTION_KEY from environment
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is required")
+
+ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY')
+if not ENCRYPTION_KEY:
+    raise ValueError("ENCRYPTION_KEY environment variable is required")
+ENCRYPTION_KEY = ENCRYPTION_KEY.encode()
 if len(ENCRYPTION_KEY) < 32:
     ENCRYPTION_KEY = ENCRYPTION_KEY.ljust(32, b'0')
 fernet_key = base64.urlsafe_b64encode(ENCRYPTION_KEY[:32])
