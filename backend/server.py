@@ -1370,7 +1370,7 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     
     job = {
         "job_order_id": f"JO{datetime.now().strftime('%Y%m%d')}{uuid.uuid4().hex[:6].upper()}",
-        "subscriber_id": sub_id,
+        "subscriber_id": subscriber.account_number,
         "subscriber_name": f"{subscriber.first_name} {subscriber.last_name}",
         "subscriber_address": full_address,
         "type": "Installation",
