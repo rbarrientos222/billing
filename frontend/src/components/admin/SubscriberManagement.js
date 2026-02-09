@@ -451,6 +451,12 @@ export default function SubscriberManagement() {
     try {
       const response = await axios.post(`/subscribers/${selectedSubscriber.account_number}/deactivate`, deactivateForm);
       toast.success(response.data.message);
+      if (response.data.mikrotik_profile_changed) {
+        toast.info(`Mikrotik profile changed to: ${response.data.mikrotik_profile_changed}`, { duration: 4000 });
+      }
+      if (response.data.active_session_disconnected) {
+        toast.info('Active session disconnected - new profile now in effect', { duration: 4000 });
+      }
       if (response.data.final_invoice) {
         toast.info(`Final bill: ₱${response.data.final_invoice.amount} (${response.data.final_invoice.days_charged} days)`);
       }
@@ -479,6 +485,12 @@ export default function SubscriberManagement() {
     try {
       const response = await axios.post(`/subscribers/${selectedSubscriber.account_number}/reactivate`, reactivateForm);
       toast.success(response.data.message);
+      if (response.data.mikrotik_profile_changed) {
+        toast.info(`Mikrotik profile changed to: ${response.data.mikrotik_profile_changed}`, { duration: 4000 });
+      }
+      if (response.data.active_session_disconnected) {
+        toast.info('Active session disconnected - new profile now in effect', { duration: 4000 });
+      }
       if (response.data.prorated_invoice) {
         toast.info(`Prorated bill: ₱${response.data.prorated_invoice.amount} (${response.data.prorated_invoice.days_covered} days)`);
       }
