@@ -161,6 +161,72 @@ export default function CashierDashboard({ user, onLogout }) {
     .filter(inv => !inv.paid)
     .reduce((sum, inv) => sum + (inv.remaining_balance || inv.amount || 0), 0);
 
+  // Fetch payment history with optional date filter
+  const fetchPaymentHistory = async (startDate = '', endDate = '') => {
+    if (!selectedSubscriber) return;
+    
+    setLoadingHistory(true);
+    try {
+      let url = `/payments/subscriber/${selectedSubscriber.account_number}`;
+      const params = new URLSearchParams();
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      if (params.toString()) url += `?${params.toString()}`;
+      
+      const response = await axios.get(url);
+      setPaymentHistory(response.data);
+    } catch (error) {
+      toast.error('Failed to fetch payment history');
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  // Apply date filter
+  const handleApplyDateFilter = () => {
+    fetchPaymentHistory(dateFrom, dateTo);
+  };
+
+  // Clear date filter
+  const handleClearDateFilter = () => {
+    setDateFrom('');
+    setDateTo('');
+    fetchPaymentHistory('', '');
+  };
+
+  // Handle advance payment (wallet deposit)
+  const handleAdvancePayment = async () => {
+    if (!advanceAmount || parseFloat(advanceAmount) <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+    
+    setProcessingAdvance(true);
+    try {
+      const response = await axios.post(`/subscribers/${selectedSubscriber.account_number}/wallet`, {
+        amount: parseFloat(advanceAmount),
+        mode: advancePaymentMode
+      });
+      
+      toast.success(`Advance payment of ₱${parseFloat(advanceAmount).toLocaleString()} added to wallet! OR# ${response.data.or_number}`, { duration: 5000 });
+      
+      // Refresh data
+      setWalletBalance(response.data.new_balance);
+      setAdvanceAmount('');
+      setShowAdvancePayment(false);
+      fetchTodayStats();
+      
+      // Refresh payment history if visible
+      if (showPaymentHistory) {
+        fetchPaymentHistory(dateFrom, dateTo);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to process advance payment');
+    } finally {
+      setProcessingAdvance(false);
+    }
+  };
+
   // Get status badge for invoice
   const getInvoiceStatus = (invoice) => {
     if (invoice.paid) {
