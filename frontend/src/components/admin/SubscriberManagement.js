@@ -866,10 +866,10 @@ export default function SubscriberManagement() {
               
               {/* PPPoE Account Section */}
               <div className="pt-4 border-t">
-                <h4 className="font-medium mb-3 text-primary">PPPoE Account Configuration</h4>
+                <h4 className="font-medium mb-3 text-primary">PPPoE Account Configuration <span className="text-red-500">*</span></h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>PPPoE Username</Label>
+                    <Label>PPPoE Username <span className="text-red-500">*</span></Label>
                     <Input 
                       value={formData.pppoe_username} 
                       onChange={(e) => setFormData({ ...formData, pppoe_username: e.target.value })} 
@@ -877,7 +877,7 @@ export default function SubscriberManagement() {
                     />
                   </div>
                   <div>
-                    <Label>PPPoE Password</Label>
+                    <Label>PPPoE Password <span className="text-red-500">*</span></Label>
                     <Input 
                       type="password"
                       value={formData.pppoe_password} 
@@ -886,7 +886,7 @@ export default function SubscriberManagement() {
                     />
                   </div>
                   <div className="col-span-2">
-                    <Label>PPPoE Profile (from Mikrotik)</Label>
+                    <Label>PPPoE Profile (from Mikrotik) <span className="text-red-500">*</span></Label>
                     {profiles.length > 0 ? (
                       <Select value={formData.pppoe_profile} onValueChange={(value) => setFormData({ ...formData, pppoe_profile: value })}>
                         <SelectTrigger>
