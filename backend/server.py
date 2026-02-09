@@ -370,13 +370,25 @@ class Purchase(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Expense(BaseModel):
+    expense_id: Optional[str] = None
     category: str
     description: str
     amount: float
+    expense_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    reference_number: Optional[str] = None  # Receipt/invoice reference
     is_recurring: bool = False
+    recurring_type: Optional[str] = None  # 'daily', 'weekly', 'monthly' (for display/reminder only)
     reference_type: Optional[str] = None  # 'purchase' for auto-created expenses
     reference_id: Optional[str] = None  # purchase_id for linking
-    expense_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ExpenseCategory(BaseModel):
+    category_id: Optional[str] = None
+    name: str
+    description: Optional[str] = None
+    is_preset: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class CompanySettings(BaseModel):
     business_name: str
