@@ -507,13 +507,94 @@ export default function CashierDashboard({ user, onLogout }) {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
-                        <Check className="h-12 w-12 mx-auto text-green-600 mb-2" />
-                        <p className="text-green-700 dark:text-green-400 font-medium">All invoices paid!</p>
-                        {walletBalance > 0 && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Wallet credit available: ₱{walletBalance.toLocaleString()}
-                          </p>
+                      <div className="space-y-4">
+                        <div className="text-center py-8 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                          <Check className="h-12 w-12 mx-auto text-green-600 mb-2" />
+                          <p className="text-green-700 dark:text-green-400 font-medium">All invoices paid!</p>
+                          {walletBalance > 0 && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Wallet credit available: ₱{walletBalance.toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                        
+                        {/* Advance Payment Section */}
+                        {!showAdvancePayment ? (
+                          <Button 
+                            onClick={() => setShowAdvancePayment(true)}
+                            variant="outline"
+                            className="w-full border-blue-500 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                            data-testid="show-advance-payment-btn"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Advance Payment to Wallet
+                          </Button>
+                        ) : (
+                          <Card className="border-2 border-blue-500" data-testid="advance-payment-card">
+                            <CardHeader className="pb-3">
+                              <div className="flex justify-between items-center">
+                                <CardTitle className="flex items-center gap-2 text-blue-600">
+                                  <Wallet className="h-5 w-5" />
+                                  Add Advance Payment
+                                </CardTitle>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => setShowAdvancePayment(false)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <p className="text-sm text-muted-foreground">
+                                Add funds to the subscriber's wallet for future bills.
+                              </p>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="sm:col-span-1">
+                                  <Label htmlFor="advance-amount">Amount</Label>
+                                  <Input
+                                    id="advance-amount"
+                                    type="number"
+                                    placeholder="Enter amount"
+                                    value={advanceAmount}
+                                    onChange={(e) => setAdvanceAmount(e.target.value)}
+                                    className="text-lg font-medium"
+                                    data-testid="advance-amount-input"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Payment Mode</Label>
+                                  <Select value={advancePaymentMode} onValueChange={setAdvancePaymentMode}>
+                                    <SelectTrigger data-testid="advance-payment-mode-select">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="cash">Cash</SelectItem>
+                                      <SelectItem value="gcash">GCash</SelectItem>
+                                      <SelectItem value="bank">Bank Transfer</SelectItem>
+                                      <SelectItem value="card">Credit/Debit Card</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="flex items-end">
+                                  <Button 
+                                    onClick={handleAdvancePayment} 
+                                    disabled={processingAdvance || !advanceAmount}
+                                    className="w-full h-10 bg-blue-600 hover:bg-blue-700"
+                                    data-testid="process-advance-payment-btn"
+                                  >
+                                    {processingAdvance ? 'Processing...' : 'Add to Wallet'}
+                                  </Button>
+                                </div>
+                              </div>
+                              {walletBalance > 0 && (
+                                <p className="text-sm text-muted-foreground">
+                                  Current wallet balance: <span className="font-bold text-blue-600">₱{walletBalance.toLocaleString()}</span>
+                                </p>
+                              )}
+                            </CardContent>
+                          </Card>
                         )}
                       </div>
                     )}
