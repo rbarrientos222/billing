@@ -438,7 +438,7 @@ export default function SubscriberManagement() {
   const openDeactivateDialog = (subscriber) => {
     setSelectedSubscriber(subscriber);
     setDeactivateForm({
-      disconnection_profile: 'NON-PAYMENTS',
+      disconnection_profile: 'DEACTIVATED',
       reason: '',
       generate_final_bill: true
     });
