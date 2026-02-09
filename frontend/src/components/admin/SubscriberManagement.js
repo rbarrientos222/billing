@@ -1097,6 +1097,57 @@ export default function SubscriberManagement() {
             </DialogDescription>
           </DialogHeader>
 
+          {/* Subscriber Details Card */}
+          <div className="bg-muted/50 border rounded-lg p-4 space-y-3">
+            <h4 className="font-semibold text-sm flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Subscriber Details
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground text-xs">Mobile Number</p>
+                <p className="font-medium">{selectedSubscriberHistory?.phone || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Plan</p>
+                <p className="font-medium">{selectedSubscriberHistory?.plan_id || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Status</p>
+                <Badge variant={selectedSubscriberHistory?.is_active ? "default" : "secondary"} className={selectedSubscriberHistory?.is_active ? "bg-green-600" : ""}>
+                  {selectedSubscriberHistory?.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Installation Date</p>
+                <p className="font-medium">
+                  {selectedSubscriberHistory?.installation_date 
+                    ? new Date(selectedSubscriberHistory.installation_date).toLocaleDateString() 
+                    : 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Billing Day</p>
+                <p className="font-medium">
+                  {selectedSubscriberHistory?.billing_day 
+                    ? `Every ${selectedSubscriberHistory.billing_day}${['st','nd','rd'][((selectedSubscriberHistory.billing_day+90)%100-10)%10-1]||'th'} of the month`
+                    : selectedSubscriberHistory?.billing_period || 'N/A'}
+                </p>
+              </div>
+              <div className="md:col-span-1">
+                <p className="text-muted-foreground text-xs">Address</p>
+                <p className="font-medium text-xs">
+                  {[
+                    selectedSubscriberHistory?.street,
+                    selectedSubscriberHistory?.barangay,
+                    selectedSubscriberHistory?.municipality,
+                    selectedSubscriberHistory?.province
+                  ].filter(Boolean).join(', ') || selectedSubscriberHistory?.address || 'N/A'}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Wallet Balance Card */}
           {(selectedSubscriberHistory?.wallet_balance || 0) > 0 && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-between">
