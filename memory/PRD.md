@@ -130,6 +130,12 @@ Build a billing system with the following features:
   - Purchase-linked expenses marked "Auto-created" and protected from edit/delete
   - Dashboard integration: Expenses reflected in Net Sales calculation
   - Access: Admin + Billing role
+  - **Reports & Analytics Tab** (NEW - Feb 9, 2026)
+    - Month comparison cards: This Month, Last Month, Change (+/-), Avg Daily Expense
+    - Monthly expense trend area chart (12 months)
+    - Category breakdown pie chart with percentages
+    - Expense breakdown bar charts (By Type: Recurring vs One-time, By Source: Manual vs Purchases)
+    - Top 5 expenses table
 
 - [x] **Cashier Dashboard**
   - Universal search (by account number, name, or phone)
