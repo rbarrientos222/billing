@@ -1981,7 +1981,8 @@ async def deactivate_subscriber(account_number: str, data: dict, current_user: d
             "deactivated_at": now,
             "deactivation_reason": reason,
             "previous_pppoe_profile": subscriber.get('pppoe_profile'),
-            "pppoe_profile": disconnection_profile
+            "pppoe_profile": disconnection_profile,
+            "pppoe_activated": False
         }}
     )
     
