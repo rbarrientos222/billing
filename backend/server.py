@@ -93,23 +93,43 @@ async def auto_generate_billing():
         
         # Check if today is the billing day
         if current_day == actual_billing_day:
-            # Check if invoice already exists for this billing cycle
-            start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            # Check if ANY invoice already exists for this billing cycle (prorated OR regular)
+            # This prevents duplicate billing when prorated bill was already generated
+            period_info = get_billing_period_description(billing_day, today)
+            
             existing_invoice = await db.invoices.find_one({
                 "subscriber_id": sub['account_number'],
-                "created_at": {"$gte": start_of_month},
-                "is_prorated": {"$ne": True}  # Exclude prorated invoices
+                "$or": [
+                    # Regular invoice for this cycle
+                    {
+                        "billing_day": billing_day,
+                        "is_prorated": {"$ne": True},
+                        "created_at": {"$gte": today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)}
+                    },
+                    # Prorated invoice that covers through this billing day
+                    {
+                        "is_prorated": True,
+                        "billing_end": {"$gte": today.replace(hour=0, minute=0, second=0, microsecond=0)}
+                    }
+                ]
             })
             
             if not existing_invoice:
                 # Get subscriber's plan
                 plan = await db.subscription_plans.find_one({"name": sub.get('plan_id')})
                 if plan:
-                    # Calculate due date (usually 15 days after billing)
-                    due_date = today + timedelta(days=15)
+                    # Calculate due date - set to next billing cycle (not +15 days)
+                    # Due date should be the next billing day
+                    if today.month == 12:
+                        next_month = 1
+                        next_year = today.year + 1
+                    else:
+                        next_month = today.month + 1
+                        next_year = today.year
                     
-                    # Get billing period description
-                    period_info = get_billing_period_description(billing_day, today)
+                    next_month_last_day = calendar.monthrange(next_year, next_month)[1]
+                    next_billing_day = min(billing_day, next_month_last_day)
+                    due_date = datetime(next_year, next_month, next_billing_day, tzinfo=timezone.utc)
                     
                     invoice = {
                         "invoice_number": f"INV{today.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}",
