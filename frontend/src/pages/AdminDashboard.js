@@ -296,7 +296,26 @@ export default function AdminDashboard({ user, onLogout }) {
               </div>
               
               <div className="border-t border-border pt-4">
-                <h4 className="text-sm font-medium mb-3">Billing Overview</h4>
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-sm font-medium">Billing Overview</h4>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        const res = await axios.post('/billing/run-now');
+                        toast.success(res.data.message);
+                        fetchStats();
+                      } catch (err) {
+                        toast.error(err.response?.data?.detail || 'Failed to run billing');
+                      }
+                    }}
+                    data-testid="run-billing-btn"
+                  >
+                    <CalendarDays className="h-3 w-3 mr-1" />
+                    Run Billing
+                  </Button>
+                </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Total Invoices</span>
