@@ -70,6 +70,7 @@ async def auto_generate_billing():
     """
     Automatic billing function that runs daily.
     Generates invoices for subscribers whose billing day matches today.
+    For new subscribers (first billing), creates prorated invoice from installation date.
     """
     today = datetime.now(timezone.utc)
     current_day = today.day
@@ -93,62 +94,107 @@ async def auto_generate_billing():
         
         # Check if today is the billing day
         if current_day == actual_billing_day:
-            # Check if ANY invoice already exists for this billing cycle (prorated OR regular)
-            # This prevents duplicate billing when prorated bill was already generated
-            period_info = get_billing_period_description(billing_day, today)
+            account_number = sub['account_number']
             
-            existing_invoice = await db.invoices.find_one({
-                "subscriber_id": sub['account_number'],
-                "$or": [
-                    # Regular invoice for this cycle
-                    {
-                        "billing_day": billing_day,
-                        "is_prorated": {"$ne": True},
-                        "created_at": {"$gte": today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)}
-                    },
-                    # Prorated invoice that covers through this billing day
-                    {
-                        "is_prorated": True,
-                        "billing_end": {"$gte": today.replace(hour=0, minute=0, second=0, microsecond=0)}
-                    }
-                ]
+            # Check if ANY invoice already exists for today (prevent duplicates from multiple runs)
+            today_start = today.replace(hour=0, minute=0, second=0, microsecond=0)
+            existing_today = await db.invoices.find_one({
+                "subscriber_id": account_number,
+                "created_at": {"$gte": today_start}
             })
             
-            if not existing_invoice:
-                # Get subscriber's plan
-                plan = await db.subscription_plans.find_one({"name": sub.get('plan_id')})
-                if plan:
-                    # Calculate due date - set to next billing cycle (not +15 days)
-                    # Due date should be the next billing day
-                    if today.month == 12:
-                        next_month = 1
-                        next_year = today.year + 1
-                    else:
-                        next_month = today.month + 1
-                        next_year = today.year
+            if existing_today:
+                logger.info(f"Invoice already exists for {account_number} today, skipping")
+                continue
+            
+            # Check if there's a prorated invoice that covers through this billing day
+            existing_prorated = await db.invoices.find_one({
+                "subscriber_id": account_number,
+                "is_prorated": True,
+                "billing_end": {"$gte": today_start}
+            })
+            
+            if existing_prorated:
+                logger.info(f"Prorated invoice covers {account_number} through today, skipping")
+                continue
+            
+            # Get subscriber's plan
+            plan = await db.subscription_plans.find_one({"name": sub.get('plan_id')})
+            if not plan:
+                logger.warning(f"No plan found for subscriber {account_number}")
+                continue
+            
+            # Check if this is the subscriber's FIRST invoice (new subscriber without prorated bill)
+            existing_invoices = await db.invoices.count_documents({"subscriber_id": account_number})
+            
+            # Calculate due date - next billing cycle
+            if today.month == 12:
+                next_month = 1
+                next_year = today.year + 1
+            else:
+                next_month = today.month + 1
+                next_year = today.year
+            
+            next_month_last_day = calendar.monthrange(next_year, next_month)[1]
+            next_billing_day = min(billing_day, next_month_last_day)
+            due_date = datetime(next_year, next_month, next_billing_day, tzinfo=timezone.utc)
+            
+            if existing_invoices == 0:
+                # FIRST INVOICE - Check if we need to prorate from installation date
+                installation_date = sub.get('installation_date')
+                if installation_date:
+                    if isinstance(installation_date, str):
+                        try:
+                            installation_date = datetime.fromisoformat(installation_date.replace('Z', '+00:00'))
+                        except:
+                            installation_date = today
                     
-                    next_month_last_day = calendar.monthrange(next_year, next_month)[1]
-                    next_billing_day = min(billing_day, next_month_last_day)
-                    due_date = datetime(next_year, next_month, next_billing_day, tzinfo=timezone.utc)
+                    # Calculate prorated amount from installation to billing day
+                    prorate_calc = calculate_prorated_amount(plan['price'], billing_day, installation_date)
                     
-                    invoice = {
-                        "invoice_number": f"INV{today.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}",
-                        "subscriber_id": sub['account_number'],
-                        "subscriber_name": f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip(),
-                        "plan_name": plan['name'],
-                        "amount": plan['price'],
-                        "description": period_info['description'],
-                        "billing_day": billing_day,
-                        "billing_start": period_info['start_date'],
-                        "billing_end": period_info['end_date'],
-                        "due_date": due_date,
-                        "paid": False,
-                        "is_prorated": False,
-                        "created_at": today
-                    }
-                    await db.invoices.insert_one(invoice)
-                    invoices_generated += 1
-                    logger.info(f"Generated invoice {invoice['invoice_number']} for {sub['account_number']}")
+                    if prorate_calc['days'] > 0 and prorate_calc['days'] < 30:
+                        # Create prorated invoice
+                        invoice = {
+                            "invoice_number": f"INV{today.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}",
+                            "subscriber_id": account_number,
+                            "subscriber_name": f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip(),
+                            "plan_name": plan['name'],
+                            "amount": prorate_calc['amount'],
+                            "description": f"Prorated bill for period {installation_date.strftime('%B %d, %Y')} - {today.strftime('%B %d, %Y')}",
+                            "billing_day": billing_day,
+                            "billing_start": installation_date,
+                            "billing_end": today,
+                            "due_date": due_date,
+                            "paid": False,
+                            "is_prorated": True,
+                            "created_at": today
+                        }
+                        await db.invoices.insert_one(invoice)
+                        invoices_generated += 1
+                        logger.info(f"Generated PRORATED invoice {invoice['invoice_number']} for new subscriber {account_number}: {prorate_calc['days']} days = ₱{prorate_calc['amount']}")
+                        continue
+            
+            # Regular full invoice for existing subscribers
+            period_info = get_billing_period_description(billing_day, today)
+            
+            invoice = {
+                "invoice_number": f"INV{today.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}",
+                "subscriber_id": account_number,
+                "subscriber_name": f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip(),
+                "plan_name": plan['name'],
+                "amount": plan['price'],
+                "description": period_info['description'],
+                "billing_day": billing_day,
+                "billing_start": period_info['start_date'],
+                "billing_end": period_info['end_date'],
+                "due_date": due_date,
+                "paid": False,
+                "is_prorated": False,
+                "created_at": today
+            }
+            await db.invoices.insert_one(invoice)
+            invoices_generated += 1
+            logger.info(f"Generated invoice {invoice['invoice_number']} for {account_number}")
     
     logger.info(f"Automatic billing completed. Generated {invoices_generated} invoices.")
     
