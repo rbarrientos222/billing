@@ -334,22 +334,22 @@ export default function TechnicianDashboard({ user, onLogout }) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
+        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 lg:px-6">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             data-testid="sidebar-toggle"
           >
-            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <Menu className="h-5 w-5" />
           </Button>
-          <div className="text-sm text-muted-foreground">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <div className="text-xs sm:text-sm text-muted-foreground">
+            {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
           </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
           <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="/joborders" element={<TechnicianJobOrders user={user} />} />
