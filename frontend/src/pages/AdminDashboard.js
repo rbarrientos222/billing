@@ -368,13 +368,35 @@ export default function AdminDashboard({ user, onLogout }) {
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Mobile Overlay */}
+      {sidebarOpen && !isDesktop && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 bg-card border-r border-border overflow-hidden`}>
+      <aside className={`
+        ${isDesktop 
+          ? (sidebarOpen ? 'w-64' : 'w-0') 
+          : (sidebarOpen ? 'translate-x-0' : '-translate-x-full')
+        }
+        ${isDesktop ? '' : 'fixed inset-y-0 left-0 z-50 w-64'}
+        transition-all duration-300 bg-card border-r border-border overflow-hidden
+      `}>
         <div className="h-full flex flex-col">
           {/* Logo */}
-          <div className="h-16 flex items-center px-6 border-b border-border">
-            <Wifi className="h-8 w-8 text-primary" />
-            <span className="ml-3 text-xl font-heading font-bold">Admin Panel</span>
+          <div className="h-16 flex items-center justify-between px-4 border-b border-border">
+            <div className="flex items-center">
+              <Wifi className="h-8 w-8 text-primary" />
+              <span className="ml-3 text-xl font-heading font-bold">Admin</span>
+            </div>
+            {!isDesktop && (
+              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            )}
           </div>
 
           {/* Navigation */}
