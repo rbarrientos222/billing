@@ -14,10 +14,35 @@ import TechnicianJobOrders from '@/components/technician/TechnicianJobOrders';
 
 export default function TechnicianDashboard({ user, onLogout }) {
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState({});
   const [myJobOrders, setMyJobOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Check if screen is desktop size
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const desktop = window.innerWidth >= 1024;
+      setIsDesktop(desktop);
+      if (desktop) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Close sidebar on navigation (mobile only)
+  useEffect(() => {
+    if (!isDesktop) {
+      setSidebarOpen(false);
+    }
+  }, [location.pathname, isDesktop]);
 
   const navigation = [
     { name: 'Dashboard', path: '/technician', icon: LayoutDashboard },
