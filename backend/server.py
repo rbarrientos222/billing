@@ -85,12 +85,13 @@ async def auto_generate_billing():
     Automatic billing function that runs daily.
     Generates invoices for subscribers whose billing day matches today.
     For new subscribers (first billing), creates prorated invoice from installation date.
+    Uses Philippine Standard Time (UTC+8).
     """
-    today = datetime.now(timezone.utc)
+    today = get_ph_now()
     current_day = today.day
     last_day_of_month = calendar.monthrange(today.year, today.month)[1]
     
-    logger.info(f"Running automatic billing check for day {current_day}")
+    logger.info(f"Running automatic billing check for day {current_day} (PH Time: {today.strftime('%Y-%m-%d %H:%M:%S')})")
     
     # Get all active subscribers
     subscribers = await db.subscribers.find({"is_active": True}).to_list(10000)
