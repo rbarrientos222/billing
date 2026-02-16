@@ -4587,16 +4587,16 @@ async def startup_event():
             # Parse time (format: "HH:MM")
             hour, minute = map(int, billing_time.split(':'))
             
-            # Schedule daily billing at specified time
+            # Schedule daily billing at specified time in Philippine timezone
             scheduler.add_job(
                 auto_generate_billing,
-                CronTrigger(hour=hour, minute=minute),
+                CronTrigger(hour=hour, minute=minute, timezone=PH_TIMEZONE),
                 id='daily_billing',
                 replace_existing=True
             )
             
             scheduler.start()
-            logger.info(f"Automatic billing scheduler started - runs daily at {billing_time}")
+            logger.info(f"Automatic billing scheduler started - runs daily at {billing_time} (Philippine Time)")
         else:
             logger.info("Automatic billing is disabled")
     except Exception as e:
