@@ -30,11 +30,39 @@ import SOASettings from '@/components/admin/SOASettings';
 
 export default function AdminDashboard({ user, onLogout }) {
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Default closed on mobile
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [stats, setStats] = useState({});
   const [mikrotikStats, setMikrotikStats] = useState(null);
   const [monthlySales, setMonthlySales] = useState([]);
+
+  // Check if screen is desktop size
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const desktop = window.innerWidth >= 1024;
+      setIsDesktop(desktop);
+      if (desktop) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    // Set initial state
+    handleResize();
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Close sidebar on navigation (mobile only)
+  useEffect(() => {
+    if (!isDesktop) {
+      setSidebarOpen(false);
+    }
+  }, [location.pathname, isDesktop]);
 
   const navigation = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
