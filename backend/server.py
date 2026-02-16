@@ -151,8 +151,9 @@ async def auto_generate_billing():
                     
                     # Calculate prorated amount from installation to billing day
                     prorate_calc = calculate_prorated_amount(plan['price'], billing_day, installation_date)
+                    days = prorate_calc.get('days_remaining', 0)
                     
-                    if prorate_calc['days'] > 0 and prorate_calc['days'] < 30:
+                    if days > 0 and days < 30:
                         # Create prorated invoice
                         invoice = {
                             "invoice_number": f"INV{today.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}",
@@ -160,7 +161,7 @@ async def auto_generate_billing():
                             "subscriber_name": f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip(),
                             "plan_name": plan['name'],
                             "amount": prorate_calc['amount'],
-                            "description": f"Prorated bill for period {installation_date.strftime('%B %d, %Y')} - {today.strftime('%B %d, %Y')}",
+                            "description": f"Prorated bill for period {installation_date.strftime('%B %d, %Y')} - {today.strftime('%B %d, %Y')} ({days} days)",
                             "billing_day": billing_day,
                             "billing_start": installation_date,
                             "billing_end": today,
@@ -171,7 +172,7 @@ async def auto_generate_billing():
                         }
                         await db.invoices.insert_one(invoice)
                         invoices_generated += 1
-                        logger.info(f"Generated PRORATED invoice {invoice['invoice_number']} for new subscriber {account_number}: {prorate_calc['days']} days = ₱{prorate_calc['amount']}")
+                        logger.info(f"Generated PRORATED invoice {invoice['invoice_number']} for new subscriber {account_number}: {days} days = ₱{prorate_calc['amount']}")
                         continue
             
             # Regular full invoice for existing subscribers
