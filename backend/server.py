@@ -25,6 +25,20 @@ import calendar
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 import asyncio
+from zoneinfo import ZoneInfo
+
+# Philippine Standard Time (UTC+8)
+PH_TIMEZONE = ZoneInfo("Asia/Manila")
+
+def get_ph_now():
+    """Get current datetime in Philippine Standard Time"""
+    return datetime.now(PH_TIMEZONE)
+
+def to_ph_time(dt: datetime) -> datetime:
+    """Convert a datetime to Philippine Standard Time"""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(PH_TIMEZONE)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
