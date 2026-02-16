@@ -256,23 +256,23 @@ export default function CashierDashboard({ user, onLogout }) {
         </Button>
       </header>
 
-      <main className="p-6 max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <main className="p-4 sm:p-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Search Subscriber</CardTitle>
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-lg sm:text-xl">Search Subscriber</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input 
-                  placeholder="Search by account number, name, or phone..." 
+                  placeholder="Account #, name, or phone..." 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   className="flex-1"
                   data-testid="search-input"
                 />
-                <Button onClick={handleSearch} disabled={searching} data-testid="search-button">
+                <Button onClick={handleSearch} disabled={searching} data-testid="search-button" className="w-full sm:w-auto">
                   <Search className="h-4 w-4 mr-2" />
                   {searching ? 'Searching...' : 'Search'}
                 </Button>
