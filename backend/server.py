@@ -142,7 +142,7 @@ async def auto_generate_billing():
             # Check if this is the subscriber's FIRST invoice (new subscriber without prorated bill)
             existing_invoices = await db.invoices.count_documents({"subscriber_id": account_number})
             
-            # Calculate due date - next billing cycle
+            # Calculate due date - next billing cycle (in PH timezone)
             if today.month == 12:
                 next_month = 1
                 next_year = today.year + 1
@@ -152,7 +152,7 @@ async def auto_generate_billing():
             
             next_month_last_day = calendar.monthrange(next_year, next_month)[1]
             next_billing_day = min(billing_day, next_month_last_day)
-            due_date = datetime(next_year, next_month, next_billing_day, tzinfo=timezone.utc)
+            due_date = datetime(next_year, next_month, next_billing_day, tzinfo=PH_TIMEZONE)
             
             if existing_invoices == 0:
                 # FIRST INVOICE - Check if we need to prorate from installation date
