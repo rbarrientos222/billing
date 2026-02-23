@@ -14,6 +14,7 @@ export default function ReceiptSettings() {
   const [settings, setSettings] = useState({
     company_logo: '',
     company_name: '',
+    company_branch: '',
     company_address: '',
     company_mobile: '',
     company_email: '',
@@ -100,10 +101,7 @@ export default function ReceiptSettings() {
     const now = new Date();
     const paperWidth = settings.paper_width || 48;
     const widthMM = `${paperWidth}mm`;
-    const logoMaxWidth = paperWidth === 48 ? '35mm' : '40mm';
-    const fontSize = paperWidth === 48 ? '9px' : '10px';
-    const headerFontSize = paperWidth === 48 ? '11px' : '12px';
-    const amountFontSize = paperWidth === 48 ? '12px' : '14px';
+    const logoMaxWidth = paperWidth === 48 ? '30mm' : '35mm';
     
     return `
       <!DOCTYPE html>
@@ -115,77 +113,78 @@ export default function ReceiptSettings() {
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { 
             font-family: 'Courier New', monospace; 
-            font-size: ${fontSize}; 
+            font-size: 8px; 
             width: ${widthMM}; 
             padding: 2mm;
-            line-height: 1.2;
+            line-height: 1.1;
           }
           .center { text-align: center; }
           .bold { font-weight: bold; }
-          .divider { 
-            border-top: 1px dashed #000; 
-            margin: 3px 0; 
-          }
-          .row { 
-            display: flex; 
-            justify-content: space-between; 
-            margin: 1px 0;
-          }
-          .logo { max-width: ${logoMaxWidth}; max-height: 12mm; margin: 0 auto 2mm; display: block; }
+          .divider { border-top: 1px dashed #000; margin: 2px 0; }
+          .row { display: flex; justify-content: space-between; margin: 1px 0; }
+          .logo { max-width: ${logoMaxWidth}; max-height: 10mm; margin: 0 auto 2mm; display: block; }
           .header { margin-bottom: 2mm; }
-          .section { margin: 2mm 0; }
-          .amount { font-size: ${amountFontSize}; font-weight: bold; }
-          .footer { margin-top: 3mm; font-size: 8px; }
-          .small { font-size: 8px; }
+          .section { margin: 1mm 0; }
+          .company-name { font-size: 10px; font-weight: bold; }
+          .branch { font-size: 7px; }
+          .address { font-size: 6px; }
+          .contact { font-size: 7px; }
+          .title { font-size: 9px; font-weight: bold; }
+          .or-number { font-size: 7px; }
+          .section-header { font-size: 7px; font-weight: bold; }
+          .subscriber-info { font-size: 6px; }
+          .details { font-size: 6px; }
+          .amount { font-size: 10px; font-weight: bold; }
+          .footer { font-size: 6px; margin-top: 2mm; }
+          .small { font-size: 6px; }
         </style>
       </head>
       <body>
         <div class="header center">
           ${settings.company_logo ? `<img src="${settings.company_logo}" class="logo" alt="Logo"/>` : ''}
-          <div class="bold" style="font-size: ${headerFontSize};">${settings.company_name || 'Company Name'}</div>
-          <div class="small">${settings.company_address || 'Company Address'}</div>
-          <div>${settings.company_mobile || ''}</div>
+          <div class="company-name">${settings.company_name || 'Company Name'}</div>
+          ${settings.company_branch ? `<div class="branch">${settings.company_branch}</div>` : ''}
+          <div class="address">${settings.company_address || 'Company Address'}</div>
+          <div class="contact">${settings.company_mobile || ''}</div>
           ${settings.tin_number ? `<div class="small">TIN: ${settings.tin_number}</div>` : ''}
         </div>
         
         <div class="divider"></div>
         
-        <div class="center bold" style="font-size: ${headerFontSize}; margin: 2mm 0;">
+        <div class="center title" style="margin: 1mm 0;">
           ${settings.receipt_title || 'SERVICE INVOICE'}
         </div>
-        <div class="center small">${settings.or_prefix || 'OR'}#: ${payment?.or_number || 'OR00000000'}</div>
+        <div class="center or-number">${settings.or_prefix || 'OR'}#: ${payment?.or_number || 'OR00000000'}</div>
         
         <div class="divider"></div>
         
         <div class="section">
-          <div class="bold">SUBSCRIBER</div>
-          <div>${payment?.subscriber_name || 'Customer Name'}</div>
-          <div class="small">Acct#: ${payment?.account_number || 'ACC000000'}</div>
-          <div class="small">${payment?.address || 'Address'}</div>
+          <div class="section-header">SUBSCRIBER</div>
+          <div class="subscriber-info">${payment?.subscriber_name || 'Customer Name'}</div>
+          <div class="subscriber-info">Acct#: ${payment?.account_number || 'ACC000000'}</div>
+          <div class="subscriber-info">${payment?.address || '123 Sample St, Brgy. Sample, City'}</div>
         </div>
         
         <div class="divider"></div>
         
         <div class="section">
-          <div class="bold">DESCRIPTION</div>
-          <div class="small">${payment?.description || 'Payment for services'}</div>
+          <div class="section-header">DESCRIPTION</div>
+          <div class="details">${payment?.description || 'Payment for services'}</div>
         </div>
         
         <div class="divider"></div>
         
         <div class="section">
-          <div class="bold">DETAILS</div>
+          <div class="section-header">DETAILS</div>
           ${payment?.invoices_settled?.map(inv => `
-            <div class="row small">
-              <span>${inv.description || inv.invoice_number}</span>
-            </div>
-            <div class="row">
+            <div class="details">${inv.description || inv.invoice_number}</div>
+            <div class="row details">
               <span></span>
               <span>P${(inv.amount || 0).toFixed(2)}</span>
             </div>
-          `).join('') || '<div class="row"><span>Payment</span><span>P0.00</span></div>'}
+          `).join('') || '<div class="row details"><span>Payment</span><span>P0.00</span></div>'}
           ${payment?.is_advance_payment ? `
-            <div class="row small">
+            <div class="row details">
               <span>Wallet Credit</span>
               <span>P${(payment.wallet_credit || 0).toFixed(2)}</span>
             </div>
@@ -322,6 +321,16 @@ export default function ReceiptSettings() {
                   placeholder="Your Company Name"
                   data-testid="company-name-input"
                 />
+              </div>
+              <div>
+                <Label>Branch (Optional)</Label>
+                <Input
+                  value={settings.company_branch}
+                  onChange={(e) => setSettings({ ...settings, company_branch: e.target.value })}
+                  placeholder="e.g., Main Branch, Branch 1"
+                  data-testid="company-branch-input"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Displays below company name in smaller font</p>
               </div>
               <div>
                 <Label>Address</Label>
@@ -474,43 +483,46 @@ export default function ReceiptSettings() {
           </CardHeader>
           <CardContent>
             <div 
-              className="bg-white text-black p-3 rounded border-2 mx-auto"
+              className="bg-white text-black p-2 rounded border-2 mx-auto"
               style={{ 
                 width: previewWidth, 
                 fontFamily: "'Courier New', monospace",
-                fontSize: settings.paper_width === 48 ? '9px' : '10px',
-                lineHeight: '1.2'
+                fontSize: '8px',
+                lineHeight: '1.1'
               }}
               data-testid="receipt-preview"
             >
               {/* Logo */}
               {settings.company_logo && (
-                <div className="text-center mb-2">
+                <div className="text-center mb-1">
                   <img 
                     src={settings.company_logo} 
                     alt="Logo" 
-                    style={{ maxWidth: settings.paper_width === 48 ? '100px' : '120px', maxHeight: '40px', margin: '0 auto' }}
+                    style={{ maxWidth: settings.paper_width === 48 ? '80px' : '100px', maxHeight: '30px', margin: '0 auto' }}
                   />
                 </div>
               )}
               
               {/* Header */}
-              <div className="text-center mb-2">
-                <div className="font-bold" style={{ fontSize: settings.paper_width === 48 ? '11px' : '12px' }}>
+              <div className="text-center mb-1">
+                <div className="font-bold" style={{ fontSize: '10px' }}>
                   {settings.company_name || 'Company Name'}
                 </div>
-                <div style={{ fontSize: '8px' }}>{settings.company_address || 'Company Address'}</div>
-                <div>{settings.company_mobile || 'Mobile Number'}</div>
-                {settings.tin_number && <div style={{ fontSize: '8px' }}>TIN: {settings.tin_number}</div>}
+                {settings.company_branch && (
+                  <div style={{ fontSize: '7px' }}>{settings.company_branch}</div>
+                )}
+                <div style={{ fontSize: '6px' }}>{settings.company_address || 'Company Address'}</div>
+                <div style={{ fontSize: '7px' }}>{settings.company_mobile || 'Mobile Number'}</div>
+                {settings.tin_number && <div style={{ fontSize: '6px' }}>TIN: {settings.tin_number}</div>}
               </div>
               
               <div className="border-t border-dashed border-gray-400 my-1"></div>
               
               {/* Receipt Title & OR Number */}
-              <div className="text-center font-bold my-1" style={{ fontSize: settings.paper_width === 48 ? '11px' : '12px' }}>
+              <div className="text-center font-bold my-1" style={{ fontSize: '9px' }}>
                 {settings.receipt_title || 'SERVICE INVOICE'}
               </div>
-              <div className="text-center" style={{ fontSize: '8px' }}>
+              <div className="text-center" style={{ fontSize: '7px' }}>
                 {settings.or_prefix || 'OR'}#: {previewData?.sample_payment?.or_number?.replace(/^[A-Z]+/, settings.or_prefix || 'OR') || `${settings.or_prefix}20260216SAMPLE`}
               </div>
               
@@ -518,29 +530,27 @@ export default function ReceiptSettings() {
               
               {/* Subscriber Info */}
               <div className="mb-1">
-                <div className="font-bold">SUBSCRIBER</div>
-                <div>{previewData?.sample_payment?.subscriber_name || 'Juan Dela Cruz'}</div>
-                <div style={{ fontSize: '8px' }}>Acct#: {previewData?.sample_payment?.account_number || 'ACC123456789'}</div>
-                <div style={{ fontSize: '8px' }}>{previewData?.sample_payment?.address || '123 Sample St, Manila'}</div>
+                <div className="font-bold" style={{ fontSize: '7px' }}>SUBSCRIBER</div>
+                <div style={{ fontSize: '6px' }}>{previewData?.sample_payment?.subscriber_name || 'Juan Dela Cruz'}</div>
+                <div style={{ fontSize: '6px' }}>Acct#: {previewData?.sample_payment?.account_number || 'ACC123456789'}</div>
+                <div style={{ fontSize: '6px' }}>{previewData?.sample_payment?.address || '123 Sample St, Brgy. Sample, Manila'}</div>
               </div>
               
               <div className="border-t border-dashed border-gray-400 my-1"></div>
               
               {/* Description */}
               <div className="mb-1">
-                <div className="font-bold">DESCRIPTION</div>
-                <div style={{ fontSize: '8px' }}>{previewData?.sample_payment?.description || 'Monthly Internet Service Payment'}</div>
+                <div className="font-bold" style={{ fontSize: '7px' }}>DESCRIPTION</div>
+                <div style={{ fontSize: '6px' }}>{previewData?.sample_payment?.description || 'Monthly Internet Service Payment'}</div>
               </div>
               
               <div className="border-t border-dashed border-gray-400 my-1"></div>
               
               {/* Transaction Details */}
               <div className="mb-1">
-                <div className="font-bold">DETAILS</div>
-                <div className="flex justify-between" style={{ fontSize: '8px' }}>
-                  <span>Monthly Plan - Feb 2026</span>
-                </div>
-                <div className="flex justify-between">
+                <div className="font-bold" style={{ fontSize: '7px' }}>DETAILS</div>
+                <div style={{ fontSize: '6px' }}>Monthly Plan - Feb 2026</div>
+                <div className="flex justify-between" style={{ fontSize: '6px' }}>
                   <span></span>
                   <span>P1,000.00</span>
                 </div>
@@ -549,11 +559,11 @@ export default function ReceiptSettings() {
               <div className="border-t border-dashed border-gray-400 my-1"></div>
               
               {/* Total */}
-              <div className="flex justify-between font-bold" style={{ fontSize: settings.paper_width === 48 ? '12px' : '14px' }}>
+              <div className="flex justify-between font-bold" style={{ fontSize: '10px' }}>
                 <span>TOTAL</span>
                 <span>P1,000.00</span>
               </div>
-              <div className="flex justify-between" style={{ fontSize: '8px' }}>
+              <div className="flex justify-between" style={{ fontSize: '6px' }}>
                 <span>Mode:</span>
                 <span>Cash</span>
               </div>
@@ -563,7 +573,7 @@ export default function ReceiptSettings() {
               {/* VAT Info */}
               {settings.vat_registered && (
                 <>
-                  <div style={{ fontSize: '8px' }}>
+                  <div style={{ fontSize: '6px' }}>
                     <div>VATable: P{(1000 / (1 + settings.vat_percentage/100)).toFixed(2)}</div>
                     <div>VAT {settings.vat_percentage}%: P{(1000 - 1000 / (1 + settings.vat_percentage/100)).toFixed(2)}</div>
                   </div>
@@ -572,7 +582,7 @@ export default function ReceiptSettings() {
               )}
               
               {/* Transaction Info */}
-              <div style={{ fontSize: '8px' }}>
+              <div style={{ fontSize: '6px' }}>
                 <div>Date: {new Date().toLocaleDateString('en-PH')} {new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}</div>
                 <div>Processed by: {previewData?.sample_payment?.received_by || 'admin'}</div>
               </div>
@@ -580,7 +590,7 @@ export default function ReceiptSettings() {
               <div className="border-t border-dashed border-gray-400 my-1"></div>
               
               {/* Footer */}
-              <div className="text-center" style={{ fontSize: '8px' }}>
+              <div className="text-center" style={{ fontSize: '6px' }}>
                 {settings.footer_text || 'Thank you for your payment!'}
               </div>
             </div>
