@@ -487,6 +487,19 @@ class CompanySettings(BaseModel):
     mobile: str
     logo_url: Optional[str] = None
 
+class ReceiptSettings(BaseModel):
+    company_logo: Optional[str] = None  # Base64 encoded image
+    company_name: str = ""
+    company_address: str = ""
+    company_mobile: str = ""
+    company_email: Optional[str] = None
+    tin_number: Optional[str] = None  # Tax Identification Number
+    vat_registered: bool = False
+    vat_percentage: float = 12.0
+    footer_text: Optional[str] = None
+    receipt_title: str = "SERVICE INVOICE"
+    auto_print: bool = False  # Auto print after payment
+
 # ========== HELPER FUNCTIONS ==========
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
