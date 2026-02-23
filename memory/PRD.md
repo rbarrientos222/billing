@@ -245,6 +245,21 @@ Build a billing system with the following features:
   - Receipt includes discount breakdown (Subtotal, Discount, Total Paid)
   - One-time discounts tracked per subscriber (can't be used twice)
 
+- [x] **Subscriber Portal** (NEW - Feb 23, 2026)
+  - Dedicated subscriber login page at `/subscriber/login`
+  - Login with account number and password (default: last 4 digits of mobile)
+  - Mobile-responsive dashboard
+  - Quick stats: Payables, Unpaid Bills, Open Jobs, Account Status
+  - **Bills Tab**: View current outstanding bills with amounts and due dates
+  - **Payments Tab**: View payment history with OR numbers, amounts, modes
+  - **Jobs Tab**: View job orders with status badges (Open/Completed)
+  - **Account Tab**: View account info, plan, contact details, change password
+  - **Notifications**: Auto-generated alerts for outstanding balance, disconnection
+  - Refresh button to reload data
+  - Logout functionality
+  - Cross-links between Staff Login and Subscriber Portal Login
+  - "Pay Now" button placeholder for future online payment integration
+
 - [x] **Job Order Management** (NEW - Feb 8, 2026)
   - Full CRUD for job orders
   - Job types: Installation, Repair/Troubleshooting, Relocation, Disconnection, Reactivation, Equipment Replacement, **Replace Modem**, **Pull Out Modem**, Others
