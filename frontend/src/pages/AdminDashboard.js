@@ -27,6 +27,7 @@ import BillingCalendar from '@/components/admin/BillingCalendar';
 import RebatesSettings from '@/components/admin/RebatesSettings';
 import PrinterSettings from '@/components/admin/PrinterSettings';
 import SOASettings from '@/components/admin/SOASettings';
+import ReceiptSettings from '@/components/admin/ReceiptSettings';
 
 export default function AdminDashboard({ user, onLogout }) {
   const location = useLocation();
