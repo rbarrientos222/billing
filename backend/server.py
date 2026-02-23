@@ -2568,7 +2568,10 @@ async def process_centralized_payment(data: dict, current_user: dict = Depends(g
         "or_number": or_number,
         "subscriber_id": subscriber_id,
         "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
-        "total_amount": amount,
+        "total_amount": amount,  # Amount actually paid by customer
+        "total_discount": total_discount,  # Total discount applied
+        "original_amount": amount + total_discount,  # Original bill amount before discount
+        "applied_discounts": applied_discounts,  # Details of each discount
         "mode": mode,
         "payment_date": now,
         "received_by": current_user['username'],
@@ -2581,6 +2584,32 @@ async def process_centralized_payment(data: dict, current_user: dict = Depends(g
         "allocation_details": payments_made
     }
     await db.payments.insert_one(payment_record)
+    
+    # Update discount usage stats
+    for disc in applied_discounts:
+        discount_id = disc.get('discount_id')
+        discount_amount = disc.get('discount_amount', 0)
+        if discount_id and discount_amount > 0:
+            await db.discounts.update_one(
+                {"discount_id": discount_id},
+                {
+                    "$inc": {
+                        "times_used": 1,
+                        "total_amount_discounted": discount_amount
+                    }
+                }
+            )
+            
+            # For one-time discounts, track usage per subscriber
+            discount_doc = await db.discounts.find_one({"discount_id": discount_id})
+            if discount_doc and discount_doc.get('duration') == 'one-time':
+                await db.discount_usage.insert_one({
+                    "discount_id": discount_id,
+                    "subscriber_id": subscriber_id,
+                    "used_at": now,
+                    "or_number": or_number,
+                    "amount": discount_amount
+                })
     
     # Calculate new total balance
     updated_invoices = await db.invoices.find({
