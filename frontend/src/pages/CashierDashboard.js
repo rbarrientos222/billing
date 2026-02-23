@@ -301,17 +301,27 @@ export default function CashierDashboard({ user, onLogout }) {
     // Center align
     commands.push(new Uint8Array([ESC, 0x61, 0x01])); // ESC a 1 - Center
     
-    // Company name (bold, double height)
+    // Company name (bold)
     commands.push(new Uint8Array([ESC, 0x45, 0x01])); // Bold on
     commands.push(encoder.encode(settings?.company_name || 'Company'));
     commands.push(new Uint8Array([LF]));
     commands.push(new Uint8Array([ESC, 0x45, 0x00])); // Bold off
     
+    // Branch (if exists)
+    if (settings?.company_branch) {
+      commands.push(encoder.encode(settings.company_branch));
+      commands.push(new Uint8Array([LF]));
+    }
+    
     // Company address
-    commands.push(encoder.encode(settings?.company_address || ''));
-    commands.push(new Uint8Array([LF]));
-    commands.push(encoder.encode(settings?.company_mobile || ''));
-    commands.push(new Uint8Array([LF]));
+    if (settings?.company_address) {
+      commands.push(encoder.encode(settings.company_address));
+      commands.push(new Uint8Array([LF]));
+    }
+    if (settings?.company_mobile) {
+      commands.push(encoder.encode(settings.company_mobile));
+      commands.push(new Uint8Array([LF]));
+    }
     
     if (settings?.tin_number) {
       commands.push(encoder.encode(`TIN: ${settings.tin_number}`));
@@ -319,7 +329,7 @@ export default function CashierDashboard({ user, onLogout }) {
     }
     
     // Divider
-    commands.push(encoder.encode('--------------------------------'));
+    commands.push(encoder.encode('------------------------'));
     commands.push(new Uint8Array([LF]));
     
     // Receipt title
@@ -333,36 +343,37 @@ export default function CashierDashboard({ user, onLogout }) {
     commands.push(new Uint8Array([LF]));
     
     // Divider
-    commands.push(encoder.encode('--------------------------------'));
+    commands.push(encoder.encode('------------------------'));
     commands.push(new Uint8Array([LF]));
     
     // Left align for details
     commands.push(new Uint8Array([ESC, 0x61, 0x00])); // Left align
     
     // Subscriber
-    commands.push(new Uint8Array([ESC, 0x45, 0x01])); // Bold
     commands.push(encoder.encode('SUBSCRIBER'));
     commands.push(new Uint8Array([LF]));
-    commands.push(new Uint8Array([ESC, 0x45, 0x00])); // Bold off
     commands.push(encoder.encode(payment?.subscriber_name || ''));
     commands.push(new Uint8Array([LF]));
     commands.push(encoder.encode(`Acct#: ${payment?.account_number || ''}`));
     commands.push(new Uint8Array([LF]));
+    // Subscriber address
+    if (payment?.address) {
+      commands.push(encoder.encode(payment.address));
+      commands.push(new Uint8Array([LF]));
+    }
     
     // Divider
-    commands.push(encoder.encode('--------------------------------'));
+    commands.push(encoder.encode('------------------------'));
     commands.push(new Uint8Array([LF]));
     
     // Description
-    commands.push(new Uint8Array([ESC, 0x45, 0x01]));
     commands.push(encoder.encode('DESCRIPTION'));
     commands.push(new Uint8Array([LF]));
-    commands.push(new Uint8Array([ESC, 0x45, 0x00]));
     commands.push(encoder.encode(payment?.description || 'Payment'));
     commands.push(new Uint8Array([LF]));
     
     // Divider
-    commands.push(encoder.encode('--------------------------------'));
+    commands.push(encoder.encode('------------------------'));
     commands.push(new Uint8Array([LF]));
     
     // Total
@@ -375,7 +386,7 @@ export default function CashierDashboard({ user, onLogout }) {
     commands.push(new Uint8Array([LF]));
     
     // Divider
-    commands.push(encoder.encode('--------------------------------'));
+    commands.push(encoder.encode('------------------------'));
     commands.push(new Uint8Array([LF]));
     
     // Date and processor
@@ -386,7 +397,7 @@ export default function CashierDashboard({ user, onLogout }) {
     commands.push(new Uint8Array([LF]));
     
     // Divider
-    commands.push(encoder.encode('--------------------------------'));
+    commands.push(encoder.encode('------------------------'));
     commands.push(new Uint8Array([LF]));
     
     // Footer (centered)
