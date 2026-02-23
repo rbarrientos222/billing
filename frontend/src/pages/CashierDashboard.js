@@ -1112,6 +1112,7 @@ export default function CashierDashboard({ user, onLogout }) {
                                 <th className="text-left p-2">Amount</th>
                                 <th className="text-left p-2">Mode</th>
                                 <th className="text-left p-2">Date</th>
+                                <th className="text-center p-2">Print</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1127,6 +1128,24 @@ export default function CashierDashboard({ user, onLogout }) {
                                   <td className="p-2 font-bold text-green-600">₱{(payment.total_amount || payment.amount || 0).toLocaleString()}</td>
                                   <td className="p-2 capitalize">{payment.mode}</td>
                                   <td className="p-2 text-xs">{new Date(payment.payment_date).toLocaleDateString()}</td>
+                                  <td className="p-2 text-center">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 w-7 p-0"
+                                      onClick={() => {
+                                        if (bluetoothDevice && printCharacteristicRef.current) {
+                                          printReceiptBluetooth(payment.or_number);
+                                        } else {
+                                          printReceiptBrowser(payment.or_number);
+                                        }
+                                      }}
+                                      disabled={printing}
+                                      data-testid={`print-receipt-${payment.or_number}`}
+                                    >
+                                      <Printer className="h-4 w-4" />
+                                    </Button>
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
