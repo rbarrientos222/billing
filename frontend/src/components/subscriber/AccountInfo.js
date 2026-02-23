@@ -156,7 +156,7 @@ export default function AccountInfo({ subscriber, token }) {
             <CreditCard className="w-4 h-4 text-muted-foreground" />
             <div>
               <span className="text-xs text-muted-foreground">Billing Day: </span>
-              <span className="text-sm font-medium">Every {subscriber.billing_day || 1}th of the month</span>
+              <span className="text-sm font-medium">Every {getOrdinalSuffix(subscriber.billing_day || 1)} of the month</span>
             </div>
           </div>
         </div>
