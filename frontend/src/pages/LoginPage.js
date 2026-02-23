@@ -43,7 +43,7 @@ export default function LoginPage({ onLogin }) {
             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center">
               <Wifi className="w-6 h-6 text-green-600" />
             </div>
-            <span className="text-2xl font-heading font-bold text-white">Billing System</span>
+            <span className="text-2xl font-heading font-bold text-white">APL Billing System</span>
           </div>
           
           <h1 className="text-5xl font-heading font-bold text-white mb-6 leading-tight">
@@ -55,7 +55,7 @@ export default function LoginPage({ onLogin }) {
         </div>
 
         <div className="relative z-10 text-green-100 text-sm">
-          <p>© 2025 Billing System. All rights reserved.</p>
+          <p>© 2025 APL Billing System. All rights reserved.</p>
         </div>
       </div>
 
