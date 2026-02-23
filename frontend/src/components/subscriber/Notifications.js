@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Bell, AlertTriangle, Info, CreditCard, Wifi, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Bell, AlertTriangle, Info, CreditCard, Wifi, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function Notifications({ notifications, onDismiss }) {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   const getNotificationIcon = (type) => {
     const icons = {
       'warning': AlertTriangle,
@@ -67,51 +70,73 @@ export default function Notifications({ notifications, onDismiss }) {
   return (
     <Card data-testid="notifications-card">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Bell className="w-5 h-5 text-blue-600" />
-          Notifications
-          <Badge variant="secondary" className="ml-2">{notifications.length}</Badge>
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Bell className="w-5 h-5 text-blue-600" />
+            Notifications
+            <Badge variant="secondary">{notifications.length}</Badge>
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            data-testid="toggle-notifications-button"
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="w-4 h-4 mr-1" />
+                Hide
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-4 h-4 mr-1" />
+                Show
+              </>
+            )}
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {notifications.map((notification, idx) => {
-          const Icon = getNotificationIcon(notification.type);
-          const style = getNotificationStyle(notification.type);
-          
-          return (
-            <div 
-              key={idx}
-              className={`p-4 rounded-lg border ${style.bg} ${style.border} relative`}
-              data-testid={`notification-item-${idx}`}
-            >
-              {onDismiss && (
-                <button 
-                  onClick={() => onDismiss(idx)}
-                  className="absolute top-2 right-2 p-1 hover:bg-white/50 rounded"
-                  data-testid={`dismiss-notification-${idx}`}
-                >
-                  <X className="w-4 h-4 text-muted-foreground" />
-                </button>
-              )}
-              
-              <div className="flex items-start gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${style.bg}`}>
-                  <Icon className={`w-4 h-4 ${style.icon}`} />
-                </div>
-                <div className="flex-1 pr-6">
-                  <p className="font-medium text-sm">{notification.title}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                  {notification.created_at && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {formatDate(notification.created_at)}
-                    </p>
-                  )}
+      {isExpanded && (
+        <CardContent className="space-y-3 pt-0">
+          {notifications.map((notification, idx) => {
+            const Icon = getNotificationIcon(notification.type);
+            const style = getNotificationStyle(notification.type);
+            
+            return (
+              <div 
+                key={idx}
+                className={`p-4 rounded-lg border ${style.bg} ${style.border} relative`}
+                data-testid={`notification-item-${idx}`}
+              >
+                {onDismiss && (
+                  <button 
+                    onClick={() => onDismiss(idx)}
+                    className="absolute top-2 right-2 p-1 hover:bg-white/50 rounded"
+                    data-testid={`dismiss-notification-${idx}`}
+                  >
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                )}
+                
+                <div className="flex items-start gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${style.bg}`}>
+                    <Icon className={`w-4 h-4 ${style.icon}`} />
+                  </div>
+                  <div className="flex-1 pr-6">
+                    <p className="font-medium text-sm">{notification.title}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                    {notification.created_at && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {formatDate(notification.created_at)}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </CardContent>
+            );
+          })}
+        </CardContent>
+      )}
     </Card>
   );
 }
