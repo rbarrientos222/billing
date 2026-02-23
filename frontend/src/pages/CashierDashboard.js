@@ -199,8 +199,8 @@ export default function CashierDashboard({ user, onLogout }) {
         
         <div class="divider"></div>
         
-        <div class="center small">
-          ${settings?.footer_text || 'Thank you for your payment!'}
+        <div class="center small" style="white-space: pre-line;">
+          ${(settings?.footer_text || 'Thank you for your payment!').replace(/\n/g, '<br>')}
         </div>
       </body>
       </html>
