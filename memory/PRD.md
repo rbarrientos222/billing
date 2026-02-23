@@ -213,21 +213,37 @@ Build a billing system with the following features:
     - Users
     - Plans
     - **Receipt Setup** (NEW - Feb 23, 2026)
-    - Rebates (placeholder)
+    - **Rebates** (IMPLEMENTED - Feb 23, 2026)
     - Printer Setup (placeholder)
     - SOA Setup (placeholder)
     - Company
 
 - [x] **Receipt Setup Page** (NEW - Feb 23, 2026)
   - Company logo upload (PNG/JPEG, max 500KB)
-  - Company information: Name, Address, Mobile, Email, TIN
+  - Company information: Name, **Branch (optional)**, Address, Mobile, Email, TIN
   - Receipt settings: Title, OR/SI Prefix, Paper Width (48mm/58mm)
   - VAT settings: Registered checkbox, VAT percentage
-  - Footer text customization
+  - Footer text customization with **multi-line support (Enter key)**
   - Auto-print after payment toggle
   - Live receipt preview (48mm/58mm format)
   - Print Preview button
   - Bluetooth Printer Info section
+
+- [x] **Rebates & Discounts Module** (NEW - Feb 23, 2026)
+  - Admin page for managing discounts
+  - Discount types: Fixed amount (₱) or Percentage (%)
+  - Duration options: One-time only or Recurring (every billing)
+  - Apply to: All Active Subscribers, Selected Subscribers, or By Plan
+  - Multi-select for subscribers and plans
+  - Stats cards: Total Discounts Given, Times Used, Active Discounts
+  - Activate/Deactivate toggle
+  - Edit and Delete functionality
+  - Dashboard card showing Total Discounts
+  - Cashier UI shows available discounts during payment
+  - Click to toggle discount on/off
+  - Shows amount to pay after discount
+  - Receipt includes discount breakdown (Subtotal, Discount, Total Paid)
+  - One-time discounts tracked per subscriber (can't be used twice)
 
 - [x] **Job Order Management** (NEW - Feb 8, 2026)
   - Full CRUD for job orders
