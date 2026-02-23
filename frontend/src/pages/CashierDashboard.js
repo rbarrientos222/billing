@@ -43,6 +43,11 @@ export default function CashierDashboard({ user, onLogout }) {
   const [printing, setPrinting] = useState(false);
   const [bluetoothDevice, setBluetoothDevice] = useState(null);
   const printCharacteristicRef = useRef(null);
+  
+  // Discount/Rebate state
+  const [availableDiscounts, setAvailableDiscounts] = useState([]);
+  const [selectedDiscounts, setSelectedDiscounts] = useState([]);
+  const [totalDiscountAmount, setTotalDiscountAmount] = useState(0);
 
   // Fetch today's payment stats and receipt settings on load
   useEffect(() => {
