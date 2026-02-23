@@ -163,6 +163,14 @@ export default function AdminDashboard({ user, onLogout }) {
         color: 'text-amber-600',
         bg: 'bg-amber-50'
       },
+      { 
+        title: 'Total Discounts', 
+        value: `₱${(stats.total_discounts || 0).toLocaleString()}`, 
+        icon: Percent, 
+        trend: 'given to subscribers',
+        color: 'text-purple-600',
+        bg: 'bg-purple-50'
+      },
     ];
 
     const activityCards = [
