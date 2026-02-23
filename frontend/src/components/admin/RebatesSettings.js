@@ -61,7 +61,9 @@ export default function RebatesSettings() {
   const fetchSubscribers = async () => {
     try {
       const response = await axios.get('/subscribers?limit=1000');
-      setSubscribers(response.data.subscribers || []);
+      // API returns array directly or object with subscribers key
+      const subs = Array.isArray(response.data) ? response.data : (response.data.subscribers || []);
+      setSubscribers(subs);
     } catch (error) {
       console.error('Failed to fetch subscribers');
     }
