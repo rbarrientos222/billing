@@ -96,6 +96,7 @@ export default function SubscriberPortal({ user, onLogout }) {
   const subscriber = dashboardData?.subscriber;
   const payables = dashboardData?.payables;
   const jobStats = dashboardData?.job_orders;
+  const walletData = dashboardData?.wallet;
   const notifications = dashboardData?.notifications || [];
 
   return (
