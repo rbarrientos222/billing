@@ -212,10 +212,22 @@ Build a billing system with the following features:
   - Settings with expandable sub-menu containing:
     - Users
     - Plans
+    - **Receipt Setup** (NEW - Feb 23, 2026)
     - Rebates (placeholder)
     - Printer Setup (placeholder)
     - SOA Setup (placeholder)
     - Company
+
+- [x] **Receipt Setup Page** (NEW - Feb 23, 2026)
+  - Company logo upload (PNG/JPEG, max 500KB)
+  - Company information: Name, Address, Mobile, Email, TIN
+  - Receipt settings: Title, OR/SI Prefix, Paper Width (48mm/58mm)
+  - VAT settings: Registered checkbox, VAT percentage
+  - Footer text customization
+  - Auto-print after payment toggle
+  - Live receipt preview (48mm/58mm format)
+  - Print Preview button
+  - Bluetooth Printer Info section
 
 - [x] **Job Order Management** (NEW - Feb 8, 2026)
   - Full CRUD for job orders
