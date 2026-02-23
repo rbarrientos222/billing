@@ -295,7 +295,7 @@ Build a billing system with the following features:
 
 ## Upcoming Tasks (P0-P1)
 
-1. **Subscriber Portal** - Login (account number) and dashboard for subscribers
+1. **Subscriber Portal - Online Payments** - Integrate payment gateway (PayMongo) for "Pay Now" button
 2. **Billing PDF/SOA Generation** - Generate PDF statements
 3. **Mikrotik Management Page** - UI for admin to configure Mikrotik credentials
 
@@ -303,13 +303,16 @@ Build a billing system with the following features:
 
 ## Future/Backlog Tasks
 
+- Subscriber Portal - Chat Support (real-time chat feature)
+- Subscriber Portal - Notification System (service interruptions, billing reminders)
+- Subscriber Portal - Knowledge Base (FAQs, help articles)
 - Admin Settings (discounts/rebates configuration, import/export)
 - Company Setup page
 - Wallet Management UI (admin manual add/deduct credits)
 - Auto-email SOA
 - Automatic SMS triggers for billing events
 - Complete Philippine address data (municipalities/barangays)
-- Backend code refactoring (server.py is 4700+ lines - needs modularization CRITICAL)
+- Backend code refactoring (server.py is 5000+ lines - needs modularization CRITICAL)
 - Printer Setup configuration (Bluetooth printer pairing settings)
 - SOA Template configuration
 
