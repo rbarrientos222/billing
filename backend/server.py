@@ -503,6 +503,26 @@ class ReceiptSettings(BaseModel):
     paper_width: int = 48  # Paper width in mm (48mm or 58mm)
     auto_print: bool = False  # Auto print after payment
 
+class DiscountCreate(BaseModel):
+    name: str  # Label/reason (e.g., "Senior Citizen Discount")
+    discount_type: str = "fixed"  # "fixed" or "percentage"
+    value: float  # Amount or percentage value
+    duration: str = "one-time"  # "one-time" or "recurring"
+    apply_to: str = "all_active"  # "all_active", "selected_subscribers", "by_plan"
+    subscriber_ids: List[str] = []  # For selected_subscribers
+    plan_ids: List[str] = []  # For by_plan
+    is_active: bool = True
+
+class DiscountUpdate(BaseModel):
+    name: Optional[str] = None
+    discount_type: Optional[str] = None
+    value: Optional[float] = None
+    duration: Optional[str] = None
+    apply_to: Optional[str] = None
+    subscriber_ids: Optional[List[str]] = None
+    plan_ids: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
 # ========== HELPER FUNCTIONS ==========
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
