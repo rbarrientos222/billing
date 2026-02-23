@@ -111,6 +111,13 @@ export default function LoginPage({ onLogin }) {
                 )}
               </Button>
             </form>
+            
+            <div className="mt-6 pt-6 border-t border-border">
+              <Link to="/subscriber/login" className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="subscriber-login-link">
+                <User className="w-4 h-4" />
+                Subscriber Portal Login
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
