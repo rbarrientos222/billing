@@ -136,7 +136,7 @@ function App() {
           } />
           
           <Route path="/subscriber/*" element={
-            <ProtectedRoute allowedRoles={['user', 'admin']}>
+            <ProtectedRoute allowedRoles={['user', 'admin', 'subscriber']}>
               <SubscriberPortal user={user} onLogout={handleLogout} />
             </ProtectedRoute>
           } />
