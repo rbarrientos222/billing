@@ -592,7 +592,7 @@ export default function ReceiptSettings() {
               <div className="border-t border-dashed border-gray-400 my-1"></div>
               
               {/* Footer */}
-              <div className="text-center" style={{ fontSize: '6px' }}>
+              <div className="text-center" style={{ fontSize: '6px', whiteSpace: 'pre-line' }}>
                 {settings.footer_text || 'Thank you for your payment!'}
               </div>
             </div>
