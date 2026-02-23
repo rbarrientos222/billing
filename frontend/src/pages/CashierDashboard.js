@@ -400,10 +400,14 @@ export default function CashierDashboard({ user, onLogout }) {
     commands.push(encoder.encode('------------------------'));
     commands.push(new Uint8Array([LF]));
     
-    // Footer (centered)
+    // Footer (centered) - handle multiple lines
     commands.push(new Uint8Array([ESC, 0x61, 0x01])); // Center
-    commands.push(encoder.encode(settings?.footer_text || 'Thank you!'));
-    commands.push(new Uint8Array([LF, LF, LF])); // Extra lines
+    const footerLines = (settings?.footer_text || 'Thank you!').split('\n');
+    for (const line of footerLines) {
+      commands.push(encoder.encode(line.trim()));
+      commands.push(new Uint8Array([LF]));
+    }
+    commands.push(new Uint8Array([LF, LF])); // Extra lines
     
     // Cut paper
     commands.push(new Uint8Array([GS, 0x56, 0x00])); // Full cut
