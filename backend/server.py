@@ -2700,17 +2700,6 @@ async def use_wallet_for_payment(data: dict, current_user: dict = Depends(get_cu
         "amount_used": used_amount,
         "remaining_wallet_balance": new_balance
     }
-    if payment.amount > 0:
-        invoice = await db.invoices.find_one({"invoice_number": payment.invoice_id})
-        if invoice and payment.amount > invoice['amount']:
-            excess = payment.amount - invoice['amount']
-            await db.wallet_balance.update_one(
-                {"subscriber_id": payment.subscriber_id},
-                {"$inc": {"balance": excess}},
-                upsert=True
-            )
-    
-    return {"message": "Payment processed", "or_number": payment_dict['or_number'], "id": str(result.inserted_id)}
 
 @api_router.get("/payments/subscriber/{account_number}")
 async def get_subscriber_payments(
