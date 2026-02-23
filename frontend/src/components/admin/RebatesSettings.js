@@ -290,13 +290,30 @@ export default function RebatesSettings() {
 
               {form.apply_to === 'selected_subscribers' && (
                 <div>
-                  <Label>Select Subscribers</Label>
+                  <Label>Select Subscribers ({form.subscriber_ids.length} selected)</Label>
+                  <Input
+                    placeholder="Search subscribers..."
+                    className="mb-2"
+                    onChange={(e) => {
+                      const search = e.target.value.toLowerCase();
+                      // Filter is applied in the map below
+                      setForm(prev => ({ ...prev, _search: search }));
+                    }}
+                  />
                   <div className="border rounded-lg p-3 max-h-48 overflow-y-auto mt-2">
                     {subscribers.length === 0 ? (
                       <p className="text-sm text-muted-foreground">No subscribers found</p>
                     ) : (
                       <div className="space-y-2">
-                        {subscribers.filter(s => s.status === 'active').map((sub) => (
+                        {subscribers
+                          .filter(s => {
+                            const search = form._search || '';
+                            if (!search) return true;
+                            const name = `${s.first_name || ''} ${s.last_name || ''}`.toLowerCase();
+                            return name.includes(search) || (s.account_number || '').toLowerCase().includes(search);
+                          })
+                          .slice(0, 50) // Limit to 50 for performance
+                          .map((sub) => (
                           <div key={sub.account_number} className="flex items-center space-x-2">
                             <Checkbox
                               id={sub.account_number}
