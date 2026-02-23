@@ -183,6 +183,9 @@ export default function AccountInfo({ subscriber, token }) {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Change Password</DialogTitle>
+                <DialogDescription>
+                  Enter your new password below. Password must be at least 4 characters.
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleChangePassword} className="space-y-4">
                 <div className="space-y-2">
