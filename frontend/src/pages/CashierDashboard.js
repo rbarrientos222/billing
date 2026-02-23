@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { LogOut, Search, Receipt, DollarSign, Wallet, CreditCard, Check, AlertCircle, History, Calendar, ChevronDown, ChevronUp, Plus, Filter, X, Printer, Bluetooth } from 'lucide-react';
+import { LogOut, Search, Receipt, DollarSign, Wallet, CreditCard, Check, AlertCircle, History, Calendar, ChevronDown, ChevronUp, Plus, Filter, X, Printer, Bluetooth, Percent } from 'lucide-react';
 
 export default function CashierDashboard({ user, onLogout }) {
   const [searchTerm, setSearchTerm] = useState('');
