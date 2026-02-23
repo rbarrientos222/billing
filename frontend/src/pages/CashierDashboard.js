@@ -1183,15 +1183,54 @@ export default function CashierDashboard({ user, onLogout }) {
                 <CardTitle className="text-sm">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button className="w-full" variant="outline" disabled={!selectedSubscriber}>
-                  Print Receipt
+                {/* Bluetooth Printer Connection */}
+                <Button 
+                  className="w-full" 
+                  variant={bluetoothDevice ? "default" : "outline"}
+                  onClick={connectBluetoothPrinter}
+                  data-testid="connect-bluetooth-btn"
+                >
+                  <Bluetooth className="h-4 w-4 mr-2" />
+                  {bluetoothDevice ? `Connected: ${bluetoothDevice.name}` : 'Connect Bluetooth Printer'}
                 </Button>
+                
+                {/* Auto-print Toggle */}
+                <div className="flex items-center space-x-2 p-2 rounded-lg bg-muted">
+                  <Checkbox
+                    id="auto-print"
+                    checked={autoPrintReceipt}
+                    onCheckedChange={setAutoPrintReceipt}
+                    data-testid="auto-print-checkbox"
+                  />
+                  <Label htmlFor="auto-print" className="text-sm cursor-pointer">
+                    Auto-print receipt after payment
+                  </Label>
+                </div>
+                
+                <Button 
+                  className="w-full" 
+                  variant="outline" 
+                  disabled={!paymentResult?.or_number || printing}
+                  onClick={() => {
+                    if (bluetoothDevice && printCharacteristicRef.current) {
+                      printReceiptBluetooth(paymentResult.or_number);
+                    } else {
+                      printReceiptBrowser(paymentResult.or_number);
+                    }
+                  }}
+                  data-testid="print-last-receipt-btn"
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  {printing ? 'Printing...' : 'Print Last Receipt'}
+                </Button>
+                
                 <Button className="w-full" variant="outline" onClick={() => {
                   setSelectedSubscriber(null);
                   setInvoices([]);
                   setPaymentHistory([]);
                   setSearchTerm('');
                   setSearchResults([]);
+                  setPaymentResult(null);
                 }}>
                   Clear / New Search
                 </Button>
