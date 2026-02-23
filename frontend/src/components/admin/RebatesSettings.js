@@ -51,7 +51,7 @@ export default function RebatesSettings() {
 
   const fetchPlans = async () => {
     try {
-      const response = await axios.get('/subscription-plans');
+      const response = await axios.get('/plans');
       setPlans(response.data);
     } catch (error) {
       console.error('Failed to fetch plans');
