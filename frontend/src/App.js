@@ -53,11 +53,20 @@ function App() {
     setLoading(false);
   }, []);
 
-  const handleLogin = (token, role, username) => {
+  const handleLogin = (token, role, username, name = '') => {
     localStorage.setItem('token', token);
     localStorage.setItem('role', role);
     localStorage.setItem('username', username);
-    setUser({ token, role, username });
+    if (name) localStorage.setItem('name', name);
+    setUser({ token, role, username, name });
+  };
+
+  const handleSubscriberLogin = (token, role, accountNumber, name) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('role', role);
+    localStorage.setItem('username', accountNumber);
+    localStorage.setItem('name', name);
+    setUser({ token, role, username: accountNumber, name });
   };
 
   const handleLogout = () => {
