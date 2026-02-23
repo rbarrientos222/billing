@@ -961,7 +961,20 @@ async def get_subscriber_dashboard(current_subscriber: dict = Depends(get_curren
     
     # Check for auto-generated notifications based on status
     status_notifications = []
-    if current_subscriber.get('status') == 'inactive' or current_subscriber.get('status') == 'deactivated':
+    
+    # Determine actual status - check both 'status' field and 'is_active' field for compatibility
+    subscriber_status = current_subscriber.get('status')
+    is_active = current_subscriber.get('is_active', True)
+    
+    # If is_active is False but status isn't set, treat as deactivated
+    if not is_active and subscriber_status not in ['inactive', 'deactivated']:
+        subscriber_status = 'deactivated'
+    
+    # Default to 'active' if nothing is set
+    if subscriber_status is None and is_active:
+        subscriber_status = 'active'
+    
+    if subscriber_status == 'inactive' or subscriber_status == 'deactivated':
         status_notifications.append({
             "type": "warning",
             "title": "Account Deactivated",
