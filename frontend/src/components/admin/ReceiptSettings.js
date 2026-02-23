@@ -450,12 +450,14 @@ export default function ReceiptSettings() {
               
               <div>
                 <Label>Footer Text</Label>
-                <Input
+                <Textarea
                   value={settings.footer_text}
                   onChange={(e) => setSettings({ ...settings, footer_text: e.target.value })}
-                  placeholder="Thank you for your payment!"
+                  placeholder="Thank you for your payment!&#10;Visit us at www.example.com"
+                  rows={3}
                   data-testid="footer-text-input"
                 />
+                <p className="text-xs text-muted-foreground mt-1">Press Enter to add new lines</p>
               </div>
               
               <div className="flex items-center space-x-2 pt-2 border-t">
