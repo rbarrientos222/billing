@@ -99,6 +99,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={!user ? <LoginPage onLogin={handleLogin} /> : <Navigate to="/" replace />} />
+          <Route path="/subscriber/login" element={!user ? <SubscriberLogin onLogin={handleSubscriberLogin} /> : <Navigate to="/subscriber" replace />} />
           
           <Route path="/" element={
             <ProtectedRoute>
@@ -106,7 +107,7 @@ function App() {
               {user?.role === 'cashier' && <Navigate to="/cashier" replace />}
               {user?.role === 'tech' && <Navigate to="/technician" replace />}
               {user?.role === 'billing' && <Navigate to="/billing" replace />}
-              {user?.role === 'user' && <Navigate to="/subscriber" replace />}
+              {(user?.role === 'user' || user?.role === 'subscriber') && <Navigate to="/subscriber" replace />}
             </ProtectedRoute>
           } />
           
