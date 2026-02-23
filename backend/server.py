@@ -2434,6 +2434,7 @@ async def process_centralized_payment(data: dict, current_user: dict = Depends(g
     - Pays oldest invoices first (FIFO)
     - Supports partial payments
     - Excess goes to wallet/credit balance
+    - Supports discounts/rebates
     """
     if current_user['role'] not in ['admin', 'cashier']:
         raise HTTPException(status_code=403, detail="Access denied")
@@ -2441,6 +2442,7 @@ async def process_centralized_payment(data: dict, current_user: dict = Depends(g
     subscriber_id = data.get('subscriber_id')
     amount = float(data.get('amount', 0))
     mode = data.get('mode', 'cash')
+    applied_discounts = data.get('applied_discounts', [])  # List of {discount_id, discount_amount}
     
     if not subscriber_id or amount <= 0:
         raise HTTPException(status_code=400, detail="Subscriber ID and amount required")
@@ -2452,13 +2454,21 @@ async def process_centralized_payment(data: dict, current_user: dict = Depends(g
     now = datetime.now(timezone.utc)
     or_number = f"OR{now.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
     
+    # Calculate total discount amount
+    total_discount = sum(d.get('discount_amount', 0) for d in applied_discounts)
+    
     # Get all unpaid invoices sorted by creation date (oldest first)
     unpaid_invoices = await db.invoices.find({
         "subscriber_id": subscriber_id,
         "paid": False
     }).sort("created_at", 1).to_list(100)
     
-    remaining_amount = amount
+    # The effective payment covers the original bill minus discounts
+    # But the amount tendered by customer is 'amount'
+    # So total_covered = amount + total_discount (discount reduces what customer needs to pay)
+    amount_to_allocate = amount + total_discount
+    
+    remaining_amount = amount_to_allocate
     payments_made = []
     invoices_settled = []
     invoices_partial = []
