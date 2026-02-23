@@ -176,10 +176,24 @@ export default function CashierDashboard({ user, onLogout }) {
           ` : ''}
         </div>
         
+        ${payment?.total_discount > 0 ? `
+          <div class="divider"></div>
+          <div class="row details">
+            <span>Subtotal:</span>
+            <span>P${(payment.original_amount || payment.total_amount + payment.total_discount).toFixed(2)}</span>
+          </div>
+          ${(payment?.applied_discounts || []).map(d => `
+            <div class="row details" style="color: green;">
+              <span>${d.name || 'Discount'}:</span>
+              <span>-P${(d.discount_amount || 0).toFixed(2)}</span>
+            </div>
+          `).join('')}
+        ` : ''}
+        
         <div class="divider"></div>
         
         <div class="row amount">
-          <span>TOTAL</span>
+          <span>TOTAL PAID</span>
           <span>P${(payment?.total_amount || 0).toFixed(2)}</span>
         </div>
         <div class="row small">
