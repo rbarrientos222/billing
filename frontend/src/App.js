@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 // Pages
 import LoginPage from '@/pages/LoginPage';
+import SubscriberLogin from '@/pages/SubscriberLogin';
 import AdminDashboard from '@/pages/AdminDashboard';
 import CashierDashboard from '@/pages/CashierDashboard';
 import TechnicianDashboard from '@/pages/TechnicianDashboard';
