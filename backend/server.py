@@ -4416,6 +4416,90 @@ async def save_company_settings(settings: CompanySettings, current_user: dict = 
     await db.company_settings.insert_one(settings.model_dump())
     return {"message": "Company settings saved"}
 
+# ========== RECEIPT SETTINGS ==========
+@api_router.get("/settings/receipt")
+async def get_receipt_settings(current_user: dict = Depends(get_current_user)):
+    """Get receipt settings for printing"""
+    settings = await db.receipt_settings.find_one({}, {"_id": 0})
+    return settings or {}
+
+@api_router.post("/settings/receipt")
+async def save_receipt_settings(settings: ReceiptSettings, current_user: dict = Depends(get_current_user)):
+    """Save receipt settings"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    await db.receipt_settings.delete_many({})
+    await db.receipt_settings.insert_one(settings.model_dump())
+    return {"message": "Receipt settings saved"}
+
+@api_router.get("/receipt/preview")
+async def get_receipt_preview(current_user: dict = Depends(get_current_user)):
+    """Get receipt preview data with sample payment"""
+    settings = await db.receipt_settings.find_one({}, {"_id": 0}) or {}
+    
+    # Sample data for preview
+    sample_payment = {
+        "or_number": "OR20260216SAMPLE",
+        "subscriber_name": "Juan Dela Cruz",
+        "account_number": "ACC123456789",
+        "address": "123 Sample Street, Manila",
+        "total_amount": 1000.00,
+        "mode": "Cash",
+        "payment_date": get_ph_now().isoformat(),
+        "received_by": current_user['username'],
+        "invoices_settled": [
+            {"invoice_number": "INV20260216A1B2C3", "amount": 1000.00, "description": "Monthly Plan - February 2026"}
+        ]
+    }
+    
+    return {
+        "settings": settings,
+        "sample_payment": sample_payment
+    }
+
+@api_router.get("/receipt/data/{or_number}")
+async def get_receipt_data(or_number: str, current_user: dict = Depends(get_current_user)):
+    """Get receipt data for printing"""
+    if current_user['role'] not in ['admin', 'cashier', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    payment = await db.payments.find_one({"or_number": or_number}, {"_id": 0})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    subscriber = await db.subscribers.find_one({"account_number": payment['subscriber_id']}, {"_id": 0})
+    settings = await db.receipt_settings.find_one({}, {"_id": 0}) or {}
+    
+    # Build address
+    address = ""
+    if subscriber:
+        address_parts = [
+            subscriber.get('street'),
+            subscriber.get('barangay'),
+            subscriber.get('municipality'),
+            subscriber.get('province')
+        ]
+        address = ', '.join(filter(None, address_parts)) or subscriber.get('address', '')
+    
+    return {
+        "settings": settings,
+        "payment": {
+            "or_number": payment.get('or_number'),
+            "subscriber_name": payment.get('subscriber_name', f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip() if subscriber else 'Unknown'),
+            "account_number": payment.get('subscriber_id'),
+            "address": address,
+            "total_amount": payment.get('total_amount', payment.get('amount', 0)),
+            "mode": payment.get('mode', 'Cash'),
+            "payment_date": payment.get('payment_date').isoformat() if payment.get('payment_date') else None,
+            "received_by": payment.get('received_by', 'Cashier'),
+            "invoices_settled": payment.get('invoices_settled', []),
+            "invoices_partial": payment.get('invoices_partial', []),
+            "description": payment.get('description', ''),
+            "is_advance_payment": payment.get('is_advance_payment', False),
+            "wallet_credit": payment.get('wallet_credit', 0)
+        }
+    }
+
 # ========== DASHBOARD STATS ==========
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
