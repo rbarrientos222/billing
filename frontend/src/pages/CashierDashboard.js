@@ -556,6 +556,9 @@ export default function CashierDashboard({ user, onLogout }) {
       toast.success(message, { duration: 5000 });
       setPaymentResult(result);
       
+      // Auto-print receipt if enabled
+      handleAutoPrint(result.or_number);
+      
       // Refresh subscriber data and today's stats
       selectSubscriber(selectedSubscriber);
       fetchTodayStats();
