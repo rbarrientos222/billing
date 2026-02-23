@@ -4439,9 +4439,12 @@ async def get_receipt_preview(current_user: dict = Depends(get_current_user)):
     """Get receipt preview data with sample payment"""
     settings = await db.receipt_settings.find_one({}, {"_id": 0}) or {}
     
+    # Get OR prefix from settings or use default
+    or_prefix = settings.get('or_prefix', 'OR')
+    
     # Sample data for preview
     sample_payment = {
-        "or_number": "OR20260216SAMPLE",
+        "or_number": f"{or_prefix}20260216SAMPLE",
         "subscriber_name": "Juan Dela Cruz",
         "account_number": "ACC123456789",
         "address": "123 Sample Street, Manila",
@@ -4449,6 +4452,7 @@ async def get_receipt_preview(current_user: dict = Depends(get_current_user)):
         "mode": "Cash",
         "payment_date": get_ph_now().isoformat(),
         "received_by": current_user['username'],
+        "description": "Monthly Internet Service Payment",
         "invoices_settled": [
             {"invoice_number": "INV20260216A1B2C3", "amount": 1000.00, "description": "Monthly Plan - February 2026"}
         ]
