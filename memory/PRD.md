@@ -249,12 +249,12 @@ Build a billing system with the following features:
   - Dedicated subscriber login page at `/subscriber/login`
   - Login with account number and password (default: last 4 digits of mobile)
   - Mobile-responsive dashboard
-  - Quick stats: Payables, Unpaid Bills, Open Jobs, Account Status
+  - Quick stats: Payables, **Wallet Credit**, Unpaid Bills, Open Jobs, Account Status
   - **Bills Tab**: View current outstanding bills with amounts and due dates
   - **Payments Tab**: View payment history with OR numbers, amounts, modes
   - **Jobs Tab**: View job orders with status badges (Open/Completed)
-  - **Account Tab**: View account info, plan, contact details, change password
-  - **Notifications**: Auto-generated alerts for outstanding balance, disconnection
+  - **Account Tab**: View account info, plan, **wallet balance**, contact details, change password
+  - **Notifications**: Auto-generated alerts for outstanding balance, disconnection, **wallet credit availability**
   - Refresh button to reload data
   - Logout functionality
   - Cross-links between Staff Login and Subscriber Portal Login
