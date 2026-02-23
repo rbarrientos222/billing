@@ -303,7 +303,7 @@ Build a billing system with the following features:
 
 - **Backend:** FastAPI, Pydantic, MongoDB (motor), APScheduler
 - **Frontend:** React, React Router, Axios, TailwindCSS, Shadcn/UI, Recharts
-- **Integrations:** routeros-api (Mikrotik), ReportLab (PDF)
+- **Integrations:** routeros-api (Mikrotik), ReportLab (PDF), Web Bluetooth API (thermal printers)
 
 ---
 
