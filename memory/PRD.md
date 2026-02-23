@@ -5,9 +5,9 @@ Build a billing system with the following features:
 
 ### A. Backend for Admin
 1. Login - Admin login page
-2. Dashboard - Gross sales, expenses, net sales, monthly sales graph, receivables, active subscribers, open tickets, Mikrotik stats
+2. Dashboard - Gross sales, expenses, net sales, monthly sales graph, receivables, active subscribers, open tickets, Mikrotik stats, **Total Discounts**
 3. User Management - Create/manage user accounts with roles (cashier, tech, admin, user, billing)
-4. Settings - Discounts/rebates, Subscription Plans, import/export
+4. Settings - **Discounts/Rebates (IMPLEMENTED)**, Subscription Plans, import/export
 5. Mikrotik Management (v6 & v7) - Integration/configuration
 6. Mikrotik Accounts - Integrated with subscriber registration (PPPoE username, password, profile)
 7. Subscriber Registration - Auto-generated account number, PPPoE account, billing period, installation details
@@ -18,7 +18,7 @@ Build a billing system with the following features:
 12. Billing Module - SOA PDF, Billing Cycle automation, Automatic SMS
 
 ### B. Cashier Module
-- Login, dashboard, fast search, receipt printing, OR/SI numbering, advance payment logic
+- Login, dashboard, fast search, **receipt printing with discounts**, OR/SI numbering, advance payment logic, **discount/rebate application**
 
 ### C. Technician Module
 - Login, dashboard (job order stats), fulfill job orders with material entry
