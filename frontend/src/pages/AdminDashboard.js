@@ -78,6 +78,7 @@ export default function AdminDashboard({ user, onLogout }) {
   const settingsSubMenu = [
     { name: 'Users', path: '/admin/settings/users', icon: Users },
     { name: 'Plans', path: '/admin/settings/plans', icon: CreditCard },
+    { name: 'Receipt Setup', path: '/admin/settings/receipt', icon: Receipt },
     { name: 'Rebates', path: '/admin/settings/rebates', icon: Percent },
     { name: 'Printer Setup', path: '/admin/settings/printer', icon: Printer },
     { name: 'SOA Setup', path: '/admin/settings/soa', icon: FileSpreadsheet },
