@@ -2560,6 +2560,7 @@ async def reactivate_subscriber(account_number: str, data: dict, current_user: d
         {"account_number": account_number},
         {"$set": {
             "is_active": True,
+            "status": "active",
             "reactivated_at": now,
             "pppoe_profile": new_profile,
             "plan_id": new_plan_id,
