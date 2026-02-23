@@ -618,6 +618,9 @@ export default function CashierDashboard({ user, onLogout }) {
       const result = response.data;
       let message = `Payment processed! OR# ${result.or_number}\n`;
       
+      if (result.total_discount > 0) {
+        message += `🏷️ Discount applied: ₱${result.total_discount.toLocaleString()}\n`;
+      }
       if (result.invoices_fully_paid?.length > 0) {
         message += `✓ ${result.invoices_fully_paid.length} invoice(s) fully paid\n`;
       }
@@ -638,6 +641,8 @@ export default function CashierDashboard({ user, onLogout }) {
       selectSubscriber(selectedSubscriber);
       fetchTodayStats();
       setPaymentAmount('');
+      setSelectedDiscounts([]);
+      setTotalDiscountAmount(0);
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Payment processing failed');
     } finally {
