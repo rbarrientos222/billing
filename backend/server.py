@@ -858,9 +858,10 @@ class SubscriberLogin(BaseModel):
     account_number: str
     password: str
 
-async def get_current_subscriber(token: str = Depends(oauth2_scheme)):
+async def get_current_subscriber(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Get current subscriber from JWT token"""
     try:
+        token = credentials.credentials
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         account_number: str = payload.get("sub")
         role: str = payload.get("role")
