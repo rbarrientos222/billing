@@ -4691,6 +4691,10 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     # Open tickets
     open_tickets = await db.job_orders.count_documents({"status": "Open"})
     
+    # Total discounts given
+    discounts = await db.discounts.find({}, {"_id": 0}).to_list(1000)
+    total_discounts = sum(d.get('total_amount_discounted', 0) for d in discounts)
+    
     return {
         "active_subscribers": total_subscribers,
         "gross_sales": gross_sales,
@@ -4699,7 +4703,8 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "receivables": receivables,
         "open_tickets": open_tickets,
         "total_invoices": total_invoices,
-        "unpaid_invoices": unpaid_invoices
+        "unpaid_invoices": unpaid_invoices,
+        "total_discounts": total_discounts
     }
 
 # ========== BILLING CYCLE MANAGEMENT ==========
