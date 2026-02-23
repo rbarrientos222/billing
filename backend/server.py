@@ -3588,12 +3588,12 @@ async def add_inventory_unit(item_code: str, unit: InventoryUnit, current_user: 
     if unit.mac_address:
         existing = await db.inventory_units.find_one({"mac_address": unit.mac_address})
         if existing:
-            raise HTTPException(status_code=400, detail=f"MAC address already exists in inventory")
+            raise HTTPException(status_code=400, detail="MAC address already exists in inventory")
     
     if unit.serial_number:
         existing = await db.inventory_units.find_one({"serial_number": unit.serial_number})
         if existing:
-            raise HTTPException(status_code=400, detail=f"Serial number already exists in inventory")
+            raise HTTPException(status_code=400, detail="Serial number already exists in inventory")
     
     unit_dict = unit.model_dump()
     unit_dict['unit_id'] = generate_unit_id()
