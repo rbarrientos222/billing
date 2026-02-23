@@ -490,6 +490,7 @@ class CompanySettings(BaseModel):
 class ReceiptSettings(BaseModel):
     company_logo: Optional[str] = None  # Base64 encoded image
     company_name: str = ""
+    company_branch: Optional[str] = None  # Optional branch name
     company_address: str = ""
     company_mobile: str = ""
     company_email: Optional[str] = None
