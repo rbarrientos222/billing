@@ -1004,13 +1004,14 @@ async def get_subscriber_dashboard(current_subscriber: dict = Depends(get_curren
             "account_number": current_subscriber['account_number'],
             "name": f"{current_subscriber.get('first_name', '')} {current_subscriber.get('last_name', '')}".strip(),
             "plan": current_subscriber.get('plan_name', current_subscriber.get('plan', {}).get('name', 'N/A')),
-            "status": current_subscriber.get('status', 'active'),
+            "status": subscriber_status,
             "address": current_subscriber.get('address', ''),
             "mobile": current_subscriber.get('mobile', ''),
             "email": current_subscriber.get('email', ''),
             "installation_date": current_subscriber.get('installation_date'),
             "billing_day": current_subscriber.get('billing_day', 1),
-            "wallet_balance": wallet_balance
+            "wallet_balance": wallet_balance,
+            "deactivation_reason": current_subscriber.get('deactivation_reason', '')
         },
         "payables": {
             "total": total_payables,
