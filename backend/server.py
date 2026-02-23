@@ -4651,8 +4651,16 @@ async def get_subscriber_discounts(account_number: str, current_user: dict = Dep
     # Get all active discounts
     all_discounts = await db.discounts.find({"is_active": True}, {"_id": 0}).to_list(1000)
     
+    # Get one-time discounts already used by this subscriber
+    used_one_time = await db.discount_usage.find({"subscriber_id": account_number}).to_list(1000)
+    used_discount_ids = set(u['discount_id'] for u in used_one_time)
+    
     applicable_discounts = []
     for discount in all_discounts:
+        # Skip one-time discounts already used
+        if discount['duration'] == 'one-time' and discount['discount_id'] in used_discount_ids:
+            continue
+            
         is_applicable = False
         
         # Check apply_to rules
