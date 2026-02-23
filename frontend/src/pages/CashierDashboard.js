@@ -74,10 +74,7 @@ export default function CashierDashboard({ user, onLogout }) {
   const generateReceiptHTML = (settings, payment) => {
     const paperWidth = settings?.paper_width || 48;
     const widthMM = `${paperWidth}mm`;
-    const logoMaxWidth = paperWidth === 48 ? '35mm' : '40mm';
-    const fontSize = paperWidth === 48 ? '9px' : '10px';
-    const headerFontSize = paperWidth === 48 ? '11px' : '12px';
-    const amountFontSize = paperWidth === 48 ? '12px' : '14px';
+    const logoMaxWidth = paperWidth === 48 ? '30mm' : '35mm';
     const orPrefix = settings?.or_prefix || 'OR';
     
     const paymentDate = payment?.payment_date ? new Date(payment.payment_date) : new Date();
@@ -92,75 +89,82 @@ export default function CashierDashboard({ user, onLogout }) {
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { 
             font-family: 'Courier New', monospace; 
-            font-size: ${fontSize}; 
+            font-size: 8px; 
             width: ${widthMM}; 
             padding: 2mm;
-            line-height: 1.2;
+            line-height: 1.1;
           }
           .center { text-align: center; }
           .bold { font-weight: bold; }
-          .divider { border-top: 1px dashed #000; margin: 3px 0; }
+          .divider { border-top: 1px dashed #000; margin: 2px 0; }
           .row { display: flex; justify-content: space-between; margin: 1px 0; }
-          .logo { max-width: ${logoMaxWidth}; max-height: 12mm; margin: 0 auto 2mm; display: block; }
-          .small { font-size: 8px; }
+          .logo { max-width: ${logoMaxWidth}; max-height: 10mm; margin: 0 auto 2mm; display: block; }
+          .company-name { font-size: 10px; font-weight: bold; }
+          .branch { font-size: 7px; }
+          .address { font-size: 6px; }
+          .contact { font-size: 7px; }
+          .title { font-size: 9px; font-weight: bold; }
+          .or-number { font-size: 7px; }
+          .section-header { font-size: 7px; font-weight: bold; }
+          .subscriber-info { font-size: 6px; }
+          .details { font-size: 6px; }
+          .amount { font-size: 10px; font-weight: bold; }
+          .small { font-size: 6px; }
         </style>
       </head>
       <body>
         <div class="center">
           ${settings?.company_logo ? `<img src="${settings.company_logo}" class="logo" alt="Logo"/>` : ''}
-          <div class="bold" style="font-size: ${headerFontSize};">${settings?.company_name || 'Company'}</div>
-          <div class="small">${settings?.company_address || ''}</div>
-          <div>${settings?.company_mobile || ''}</div>
+          <div class="company-name">${settings?.company_name || 'Company'}</div>
+          ${settings?.company_branch ? `<div class="branch">${settings.company_branch}</div>` : ''}
+          <div class="address">${settings?.company_address || ''}</div>
+          <div class="contact">${settings?.company_mobile || ''}</div>
           ${settings?.tin_number ? `<div class="small">TIN: ${settings.tin_number}</div>` : ''}
         </div>
         
         <div class="divider"></div>
         
-        <div class="center bold" style="font-size: ${headerFontSize}; margin: 2mm 0;">
+        <div class="center title" style="margin: 1mm 0;">
           ${settings?.receipt_title || 'SERVICE INVOICE'}
         </div>
-        <div class="center small">${orPrefix}#: ${payment?.or_number || ''}</div>
+        <div class="center or-number">${orPrefix}#: ${payment?.or_number || ''}</div>
         
         <div class="divider"></div>
         
         <div>
-          <div class="bold">SUBSCRIBER</div>
-          <div>${payment?.subscriber_name || ''}</div>
-          <div class="small">Acct#: ${payment?.account_number || ''}</div>
-          <div class="small">${payment?.address || ''}</div>
+          <div class="section-header">SUBSCRIBER</div>
+          <div class="subscriber-info">${payment?.subscriber_name || ''}</div>
+          <div class="subscriber-info">Acct#: ${payment?.account_number || ''}</div>
+          <div class="subscriber-info">${payment?.address || ''}</div>
         </div>
         
         <div class="divider"></div>
         
         <div>
-          <div class="bold">DESCRIPTION</div>
-          <div class="small">${payment?.description || 'Payment for services'}</div>
+          <div class="section-header">DESCRIPTION</div>
+          <div class="details">${payment?.description || 'Payment for services'}</div>
         </div>
         
         <div class="divider"></div>
         
         <div>
-          <div class="bold">DETAILS</div>
+          <div class="section-header">DETAILS</div>
           ${(payment?.invoices_settled || []).map(inv => `
-            <div class="row small">
-              <span>${inv.description || inv.invoice_number || 'Invoice'}</span>
-            </div>
-            <div class="row">
+            <div class="details">${inv.description || inv.invoice_number || 'Invoice'}</div>
+            <div class="row details">
               <span></span>
               <span>P${(inv.amount || 0).toFixed(2)}</span>
             </div>
           `).join('')}
           ${(payment?.invoices_partial || []).map(inv => `
-            <div class="row small">
-              <span>${inv.description || inv.invoice_number || 'Invoice'} (Partial)</span>
-            </div>
-            <div class="row">
+            <div class="details">${inv.description || inv.invoice_number || 'Invoice'} (Partial)</div>
+            <div class="row details">
               <span></span>
               <span>P${(inv.amount_paid || 0).toFixed(2)}</span>
             </div>
           `).join('')}
           ${payment?.is_advance_payment ? `
-            <div class="row small">
+            <div class="row details">
               <span>Wallet Credit</span>
               <span>P${(payment.wallet_credit || 0).toFixed(2)}</span>
             </div>
@@ -169,7 +173,7 @@ export default function CashierDashboard({ user, onLogout }) {
         
         <div class="divider"></div>
         
-        <div class="row bold" style="font-size: ${amountFontSize};">
+        <div class="row amount">
           <span>TOTAL</span>
           <span>P${(payment?.total_amount || 0).toFixed(2)}</span>
         </div>
