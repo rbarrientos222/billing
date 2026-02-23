@@ -2420,6 +2420,7 @@ async def deactivate_subscriber(account_number: str, data: dict, current_user: d
         {"account_number": account_number},
         {"$set": {
             "is_active": False,
+            "status": "deactivated",
             "deactivated_at": now,
             "deactivation_reason": reason,
             "previous_pppoe_profile": subscriber.get('pppoe_profile'),
