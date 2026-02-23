@@ -498,6 +498,8 @@ class ReceiptSettings(BaseModel):
     vat_percentage: float = 12.0
     footer_text: Optional[str] = None
     receipt_title: str = "SERVICE INVOICE"
+    or_prefix: str = "OR"  # OR/SI number prefix
+    paper_width: int = 48  # Paper width in mm (48mm or 58mm)
     auto_print: bool = False  # Auto print after payment
 
 # ========== HELPER FUNCTIONS ==========
