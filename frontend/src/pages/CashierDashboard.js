@@ -59,6 +59,407 @@ export default function CashierDashboard({ user, onLogout }) {
     }
   };
 
+  // Fetch receipt settings
+  const fetchReceiptSettings = async () => {
+    try {
+      const response = await axios.get('/settings/receipt');
+      setReceiptSettings(response.data);
+      setAutoPrintReceipt(response.data?.auto_print || false);
+    } catch (error) {
+      console.error('Failed to fetch receipt settings');
+    }
+  };
+
+  // Generate receipt HTML for printing
+  const generateReceiptHTML = (settings, payment) => {
+    const paperWidth = settings?.paper_width || 48;
+    const widthMM = `${paperWidth}mm`;
+    const logoMaxWidth = paperWidth === 48 ? '35mm' : '40mm';
+    const fontSize = paperWidth === 48 ? '9px' : '10px';
+    const headerFontSize = paperWidth === 48 ? '11px' : '12px';
+    const amountFontSize = paperWidth === 48 ? '12px' : '14px';
+    const orPrefix = settings?.or_prefix || 'OR';
+    
+    const paymentDate = payment?.payment_date ? new Date(payment.payment_date) : new Date();
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Receipt</title>
+        <style>
+          @page { size: ${widthMM} auto; margin: 0; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: 'Courier New', monospace; 
+            font-size: ${fontSize}; 
+            width: ${widthMM}; 
+            padding: 2mm;
+            line-height: 1.2;
+          }
+          .center { text-align: center; }
+          .bold { font-weight: bold; }
+          .divider { border-top: 1px dashed #000; margin: 3px 0; }
+          .row { display: flex; justify-content: space-between; margin: 1px 0; }
+          .logo { max-width: ${logoMaxWidth}; max-height: 12mm; margin: 0 auto 2mm; display: block; }
+          .small { font-size: 8px; }
+        </style>
+      </head>
+      <body>
+        <div class="center">
+          ${settings?.company_logo ? `<img src="${settings.company_logo}" class="logo" alt="Logo"/>` : ''}
+          <div class="bold" style="font-size: ${headerFontSize};">${settings?.company_name || 'Company'}</div>
+          <div class="small">${settings?.company_address || ''}</div>
+          <div>${settings?.company_mobile || ''}</div>
+          ${settings?.tin_number ? `<div class="small">TIN: ${settings.tin_number}</div>` : ''}
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="center bold" style="font-size: ${headerFontSize}; margin: 2mm 0;">
+          ${settings?.receipt_title || 'SERVICE INVOICE'}
+        </div>
+        <div class="center small">${orPrefix}#: ${payment?.or_number || ''}</div>
+        
+        <div class="divider"></div>
+        
+        <div>
+          <div class="bold">SUBSCRIBER</div>
+          <div>${payment?.subscriber_name || ''}</div>
+          <div class="small">Acct#: ${payment?.account_number || ''}</div>
+          <div class="small">${payment?.address || ''}</div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div>
+          <div class="bold">DESCRIPTION</div>
+          <div class="small">${payment?.description || 'Payment for services'}</div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div>
+          <div class="bold">DETAILS</div>
+          ${(payment?.invoices_settled || []).map(inv => `
+            <div class="row small">
+              <span>${inv.description || inv.invoice_number || 'Invoice'}</span>
+            </div>
+            <div class="row">
+              <span></span>
+              <span>P${(inv.amount || 0).toFixed(2)}</span>
+            </div>
+          `).join('')}
+          ${(payment?.invoices_partial || []).map(inv => `
+            <div class="row small">
+              <span>${inv.description || inv.invoice_number || 'Invoice'} (Partial)</span>
+            </div>
+            <div class="row">
+              <span></span>
+              <span>P${(inv.amount_paid || 0).toFixed(2)}</span>
+            </div>
+          `).join('')}
+          ${payment?.is_advance_payment ? `
+            <div class="row small">
+              <span>Wallet Credit</span>
+              <span>P${(payment.wallet_credit || 0).toFixed(2)}</span>
+            </div>
+          ` : ''}
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="row bold" style="font-size: ${amountFontSize};">
+          <span>TOTAL</span>
+          <span>P${(payment?.total_amount || 0).toFixed(2)}</span>
+        </div>
+        <div class="row small">
+          <span>Mode:</span>
+          <span>${payment?.mode || 'Cash'}</span>
+        </div>
+        
+        <div class="divider"></div>
+        
+        ${settings?.vat_registered ? `
+          <div class="small">
+            <div>VATable: P${((payment?.total_amount || 0) / (1 + (settings.vat_percentage || 12)/100)).toFixed(2)}</div>
+            <div>VAT ${settings.vat_percentage || 12}%: P${((payment?.total_amount || 0) - (payment?.total_amount || 0) / (1 + (settings.vat_percentage || 12)/100)).toFixed(2)}</div>
+          </div>
+          <div class="divider"></div>
+        ` : ''}
+        
+        <div class="small">
+          <div>Date: ${paymentDate.toLocaleDateString('en-PH')} ${paymentDate.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}</div>
+          <div>Processed by: ${payment?.received_by || user.username}</div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="center small">
+          ${settings?.footer_text || 'Thank you for your payment!'}
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
+  // Print receipt using browser print dialog
+  const printReceiptBrowser = async (orNumber) => {
+    setPrinting(true);
+    try {
+      const response = await axios.get(`/receipt/data/${orNumber}`);
+      const { settings, payment } = response.data;
+      
+      const printWindow = window.open('', '_blank', 'width=400,height=600');
+      printWindow.document.write(generateReceiptHTML(settings, payment));
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+      
+      toast.success('Receipt sent to print');
+    } catch (error) {
+      toast.error('Failed to print receipt');
+      console.error('Print error:', error);
+    } finally {
+      setPrinting(false);
+    }
+  };
+
+  // Connect to Bluetooth printer
+  const connectBluetoothPrinter = async () => {
+    try {
+      if (!navigator.bluetooth) {
+        toast.error('Web Bluetooth is not supported in this browser. Use Chrome or Edge.');
+        return false;
+      }
+      
+      const device = await navigator.bluetooth.requestDevice({
+        filters: [
+          { services: ['000018f0-0000-1000-8000-00805f9b34fb'] }, // Common thermal printer service
+          { namePrefix: 'RPP' }, // RPP series printers
+          { namePrefix: 'Printer' },
+          { namePrefix: 'BT' },
+        ],
+        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', '0000ff00-0000-1000-8000-00805f9b34fb', 'e7810a71-73ae-499d-8c15-faa9aef0c3f2']
+      });
+      
+      toast.info(`Connecting to ${device.name}...`);
+      
+      const server = await device.gatt.connect();
+      const services = await server.getPrimaryServices();
+      
+      let characteristic = null;
+      for (const service of services) {
+        const characteristics = await service.getCharacteristics();
+        for (const char of characteristics) {
+          if (char.properties.write || char.properties.writeWithoutResponse) {
+            characteristic = char;
+            break;
+          }
+        }
+        if (characteristic) break;
+      }
+      
+      if (!characteristic) {
+        throw new Error('No writable characteristic found');
+      }
+      
+      setBluetoothDevice(device);
+      printCharacteristicRef.current = characteristic;
+      toast.success(`Connected to ${device.name}`);
+      return true;
+    } catch (error) {
+      if (error.name === 'NotFoundError') {
+        toast.error('No printer selected');
+      } else {
+        toast.error(`Bluetooth error: ${error.message}`);
+      }
+      console.error('Bluetooth error:', error);
+      return false;
+    }
+  };
+
+  // Generate ESC/POS commands for thermal printer
+  const generateESCPOS = (settings, payment) => {
+    const ESC = 0x1B;
+    const GS = 0x1D;
+    const LF = 0x0A;
+    
+    const encoder = new TextEncoder();
+    const commands = [];
+    
+    // Initialize printer
+    commands.push(new Uint8Array([ESC, 0x40])); // ESC @ - Initialize
+    
+    // Center align
+    commands.push(new Uint8Array([ESC, 0x61, 0x01])); // ESC a 1 - Center
+    
+    // Company name (bold, double height)
+    commands.push(new Uint8Array([ESC, 0x45, 0x01])); // Bold on
+    commands.push(encoder.encode(settings?.company_name || 'Company'));
+    commands.push(new Uint8Array([LF]));
+    commands.push(new Uint8Array([ESC, 0x45, 0x00])); // Bold off
+    
+    // Company address
+    commands.push(encoder.encode(settings?.company_address || ''));
+    commands.push(new Uint8Array([LF]));
+    commands.push(encoder.encode(settings?.company_mobile || ''));
+    commands.push(new Uint8Array([LF]));
+    
+    if (settings?.tin_number) {
+      commands.push(encoder.encode(`TIN: ${settings.tin_number}`));
+      commands.push(new Uint8Array([LF]));
+    }
+    
+    // Divider
+    commands.push(encoder.encode('--------------------------------'));
+    commands.push(new Uint8Array([LF]));
+    
+    // Receipt title
+    commands.push(new Uint8Array([ESC, 0x45, 0x01])); // Bold on
+    commands.push(encoder.encode(settings?.receipt_title || 'SERVICE INVOICE'));
+    commands.push(new Uint8Array([LF]));
+    commands.push(new Uint8Array([ESC, 0x45, 0x00])); // Bold off
+    
+    // OR Number
+    commands.push(encoder.encode(`${settings?.or_prefix || 'OR'}#: ${payment?.or_number || ''}`));
+    commands.push(new Uint8Array([LF]));
+    
+    // Divider
+    commands.push(encoder.encode('--------------------------------'));
+    commands.push(new Uint8Array([LF]));
+    
+    // Left align for details
+    commands.push(new Uint8Array([ESC, 0x61, 0x00])); // Left align
+    
+    // Subscriber
+    commands.push(new Uint8Array([ESC, 0x45, 0x01])); // Bold
+    commands.push(encoder.encode('SUBSCRIBER'));
+    commands.push(new Uint8Array([LF]));
+    commands.push(new Uint8Array([ESC, 0x45, 0x00])); // Bold off
+    commands.push(encoder.encode(payment?.subscriber_name || ''));
+    commands.push(new Uint8Array([LF]));
+    commands.push(encoder.encode(`Acct#: ${payment?.account_number || ''}`));
+    commands.push(new Uint8Array([LF]));
+    
+    // Divider
+    commands.push(encoder.encode('--------------------------------'));
+    commands.push(new Uint8Array([LF]));
+    
+    // Description
+    commands.push(new Uint8Array([ESC, 0x45, 0x01]));
+    commands.push(encoder.encode('DESCRIPTION'));
+    commands.push(new Uint8Array([LF]));
+    commands.push(new Uint8Array([ESC, 0x45, 0x00]));
+    commands.push(encoder.encode(payment?.description || 'Payment'));
+    commands.push(new Uint8Array([LF]));
+    
+    // Divider
+    commands.push(encoder.encode('--------------------------------'));
+    commands.push(new Uint8Array([LF]));
+    
+    // Total
+    commands.push(new Uint8Array([ESC, 0x45, 0x01])); // Bold
+    const totalLine = `TOTAL: P${(payment?.total_amount || 0).toFixed(2)}`;
+    commands.push(encoder.encode(totalLine));
+    commands.push(new Uint8Array([LF]));
+    commands.push(new Uint8Array([ESC, 0x45, 0x00])); // Bold off
+    commands.push(encoder.encode(`Mode: ${payment?.mode || 'Cash'}`));
+    commands.push(new Uint8Array([LF]));
+    
+    // Divider
+    commands.push(encoder.encode('--------------------------------'));
+    commands.push(new Uint8Array([LF]));
+    
+    // Date and processor
+    const paymentDate = payment?.payment_date ? new Date(payment.payment_date) : new Date();
+    commands.push(encoder.encode(`Date: ${paymentDate.toLocaleDateString('en-PH')}`));
+    commands.push(new Uint8Array([LF]));
+    commands.push(encoder.encode(`Processed by: ${payment?.received_by || ''}`));
+    commands.push(new Uint8Array([LF]));
+    
+    // Divider
+    commands.push(encoder.encode('--------------------------------'));
+    commands.push(new Uint8Array([LF]));
+    
+    // Footer (centered)
+    commands.push(new Uint8Array([ESC, 0x61, 0x01])); // Center
+    commands.push(encoder.encode(settings?.footer_text || 'Thank you!'));
+    commands.push(new Uint8Array([LF, LF, LF])); // Extra lines
+    
+    // Cut paper
+    commands.push(new Uint8Array([GS, 0x56, 0x00])); // Full cut
+    
+    // Combine all commands
+    const totalLength = commands.reduce((acc, cmd) => acc + cmd.length, 0);
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const cmd of commands) {
+      result.set(cmd, offset);
+      offset += cmd.length;
+    }
+    
+    return result;
+  };
+
+  // Print to Bluetooth thermal printer
+  const printReceiptBluetooth = async (orNumber) => {
+    setPrinting(true);
+    try {
+      // Ensure connected
+      if (!printCharacteristicRef.current) {
+        const connected = await connectBluetoothPrinter();
+        if (!connected) {
+          setPrinting(false);
+          return;
+        }
+      }
+      
+      const response = await axios.get(`/receipt/data/${orNumber}`);
+      const { settings, payment } = response.data;
+      
+      const escposData = generateESCPOS(settings, payment);
+      
+      // Send data in chunks (BLE has packet size limits)
+      const chunkSize = 100;
+      for (let i = 0; i < escposData.length; i += chunkSize) {
+        const chunk = escposData.slice(i, i + chunkSize);
+        await printCharacteristicRef.current.writeValue(chunk);
+        await new Promise(resolve => setTimeout(resolve, 50)); // Small delay between chunks
+      }
+      
+      toast.success('Receipt printed successfully');
+    } catch (error) {
+      console.error('Bluetooth print error:', error);
+      if (error.message?.includes('GATT')) {
+        setBluetoothDevice(null);
+        printCharacteristicRef.current = null;
+        toast.error('Printer disconnected. Please reconnect.');
+      } else {
+        toast.error('Failed to print receipt');
+      }
+    } finally {
+      setPrinting(false);
+    }
+  };
+
+  // Auto-print after successful payment
+  const handleAutoPrint = async (orNumber) => {
+    if (autoPrintReceipt && orNumber) {
+      // Small delay to let payment UI update
+      setTimeout(() => {
+        if (bluetoothDevice && printCharacteristicRef.current) {
+          printReceiptBluetooth(orNumber);
+        } else {
+          printReceiptBrowser(orNumber);
+        }
+      }, 500);
+    }
+  };
+
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
     setSearching(true);
