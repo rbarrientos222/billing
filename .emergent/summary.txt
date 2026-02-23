@@ -1,213 +1,196 @@
 <analysis>**original_problem_statement:**
-Build me a billing system that has the following features.
+The user wants to build a comprehensive full-stack billing system for an ISP.
 
-A. **Backend for Admin:**
-1.  **Login:** Admin login page.
-2.  **Dashboard:** Gross sales, expenses, net sales, monthly sales graph, receivables, active subscribers, open tickets, ticket of the month, Mikrotik stats (CPU, RAM usage, etc.), recent activity.
-3.  **User Management:** Create/manage user accounts with roles (cashier, tech, admin, user, billing).
-4.  **Settings:** Discounts/rebates, Subscription Plans, import/export.
-5.  **Mikrotik Management (v6 & v7):** Integration/configuration.
-6.  **Creation of Mikrotik Accounts:** Integrated with subscriber registration (PPPoE username, password, profile) with an option to activate on save. Sync accounts from Mikrotik, update profiles.
-7.  **Subscriber Registration:**
-    *   **Data:** Auto-generated account number, PPPoE account, billing period, installation details, plan, one-time charges.
-    *   **Actions:** Job order creation, pro-rated bill, modem assignment, next billing schedule.
-    *   **Management:** Edit, Activate/Deactivate, View payment/billing history, job orders, logs, equipment used.
-    *   **Address:** Split into dropdowns for Province, Municipality, Barangay, and a text field for Street.
-8.  **Company Setup:** Logo, business name, address, email, mobile for receipts/SOA.
-9.  **Inventory:** Stock management, MAC/serial tracking, bulk item tracking (e.g., fiber cable usage), costing.
-10. **Expenses:** Category-based, recurring, included in dashboard net sales.
-11. **Import/Export:** Subscribers.
-12. **Billing Module:**
-    *   **SOA:** PDF generator, printable, auto-email.
-    *   **Billing Cycle:** Automatic invoice generation.
-    *   **Automatic SMS:** Triggers for bill generation, payment received, overdue, disconnection.
+Key features requested include:
+-   **Admin Backend:** Dashboard, User Management, Mikrotik Integration (v6/v7), Subscriber Registration & Management, Company Setup, Inventory, Expenses, and a detailed Billing Module with automatic invoice generation, SOA/receipt printing, and SMS notifications.
+-   **Cashier Module:** Login, dashboard, fast search, receipt printing, and payment processing.
+-   **Technician Module:** Login, dashboard, and job order fulfillment.
+-   **Subscriber Portal:** Login, dashboard to view history and status.
 
-B. **Cashier Module:**
-*   Login, dashboard, fast search, receipt printing, OR/SI numbering, audit trail, mode of payment, advance payment logic (wallet/credit ledger).
-
-C. **Technician Module:**
-*   Login, dashboard (job order stats), fulfill job orders with material entry.
-
-D. **Subscribers Portal:**
-*   Login (account number), dashboard (job orders, payment records, chat, account history).
+The most recent request is to implement receipt printing for the Cashier module, starting with a Receipt Setup page in the Admin settings to configure the receipt's appearance and content, with an initial focus on printing to a mobile Bluetooth thermal printer.
 
 **User's preferred language**: English
 
 **what currently exists?**
 A comprehensive full-stack billing application with a FastAPI backend, React frontend, and MongoDB database.
 
-*   **Backend:** Supports JWT authentication, user/subscriber/plan management, and a robust subscriber lifecycle. It features an automatic monthly billing scheduler, a complete centralized payment system with a subscriber wallet, extensive Mikrotik integration, and a full-featured inventory management system capable of tracking items by bulk, length, and individual serialized units (MAC/Serial). A new Purchasing module has been added, which integrates with both Inventory and Expenses.
-*   **Frontend:** The UI includes functional Login, Admin, and Cashier roles.
-    *   **Admin:** The dashboard is powered by live data. The Subscriber Management page allows assigning serialized equipment from inventory during registration. A complete Inventory Management module is fully functional. A new Purchasing Management module has been built from the ground up to handle suppliers and purchase orders.
-    *   **Cashier:** The dashboard features a fully functional centralized payment system.
+*   **Backend:** Supports JWT authentication, user/subscriber/plan management, a robust subscriber lifecycle with prorated billing logic, and a centralized payment system. It includes extensive Mikrotik integration (sync, activate/deactivate, profile changes), a full inventory management system, a purchasing module, and a complete Job Order and Technician management system. An expense module with analytics has also been implemented. The backend now runs on Philippine Standard Time (UTC+8).
+*   **Frontend:** The UI includes functional Login, Admin, Cashier, and Technician roles. The entire application has been made mobile-responsive, with a collapsible sidebar and hamburger menu for smaller screens.
+    *   **Admin:** A data-driven dashboard, paginated management tables, a Job Order management page, an Expense management module with charts, and a Run Billing button.
+    *   **Cashier:** The dashboard features a functional centralized payment system with enhancements like a togglable payment history, date filters, and an advance payment/wallet system.
+    *   **Technician:** A dashboard to view and fulfill assigned job orders.
 
 **Last working item**:
-- **Last item agent was working:** Implementing several UI/UX improvements requested by the user. The agent successfully reordered the admin sidebar navigation and began adding pagination to the subscriber management table.
+- **Last item agent was working:** Implementing the Receipt Setup page for the Admin, which is the first step towards enabling receipt printing in the Cashier module. The agent created the backend model and API endpoints for storing receipt settings and created the placeholder frontend component.
 - **Status:** IN PROGRESS
 - **Agent Testing Done:** N
 - **Which testing method agent to use?** both
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** (P0) Complete UI/UX Refactor in Subscriber Management
+-   **Issue 1:** (P0) Implement Receipt Printing Feature
 -   **Issue 2:** (P1) Babel Plugin Failure for 
 
 **Issues Detail:**
 -   **Issue 1:**
-    -   **Description:** The user requested to add pagination to the main data tables (Subscribers, Inventory, Purchases) and to refactor the subscriber View Records dialog to use tabs for better organization. The agent started implementing pagination on the Subscriber Management page but has not completed it or started on the tabs.
+    -   **Description:** The user wants to print receipts from the cashier module, targeting a mobile Bluetooth printer first. This requires:
+        1.  A Receipt Setup page in the admin settings to configure a company logo, name, address, and other details for the receipt.
+        2.  A Print Receipt button in the Cashier module's payment history.
+        3.  An Auto-print receipt checkbox for the cashier.
+        4.  Integration with a mobile Bluetooth printer (e.g., rpp02n-c078).
     -   **Next debug checklist:**
-        1.  Complete the pagination implementation in .
-        2.  Verify the subscriber table paginates correctly.
-        3.  Implement pagination for the Inventory and Purchasing tables.
-        4.  Refactor the View Records modal in  to use Shadcn's  component for Invoices, Payment Records, and Assigned Equipment.
-    -   **Why fix this issue and what will be achieved with the fix?** Improves application performance and user experience when dealing with large datasets.
+        1.  **Backend ():** Implement logic for uploading and storing the company logo for the receipt.
+        2.  **Frontend ():** Add the route for the newly created  component to make it accessible from the settings menu.
+        3.  **Frontend ():** Build the complete UI for the receipt setup page, including a file upload component for the logo, input fields for company details, and a live preview of the receipt template.
+        4.  **Frontend ():**
+            *   Add a Print Receipt button to each entry in the payment history table.
+            *   Add an Auto-print receipt checkbox near the payment submission area.
+            *   On print, fetch receipt settings and payment data, format it into an HTML template suitable for a 58mm thermal printer.
+            *   Use the **Web Bluetooth API** to discover and send the print job to the specified Bluetooth printer.
+    -   **Why fix this issue and what will be achieved with the fix?** This will complete a core requirement for the Cashier module, enabling physical proof of payment for subscribers.
     -   **Status:** IN PROGRESS
     -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Should Test frontend/backend/both after fix?** both
     -   **Blocked on other issue:** None
 
 -   **Issue 2:**
-    -   **Description:** The development server's  causes a Maximum call stack size exceeded error when rendering the  component, resulting in a blank page.
-    -   **Attempted fixes:** The agent confirmed the issue was with the babel plugin's handling of complex components. As a temporary workaround, the agent disabled the plugin entirely in .
-    -   **Next debug checklist:** The next agent should investigate a permanent solution. This could involve refactoring  into smaller components to avoid triggering the bug, or finding a way to configure the babel plugin correctly. For now, development can proceed with the plugin disabled.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a piece of technical debt that affects the development environment. Fixing it will restore full development tool functionality.
+    -   **Description:** The development server's  causes a Maximum call stack size exceeded error on complex components, forcing a blank page render.
+    -   **Attempted fixes:** The plugin was disabled in  as a temporary workaround.
+    -   **Why fix this issue and what will be achieved with the fix?** This is technical debt. Fixing it restores full development tool functionality.
     -   **Status:** BLOCKED (Workaround in place)
     -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** Frontend
-    -   **Blocked on other issue:** None
 
 **In progress Task List**:
--   **Task 1:** Add Pagination to Tables
-    -   **Where to resume:** Continue editing . The  logic has been added, but the table rendering needs to be updated to use the  data and display the pagination controls.
-    -   **What will be achieved with this?** Paginated views for Subscriber, Inventory, and Purchase tables, making the UI much more scalable.
+-   **Task 1:** Complete the Receipt Printing Feature
+    -   **Where to resume:** The file  needs to be edited to include a route to the new  component. After that, the  component needs its UI and logic fully implemented.
+    -   **What will be achieved with this?** A fully configurable receipt template that can be printed from the Cashier module.
     -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** Frontend
-    -   **Blocked on something:** None
-
--   **Task 2:** Refactor Subscriber Records Dialog with Tabs
-    -   **Where to resume:** Modify the View Records dialog in .
-    -   **What will be achieved with this?** A cleaner, tabbed interface for Invoices, Payment Records, and Assigned Equipment within the subscriber details modal.
-    -   **Status:** NOT STARTED
-    -   **Should Test frontend/backend/both after fix?** Frontend
-    -   **Blocked on something:** Task 1 (Best to do after pagination is complete)
+    -   **Should Test frontend/backend/both after fix?** both
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
--   **Technician Module (P1):** Implement the login page, dashboard (job order stats), and the functionality to fulfill job orders, integrating with inventory to assign materials.
 -   **Subscribers Portal (P1):** Build the login page (using account number) and a dashboard for subscribers to view their payment history, job orders, and account status.
--   **Admin - PDF Generation (P1):** Implement PDF generation for Statements of Account (SOA) and payment receipts.
--   **Admin - Settings Page (P1):** Build the UI for the Settings page to host the Subscription Plans management and other future settings.
+-   **Admin - PDF Generation (P1):** Implement PDF generation for Statements of Account (SOA).
+-   **Admin - Settings Page (P1):** Build out the UI for the placeholder settings pages (Rebates, Printer Setup, SOA Setup).
 
 **Future Tasks:**
 -   **Billing Automations:** Implement automatic emailing of SOAs and SMS notifications.
 -   **Admin - Wallet Management:** Create a UI for admins to manually manage subscriber wallet credits.
--   **Admin - Advanced Settings:** Add UI for managing discounts/rebates.
--   **Admin - Company Setup:** Create the UI to manage company details for receipts.
--   **Admin - Expenses Module:** Build out the full Expenses management module UI.
+-   **Admin - Company Setup:** Create the UI to manage company details for receipts (partially addressed by the current task).
 
 **Completed work in this session**
-- **Inventory Unit Tracking:** Completed and tested the feature for tracking individual items by MAC address or serial number.
-- **Equipment Assignment on Registration:** Implemented the flow to search for and assign serialized equipment from inventory directly within the subscriber registration form.
-- **Purchasing Module:** Built and tested a complete purchasing module that integrates with inventory (for stock updates) and expenses (for cost tracking).
-- **Bug Fix - Inventory Quantity:** Resolved a critical bug where purchasing a serialized item and then adding its serial number would incorrectly double the inventory quantity.
-- **UI/UX Improvements (Started):**
-    - Reordered the main admin navigation links as per user request.
-    - Created a reusable pagination component.
+-   **Cashier Module Enhancements:** Implemented togglable payment history, a date range filter, and an advance payment/wallet feature.
+-   **Full Expense Module:** Built the backend and frontend for expense management, including CRUD for expenses and categories, stats cards, and filtering.
+-   **Expense Reports & Analytics:** Added a new tab with charts for monthly trends, category breakdowns, and type comparisons.
+-   **Deployment Readiness:** Performed a health check, removed hardcoded secrets from , and moved them to  variables.
+-   **Subscriber UI Enhancements:** Added a detailed information card (Address, Mobile, Plan, Dates) to the View Records modal.
+-   **Job Order Creation Fix:** Resolved a critical bug where job orders created during subscriber registration were missing , , and had the wrong . A migration script was run to fix 22 existing broken records.
+-   **Mikrotik Sync/Status Enhancements:**
+    -   Sync now gracefully handles pre-existing PPPoE accounts.
+    -   Deactivating a subscriber now updates their Mikrotik profile to DEACTIVATED and disconnects their active session.
+    -   Reactivating a subscriber updates their profile and disconnects the session to apply changes immediately.
+    -   The  status in the database now correctly syncs with deactivation/reactivation actions.
+-   **Billing Logic Overhaul:**
+    -   Fixed multiple issues causing duplicate invoices and incorrect billing amounts (full vs. prorated).
+    -   Corrected the due date calculation to be the next billing cycle date, not +15 days.
+    -   Implemented Philippine Standard Time (PST/UTC+8) across the entire billing process, including the scheduler.
+    -   Added a Run Billing Now button to the Admin Dashboard for manual testing.
+-   **Mobile Responsiveness:** Overhauled the Admin, Cashier, and Technician dashboards to be fully responsive, adding a hamburger menu and a slide-out overlay sidebar for mobile devices.
+-   **Required Fields:** Made Subscription Plan, Modem/Equipment, and PPPoE fields mandatory in the subscriber creation form, with both backend and frontend validation.
 
 **Earlier issues found/mentioned but not fixed**
-- **Issue 1:** The address data for municipalities and barangays is incomplete sample data, which limits the address dropdown functionality.
+-   **Issue 1:** The address data for municipalities and barangays is incomplete sample data, which limits the address dropdown functionality.
 
 **Known issue recurrence from previous fork**
-- None.
+-   None.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, Pydantic,  for background jobs, , JWT authentication.
--   **Frontend:** React, React Router, Axios, TailwindCSS, Shadcn/UI.
--   **Integrations:**  for Mikrotik communication.
--   **Architecture:** Monolithic repository with a critically large backend file () that urgently needs modularization.
+-   **Backend:** FastAPI, Pydantic,  (now timezone-aware), , JWT authentication,  for timezones.
+-   **Frontend:** React, React Router, Axios, TailwindCSS, Shadcn/UI, Recharts.
+-   **Integrations:**  for Mikrotik.
+-   **Potential Upcoming:** Web Bluetooth API for printer integration.
 
 **key DB schema**
--   **subscribers:** Added .
--   **inventory_items:** Added  to track serialized units purchased but not yet entered with serial numbers.
--   **suppliers (New):** , , , , , , .
--   **purchase_orders (New):** , , , , , , , , , .
+-   **receipt_settings:** (New) , , , , .
+-   **company_settings:** , , , .
+-   **invoices:** , , .
+-   **job_orders:** Schema corrected. Now reliably contains ,  (as account number), and .
 
 **changes in tech stack**
-- None.
+-   None.
 
 **All files of reference**
--   : Heavily modified to add all backend logic for purchasing, suppliers, equipment assignment, and the inventory quantity bug fix.
--   : Heavily modified for equipment assignment search and the in-progress pagination refactor.
--   : New, large component for the entire purchasing feature.
--   : Modified to reorder navigation links and add the route for the purchasing module.
--   : New reusable component for table pagination.
--   : Modified to temporarily disable a babel plugin causing development server crashes.
+-   : Heavily modified for all backend features, bug fixes, and timezone implementation.
+-   : Major refactor for mobile responsiveness and added Run Billing button.
+-   : Major refactor for mobile responsiveness and UI/UX enhancements.
+-   : Major refactor for mobile responsiveness.
+-   : Updated for required fields and new UI elements in the View Records modal.
+-   : Created and enhanced with a full analytics tab.
+-   : New placeholder file for the current task.
 
 **Areas that need refactoring**:
--   **Backend:** The  file is now over 3000 lines and its modularization is critical for maintainability.
--   **Frontend:** The  component is large and complex, causing issues with the development environment's babel plugins. It could be broken down into smaller, more manageable components.
+-   **CRITICAL:** The  file is now over 4700 lines. Modularizing it into a proper , , and  directory structure is extremely urgent and should be proposed to the user immediately after the current task is complete. The current size poses a significant risk to maintainability and future development speed.
 
 **key api endpoints**
--   : (New) Full CRUD for suppliers.
--   : (New) Create and list purchase orders.
--   : (New) Get statistics for the purchasing dashboard.
--   : (New) Search available inventory units by MAC/Serial.
--   : (New) Get equipment assigned to a specific subscriber.
--   : Updated to correctly handle inventory quantity and decrement .
--   : Updated to correctly handle quantity for serialized vs. non-serialized items.
+-   : (New) Create/update receipt settings.
+-   : (New) Get receipt settings.
+-   : (New) Manually triggers the billing generation process.
+-   : (Enhanced) Now changes Mikrotik profile and disconnects session.
+-   : (Enhanced) Now updates Mikrotik profile and disconnects session.
+-   , , , : (New) Full suite of endpoints for the expense module.
 
 **Critical Info for New Agent**
--   The immediate priority is to complete the UI refactor: **pagination and tabs**. Start with .
--   **CRITICAL WORKAROUND**: The  babel plugin is temporarily **disabled** in . This was done to prevent a Maximum call stack size exceeded crash when rendering the new  in the dev environment. Be aware that this is a temporary fix; a permanent solution is needed.
--   After the current UI tasks, proposing a refactor of the massive  file should be a high-priority suggestion to the user.
+-   The immediate task is to continue building the **Receipt Printing** feature. The very next step is to **add the route for  in ** to make the new page visible.
+-   The user's initial requirement is for a **mobile Bluetooth printer**. This will likely require using the **Web Bluetooth API**, which is experimental and mostly supported only in Chrome-based browsers. You should be prepared for this and may need to inform the user of these limitations.
+-   The backend now operates entirely in **Philippine Standard Time (UTC+8)** for all billing-related logic.
+-   The monolithic  is a major piece of technical debt. Once the receipt printing feature is done, you should strongly advocate for refactoring the backend.
 
 **documents and test reports created in this job**
+-   
+-   
 -    (Updated)
--   
--   
--   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requested UI improvements: reorder navigation, add table pagination, and use tabs in the subscriber records dialog. (IN PROGRESS)
-2.  **User:** Reported a bug where purchasing a serialized item and then adding its serial number resulted in an incorrect quantity. (COMPLETED)
-3.  **User:** Asked to add a purchasing module that integrates with inventory and expenses. (COMPLETED)
-4.  **User:** Provided requirements for the new purchasing module. (COMPLETED)
-5.  **User:** Requested to start working on the subscriber registration and MAC address integration. (COMPLETED)
-6.  **User:** Confirmed that the agent should proceed with testing. (COMPLETED)
-7.  **User:** Acknowledged the completion of the inventory unit tracking. (COMPLETED)
-8.  **User:** Reported an error. (ADDRESSED)
-9.  **Agent:** Asked for clarification on the purchasing module requirements. (COMPLETED)
-10. **Agent:** Finished the equipment assignment feature. (COMPLETED)
+1.  **User:** Requests receipt printing for the cashier module, starting with setup for a mobile Bluetooth printer. (IN PROGRESS)
+2.  **User:** Reports issues with the billing logic (duplicate invoices, incorrect prorated amounts). (COMPLETED)
+3.  **User:** Reports issues with the unchecked prorated bill scenario and asks for Philippine Standard Time. (COMPLETED)
+4.  **User:** Reports a messy UI on mobile devices. (COMPLETED)
+5.  **User:** Confirms the Mikrotik deactivate/reactivate logic works but notes the PPPoE status badge doesn't update. (COMPLETED)
+6.  **User:** Asks to make several subscriber fields required. (COMPLETED)
+7.  **User:** Asks for clarification on deployment costs for future modifications. (ADDRESSED)
+8.  **User:** Requests a deployment health check. (COMPLETED)
+9.  **User:** Reports that newly created job orders are missing IDs and subscriber names. (COMPLETED)
+10. **User:** Reports  and Mikrotik connection errors after deployment. (COMPLETED)
 
 **Project Health Check:**
 -   **Broken:**
     -   None.
 -   **Partially Implemented:**
-    -   UI Refactor: Navigation is reordered, but pagination and tabs are incomplete.
+    -   **Receipt Printing:** Backend endpoints and frontend component file exist, but the UI is not built and it's not routed.
+    -   **Admin Settings:** Placeholders for Rebates, Printer, and SOA Setup still exist.
 -   **Mocked:**
-    -   Address data for municipalities and barangays remains as placeholder/sample data.
+    -   Address data (provinces, municipalities, barangays) is sample data.
 -   **Technical Debt:**
-    -   A babel plugin () is disabled in the frontend development environment as a workaround for a stack overflow crash.
+    -   The  babel plugin is disabled in .
+    -    is a critically large monolithic file (>4700 lines).
 
 **3rd Party Integrations**
--   **Mikrotik RouterOS API:** Using the  Python library.
+-   **Mikrotik RouterOS API:** Using the  Python library for PPPoE management.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES (used 3 times for inventory, equipment assignment, and purchasing modules)
+-   **Testing agent used after significant changes:** YES (for Cashier and Expense modules).
 -   **Troubleshoot agent used after agent stuck in loop:** NO
--   **Test files created:** The testing agent created pytest reports, but no new permanent test files were added to the repo.
+-   **Test files created:** , 
 -   **Known regressions:** None.
 
 **Credentials to test flow:**
 -   **Admin:**  / 
 -   **Cashier:**  / 
--   **Mikrotik Admin:**  / 
+-   **Technician:**  / 
 
 **What agent forgot to execute**
-- The agent was in the middle of implementing pagination in  and did not complete it.
-- The agent did not start the implementation of the tabbed view for the subscriber records dialog.
-- The agent did not apply the pagination logic to the other tables (Inventory, Purchases) as requested.
-- The agent disabled a babel plugin as a workaround but did not investigate or implement a permanent fix.</analysis>
+-   The agent created the new component  but did not add the corresponding route in  to make the page accessible in the UI.</analysis>
