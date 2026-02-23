@@ -853,6 +853,313 @@ async def login(user: UserLogin):
 async def get_me(current_user: dict = Depends(get_current_user)):
     return current_user
 
+# ========== SUBSCRIBER PORTAL ==========
+class SubscriberLogin(BaseModel):
+    account_number: str
+    password: str
+
+async def get_current_subscriber(token: str = Depends(oauth2_scheme)):
+    """Get current subscriber from JWT token"""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        account_number: str = payload.get("sub")
+        role: str = payload.get("role")
+        if account_number is None or role != "subscriber":
+            raise HTTPException(status_code=401, detail="Invalid subscriber token")
+        subscriber = await db.subscribers.find_one({"account_number": account_number}, {"_id": 0})
+        if subscriber is None:
+            raise HTTPException(status_code=401, detail="Subscriber not found")
+        subscriber['role'] = 'subscriber'
+        return subscriber
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@api_router.post("/subscriber/auth/login")
+async def subscriber_login(data: SubscriberLogin):
+    """Subscriber login using account number"""
+    subscriber = await db.subscribers.find_one({"account_number": data.account_number.upper()})
+    if not subscriber:
+        raise HTTPException(status_code=401, detail="Account not found")
+    
+    # Check password - use stored password or default to last 4 digits of mobile
+    stored_password = subscriber.get('portal_password')
+    if stored_password:
+        if not verify_password(data.password, stored_password):
+            raise HTTPException(status_code=401, detail="Invalid password")
+    else:
+        # Default password: last 4 digits of mobile number
+        mobile = subscriber.get('mobile', '')
+        default_password = mobile[-4:] if len(mobile) >= 4 else '0000'
+        if data.password != default_password:
+            raise HTTPException(status_code=401, detail="Invalid password. Default is last 4 digits of your mobile number.")
+    
+    # Create token with subscriber role
+    token = create_access_token({
+        "sub": subscriber['account_number'],
+        "role": "subscriber",
+        "name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip()
+    })
+    
+    return {
+        "access_token": token,
+        "role": "subscriber",
+        "account_number": subscriber['account_number'],
+        "name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip()
+    }
+
+@api_router.post("/subscriber/auth/change-password")
+async def subscriber_change_password(data: dict, current_subscriber: dict = Depends(get_current_subscriber)):
+    """Change subscriber portal password"""
+    new_password = data.get('new_password')
+    if not new_password or len(new_password) < 4:
+        raise HTTPException(status_code=400, detail="Password must be at least 4 characters")
+    
+    hashed = hash_password(new_password)
+    await db.subscribers.update_one(
+        {"account_number": current_subscriber['account_number']},
+        {"$set": {"portal_password": hashed}}
+    )
+    return {"message": "Password changed successfully"}
+
+@api_router.get("/subscriber/dashboard")
+async def get_subscriber_dashboard(current_subscriber: dict = Depends(get_current_subscriber)):
+    """Get subscriber dashboard data"""
+    account_number = current_subscriber['account_number']
+    
+    # Get unpaid invoices (payables)
+    unpaid_invoices = await db.invoices.find({
+        "subscriber_id": account_number,
+        "paid": False
+    }, {"_id": 0}).to_list(100)
+    
+    total_payables = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid_invoices)
+    
+    # Get job orders
+    job_orders = await db.job_orders.find({
+        "subscriber_id": account_number
+    }, {"_id": 0}).sort("created_at", -1).to_list(50)
+    
+    open_jobs = len([j for j in job_orders if j.get('status') == 'Open'])
+    completed_jobs = len([j for j in job_orders if j.get('status') == 'Completed'])
+    
+    # Get recent payments
+    recent_payments = await db.payments.find({
+        "subscriber_id": account_number
+    }, {"_id": 0}).sort("payment_date", -1).to_list(10)
+    
+    # Get notifications
+    notifications = await db.subscriber_notifications.find({
+        "$or": [
+            {"subscriber_id": account_number},
+            {"subscriber_id": "all"}
+        ]
+    }, {"_id": 0}).sort("created_at", -1).to_list(20)
+    
+    # Check for auto-generated notifications based on status
+    status_notifications = []
+    if current_subscriber.get('status') == 'inactive' or current_subscriber.get('status') == 'deactivated':
+        status_notifications.append({
+            "type": "warning",
+            "title": "Account Deactivated",
+            "message": f"Your account has been temporarily disconnected. Reason: {current_subscriber.get('deactivation_reason', 'Please contact support.')}",
+            "created_at": get_ph_now().isoformat()
+        })
+    
+    if total_payables > 0:
+        status_notifications.append({
+            "type": "billing",
+            "title": "Outstanding Balance",
+            "message": f"You have an outstanding balance of ₱{total_payables:,.2f}. Please settle to avoid service interruption.",
+            "created_at": get_ph_now().isoformat()
+        })
+    
+    return {
+        "subscriber": {
+            "account_number": current_subscriber['account_number'],
+            "name": f"{current_subscriber.get('first_name', '')} {current_subscriber.get('last_name', '')}".strip(),
+            "plan": current_subscriber.get('plan_name', current_subscriber.get('plan', {}).get('name', 'N/A')),
+            "status": current_subscriber.get('status', 'active'),
+            "address": current_subscriber.get('address', ''),
+            "mobile": current_subscriber.get('mobile', ''),
+            "email": current_subscriber.get('email', ''),
+            "installation_date": current_subscriber.get('installation_date'),
+            "billing_day": current_subscriber.get('billing_day', 1)
+        },
+        "payables": {
+            "total": total_payables,
+            "invoice_count": len(unpaid_invoices)
+        },
+        "job_orders": {
+            "open": open_jobs,
+            "completed": completed_jobs,
+            "total": len(job_orders)
+        },
+        "recent_payments": recent_payments[:5],
+        "notifications": status_notifications + notifications
+    }
+
+@api_router.get("/subscriber/invoices")
+async def get_subscriber_invoices(current_subscriber: dict = Depends(get_current_subscriber)):
+    """Get all invoices for subscriber"""
+    invoices = await db.invoices.find({
+        "subscriber_id": current_subscriber['account_number']
+    }, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return invoices
+
+@api_router.get("/subscriber/payments")
+async def get_subscriber_payments(current_subscriber: dict = Depends(get_current_subscriber)):
+    """Get payment history for subscriber"""
+    payments = await db.payments.find({
+        "subscriber_id": current_subscriber['account_number']
+    }, {"_id": 0}).sort("payment_date", -1).to_list(100)
+    return payments
+
+@api_router.get("/subscriber/job-orders")
+async def get_subscriber_job_orders(current_subscriber: dict = Depends(get_current_subscriber)):
+    """Get job orders for subscriber"""
+    job_orders = await db.job_orders.find({
+        "subscriber_id": current_subscriber['account_number']
+    }, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return job_orders
+
+# ========== SUBSCRIBER CHAT SUPPORT ==========
+@api_router.get("/subscriber/chat/tickets")
+async def get_subscriber_chat_tickets(current_subscriber: dict = Depends(get_current_subscriber)):
+    """Get chat support tickets for subscriber"""
+    tickets = await db.support_tickets.find({
+        "subscriber_id": current_subscriber['account_number']
+    }, {"_id": 0}).sort("updated_at", -1).to_list(50)
+    return tickets
+
+@api_router.post("/subscriber/chat/tickets")
+async def create_support_ticket(data: dict, current_subscriber: dict = Depends(get_current_subscriber)):
+    """Create a new support ticket"""
+    ticket_id = f"TKT{datetime.now().strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
+    
+    ticket = {
+        "ticket_id": ticket_id,
+        "subscriber_id": current_subscriber['account_number'],
+        "subscriber_name": f"{current_subscriber.get('first_name', '')} {current_subscriber.get('last_name', '')}".strip(),
+        "subject": data.get('subject', 'Support Request'),
+        "category": data.get('category', 'general'),
+        "status": "open",
+        "messages": [{
+            "sender": "subscriber",
+            "sender_name": f"{current_subscriber.get('first_name', '')} {current_subscriber.get('last_name', '')}".strip(),
+            "message": data.get('message', ''),
+            "timestamp": get_ph_now().isoformat()
+        }],
+        "created_at": get_ph_now().isoformat(),
+        "updated_at": get_ph_now().isoformat()
+    }
+    
+    await db.support_tickets.insert_one(ticket)
+    ticket.pop('_id', None)
+    return ticket
+
+@api_router.post("/subscriber/chat/tickets/{ticket_id}/message")
+async def send_ticket_message(ticket_id: str, data: dict, current_subscriber: dict = Depends(get_current_subscriber)):
+    """Send a message to a support ticket"""
+    ticket = await db.support_tickets.find_one({
+        "ticket_id": ticket_id,
+        "subscriber_id": current_subscriber['account_number']
+    })
+    
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    message = {
+        "sender": "subscriber",
+        "sender_name": f"{current_subscriber.get('first_name', '')} {current_subscriber.get('last_name', '')}".strip(),
+        "message": data.get('message', ''),
+        "timestamp": get_ph_now().isoformat()
+    }
+    
+    await db.support_tickets.update_one(
+        {"ticket_id": ticket_id},
+        {
+            "$push": {"messages": message},
+            "$set": {"updated_at": get_ph_now().isoformat(), "status": "open"}
+        }
+    )
+    
+    return {"message": "Message sent", "data": message}
+
+@api_router.get("/subscriber/chat/tickets/{ticket_id}")
+async def get_ticket_details(ticket_id: str, current_subscriber: dict = Depends(get_current_subscriber)):
+    """Get ticket details with messages"""
+    ticket = await db.support_tickets.find_one({
+        "ticket_id": ticket_id,
+        "subscriber_id": current_subscriber['account_number']
+    }, {"_id": 0})
+    
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    return ticket
+
+# Admin endpoint to reply to tickets
+@api_router.post("/admin/support/tickets/{ticket_id}/reply")
+async def admin_reply_ticket(ticket_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """Admin reply to support ticket"""
+    if current_user['role'] not in ['admin', 'cashier']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    ticket = await db.support_tickets.find_one({"ticket_id": ticket_id})
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    message = {
+        "sender": "support",
+        "sender_name": current_user['username'],
+        "message": data.get('message', ''),
+        "timestamp": get_ph_now().isoformat()
+    }
+    
+    await db.support_tickets.update_one(
+        {"ticket_id": ticket_id},
+        {
+            "$push": {"messages": message},
+            "$set": {
+                "updated_at": get_ph_now().isoformat(),
+                "status": data.get('status', 'in_progress')
+            }
+        }
+    )
+    
+    return {"message": "Reply sent", "data": message}
+
+@api_router.get("/admin/support/tickets")
+async def get_all_support_tickets(current_user: dict = Depends(get_current_user)):
+    """Get all support tickets (admin)"""
+    if current_user['role'] not in ['admin', 'cashier']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    tickets = await db.support_tickets.find({}, {"_id": 0}).sort("updated_at", -1).to_list(100)
+    return tickets
+
+# ========== SUBSCRIBER NOTIFICATIONS (Admin Management) ==========
+@api_router.post("/admin/notifications/broadcast")
+async def broadcast_notification(data: dict, current_user: dict = Depends(get_current_user)):
+    """Broadcast notification to all subscribers or specific ones"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    notification = {
+        "notification_id": f"NOTIF{str(uuid.uuid4())[:8].upper()}",
+        "subscriber_id": data.get('subscriber_id', 'all'),  # 'all' for broadcast
+        "type": data.get('type', 'info'),  # info, warning, billing, maintenance
+        "title": data.get('title', ''),
+        "message": data.get('message', ''),
+        "created_at": get_ph_now().isoformat(),
+        "created_by": current_user['username'],
+        "read": False
+    }
+    
+    await db.subscriber_notifications.insert_one(notification)
+    notification.pop('_id', None)
+    return notification
+
 # ========== USER MANAGEMENT ==========
 @api_router.get("/users")
 async def list_users(current_user: dict = Depends(get_current_user)):
