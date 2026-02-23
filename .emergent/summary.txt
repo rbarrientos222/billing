@@ -2,59 +2,57 @@
 The user wants to build a comprehensive full-stack billing system for an ISP.
 
 Key features requested include:
--   **Admin Backend:** Dashboard, User Management, Mikrotik Integration (v6/v7), Subscriber Registration & Management, Company Setup, Inventory, Expenses, and a detailed Billing Module with automatic invoice generation, SOA/receipt printing, and SMS notifications.
--   **Cashier Module:** Login, dashboard, fast search, receipt printing, and payment processing.
+-   **Admin Backend:** Dashboard, User Management, Mikrotik Integration, Subscriber Management, Company Setup, Inventory, Expenses, Billing Module, and a Discount/Rebates system.
+-   **Cashier Module:** Login, dashboard, fast search, payment processing, and receipt printing.
 -   **Technician Module:** Login, dashboard, and job order fulfillment.
--   **Subscriber Portal:** Login, dashboard to view history and status.
-
-The most recent request is to implement receipt printing for the Cashier module, starting with a Receipt Setup page in the Admin settings to configure the receipt's appearance and content, with an initial focus on printing to a mobile Bluetooth thermal printer.
+-   **Subscriber Portal:** A new portal for subscribers to log in, view their bills and payment history, see job order status, and eventually get support and pay online.
 
 **User's preferred language**: English
 
 **what currently exists?**
 A comprehensive full-stack billing application with a FastAPI backend, React frontend, and MongoDB database.
 
-*   **Backend:** Supports JWT authentication, user/subscriber/plan management, a robust subscriber lifecycle with prorated billing logic, and a centralized payment system. It includes extensive Mikrotik integration (sync, activate/deactivate, profile changes), a full inventory management system, a purchasing module, and a complete Job Order and Technician management system. An expense module with analytics has also been implemented. The backend now runs on Philippine Standard Time (UTC+8).
-*   **Frontend:** The UI includes functional Login, Admin, Cashier, and Technician roles. The entire application has been made mobile-responsive, with a collapsible sidebar and hamburger menu for smaller screens.
-    *   **Admin:** A data-driven dashboard, paginated management tables, a Job Order management page, an Expense management module with charts, and a Run Billing button.
-    *   **Cashier:** The dashboard features a functional centralized payment system with enhancements like a togglable payment history, date filters, and an advance payment/wallet system.
-    *   **Technician:** A dashboard to view and fulfill assigned job orders.
+*   **Backend:** Supports JWT authentication for Admin, Cashier, and Technician roles. It includes management for users, subscribers, plans, inventory, job orders, and expenses. The backend features robust Mikrotik integration, a complete subscriber lifecycle with prorated billing, a centralized payment system, and a newly implemented discount/rebate module. All date/time operations are standardized to Philippine Standard Time (UTC+8). The initial endpoints for the new Subscriber Portal have been created.
+*   **Frontend:** A mobile-responsive UI with distinct dashboards for Admin, Cashier, and Technician roles.
+    *   **Admin:** Features a data-driven dashboard (including new stats for discounts), comprehensive management tables, a full expense module with analytics, a Run Billing button, and detailed settings pages for receipt configuration and discount management.
+    *   **Cashier:** The dashboard includes a centralized payment system that now reflects and applies available discounts, a togglable payment history, and a fully functional receipt printing feature using the Web Bluetooth API.
+    *   **Technician:** A dashboard to view and manage assigned job orders.
 
 **Last working item**:
-- **Last item agent was working:** Implementing the Receipt Setup page for the Admin, which is the first step towards enabling receipt printing in the Cashier module. The agent created the backend model and API endpoints for storing receipt settings and created the placeholder frontend component.
+- **Last item agent was working:** The agent began implementing the **Subscriber Portal** by creating the necessary backend API endpoints for subscriber authentication and data retrieval.
 - **Status:** IN PROGRESS
 - **Agent Testing Done:** N
 - **Which testing method agent to use?** both
 - **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** (P0) Implement Receipt Printing Feature
+-   **Issue 1:** (P0) Implement Subscriber Portal Frontend
 -   **Issue 2:** (P1) Babel Plugin Failure for 
 
 **Issues Detail:**
 -   **Issue 1:**
-    -   **Description:** The user wants to print receipts from the cashier module, targeting a mobile Bluetooth printer first. This requires:
-        1.  A Receipt Setup page in the admin settings to configure a company logo, name, address, and other details for the receipt.
-        2.  A Print Receipt button in the Cashier module's payment history.
-        3.  An Auto-print receipt checkbox for the cashier.
-        4.  Integration with a mobile Bluetooth printer (e.g., rpp02n-c078).
+    -   **Description:** The user has requested a new portal for subscribers. The backend endpoints have been laid out, but the entire frontend needs to be built. Requirements include:
+        1.  A dedicated login page for subscribers.
+        2.  A mobile-responsive dashboard showing Payables and Job Order stats.
+        3.  Sections to view the active bill (with a Pay Now button for future payment gateway integration), payment history, and job order status.
+        4.  Placeholders for future features like Chat Support and a Knowledge Base.
+        5.  A notification system for service interruptions, billing reminders, and disconnection notices.
     -   **Next debug checklist:**
-        1.  **Backend ():** Implement logic for uploading and storing the company logo for the receipt.
-        2.  **Frontend ():** Add the route for the newly created  component to make it accessible from the settings menu.
-        3.  **Frontend ():** Build the complete UI for the receipt setup page, including a file upload component for the logo, input fields for company details, and a live preview of the receipt template.
-        4.  **Frontend ():**
-            *   Add a Print Receipt button to each entry in the payment history table.
-            *   Add an Auto-print receipt checkbox near the payment submission area.
-            *   On print, fetch receipt settings and payment data, format it into an HTML template suitable for a 58mm thermal printer.
-            *   Use the **Web Bluetooth API** to discover and send the print job to the specified Bluetooth printer.
-    -   **Why fix this issue and what will be achieved with the fix?** This will complete a core requirement for the Cashier module, enabling physical proof of payment for subscribers.
+        1.  **Frontend ():** Add new routes for  and .
+        2.  **Frontend ():** Create the new subscriber portal pages and components:
+            *   Create  for the subscriber login form.
+            *   Create  to serve as the main layout for the logged-in subscriber.
+            *   Create a new directory  for child components (e.g., , , ).
+        3.  **Frontend ():** Implement the UI and logic to call the  endpoint.
+        4.  **Frontend ():** Implement the UI to call the , , etc., endpoints and display the data as requested.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a major new feature that will provide value to the end-users (the ISP's subscribers) by giving them a self-service platform.
     -   **Status:** IN PROGRESS
     -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** both
     -   **Blocked on other issue:** None
 
 -   **Issue 2:**
-    -   **Description:** The development server's  causes a Maximum call stack size exceeded error on complex components, forcing a blank page render.
+    -   **Description:** The development server's  causes a Maximum call stack size exceeded error on complex components.
     -   **Attempted fixes:** The plugin was disabled in  as a temporary workaround.
     -   **Why fix this issue and what will be achieved with the fix?** This is technical debt. Fixing it restores full development tool functionality.
     -   **Status:** BLOCKED (Workaround in place)
@@ -62,45 +60,40 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
     -   **Should Test frontend/backend/both after fix?** Frontend
 
 **In progress Task List**:
--   **Task 1:** Complete the Receipt Printing Feature
-    -   **Where to resume:** The file  needs to be edited to include a route to the new  component. After that, the  component needs its UI and logic fully implemented.
-    -   **What will be achieved with this?** A fully configurable receipt template that can be printed from the Cashier module.
+-   **Task 1:** Build the Subscriber Portal Frontend
+    -   **Where to resume:** The backend endpoints are ready in . The next step is to start building the frontend, beginning with creating the necessary files (, ), adding routes in , and implementing the login functionality.
+    -   **What will be achieved with this?** A functional subscriber portal that allows users to log in and view their account information.
     -   **Status:** IN PROGRESS
     -   **Should Test frontend/backend/both after fix?** both
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
--   **Subscribers Portal (P1):** Build the login page (using account number) and a dashboard for subscribers to view their payment history, job orders, and account status.
+-   **Subscriber Portal - Online Payments (P0):** Integrate a payment gateway (e.g., PayMongo) for the Pay Now button.
+-   **Subscriber Portal - Chat Support (P1):** Implement a real-time chat feature.
+-   **Subscriber Portal - Notifications (P1):** Build the notification system.
 -   **Admin - PDF Generation (P1):** Implement PDF generation for Statements of Account (SOA).
--   **Admin - Settings Page (P1):** Build out the UI for the placeholder settings pages (Rebates, Printer Setup, SOA Setup).
 
 **Future Tasks:**
+-   **Subscriber Portal - Knowledge Base:** Add a section for FAQs and help articles.
 -   **Billing Automations:** Implement automatic emailing of SOAs and SMS notifications.
 -   **Admin - Wallet Management:** Create a UI for admins to manually manage subscriber wallet credits.
--   **Admin - Company Setup:** Create the UI to manage company details for receipts (partially addressed by the current task).
 
 **Completed work in this session**
--   **Cashier Module Enhancements:** Implemented togglable payment history, a date range filter, and an advance payment/wallet feature.
--   **Full Expense Module:** Built the backend and frontend for expense management, including CRUD for expenses and categories, stats cards, and filtering.
--   **Expense Reports & Analytics:** Added a new tab with charts for monthly trends, category breakdowns, and type comparisons.
--   **Deployment Readiness:** Performed a health check, removed hardcoded secrets from , and moved them to  variables.
--   **Subscriber UI Enhancements:** Added a detailed information card (Address, Mobile, Plan, Dates) to the View Records modal.
--   **Job Order Creation Fix:** Resolved a critical bug where job orders created during subscriber registration were missing , , and had the wrong . A migration script was run to fix 22 existing broken records.
--   **Mikrotik Sync/Status Enhancements:**
-    -   Sync now gracefully handles pre-existing PPPoE accounts.
-    -   Deactivating a subscriber now updates their Mikrotik profile to DEACTIVATED and disconnects their active session.
-    -   Reactivating a subscriber updates their profile and disconnects the session to apply changes immediately.
-    -   The  status in the database now correctly syncs with deactivation/reactivation actions.
--   **Billing Logic Overhaul:**
-    -   Fixed multiple issues causing duplicate invoices and incorrect billing amounts (full vs. prorated).
-    -   Corrected the due date calculation to be the next billing cycle date, not +15 days.
-    -   Implemented Philippine Standard Time (PST/UTC+8) across the entire billing process, including the scheduler.
-    -   Added a Run Billing Now button to the Admin Dashboard for manual testing.
--   **Mobile Responsiveness:** Overhauled the Admin, Cashier, and Technician dashboards to be fully responsive, adding a hamburger menu and a slide-out overlay sidebar for mobile devices.
--   **Required Fields:** Made Subscription Plan, Modem/Equipment, and PPPoE fields mandatory in the subscriber creation form, with both backend and frontend validation.
+-   **Discounts/Rebates Module:**
+    -   Implemented a full CRUD interface for Admins to manage fixed-amount or percentage-based discounts.
+    -   Discounts can be applied to all subscribers, all active subscribers, or selected subscribers, and can be set as one-time or recurring.
+    -   Integrated the discount system into the Cashier's payment workflow, allowing cashiers to apply eligible discounts.
+    -   Added a Total Discounts card to the Admin dashboard.
+    -   Fixed a bug where the subscriber selection list was not appearing when creating a targeted discount.
+-   **Receipt Printing Feature & Fixes:**
+    -   Completed the Receipt Setup page for Admins to configure company details, logo, and receipt appearance.
+    -   Implemented receipt printing from the Cashier module using the Web Bluetooth API.
+    -   Fixed issues based on user feedback: added an optional Branch field, adjusted font sizes, ensured the subscriber's address appears correctly, and enabled multi-line footers.
+-   **UI Tweak:**
+    -   Updated the application name on the login page to APL Billing System.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1:** The address data for municipalities and barangays is incomplete sample data, which limits the address dropdown functionality.
+-   **Issue 1:** The address data for municipalities and barangays is incomplete sample data.
 
 **Known issue recurrence from previous fork**
 -   None.
@@ -109,82 +102,80 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, Pydantic,  (now timezone-aware), , JWT authentication,  for timezones.
+-   **Backend:** FastAPI, Pydantic, pymongo, JWT authentication.
 -   **Frontend:** React, React Router, Axios, TailwindCSS, Shadcn/UI, Recharts.
--   **Integrations:**  for Mikrotik.
--   **Potential Upcoming:** Web Bluetooth API for printer integration.
+-   **Integrations:**  for Mikrotik, Web Bluetooth API for printing.
 
 **key DB schema**
--   **receipt_settings:** (New) , , , , .
--   **company_settings:** , , , .
--   **invoices:** , , .
--   **job_orders:** Schema corrected. Now reliably contains ,  (as account number), and .
+-   **receipt_settings:** Added optional  field.
+-   **discounts:** (New) , ,  ('fixed', 'percentage'), , , , , .
+-   **payments:** Added , , .
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   : Heavily modified for all backend features, bug fixes, and timezone implementation.
--   : Major refactor for mobile responsiveness and added Run Billing button.
--   : Major refactor for mobile responsiveness and UI/UX enhancements.
--   : Major refactor for mobile responsiveness.
--   : Updated for required fields and new UI elements in the View Records modal.
--   : Created and enhanced with a full analytics tab.
--   : New placeholder file for the current task.
+-   : Heavily modified with Discount, Rebate, and Subscriber Portal endpoints.
+-   : Text change.
+-   : Added discount stats card.
+-   : Major updates for discount application and receipt printing fixes.
+-   : Updated for branch field and multi-line footer.
+-   : New component for managing discounts.
+-   : Updated with completed features.
 
 **Areas that need refactoring**:
--   **CRITICAL:** The  file is now over 4700 lines. Modularizing it into a proper , , and  directory structure is extremely urgent and should be proposed to the user immediately after the current task is complete. The current size poses a significant risk to maintainability and future development speed.
+-   **CRITICAL:** The  file is now over 5000 lines. It is imperative to propose a refactoring task to the user to modularize the backend into a proper , , and  structure. This will improve maintainability and prevent future development from slowing down.
 
 **key api endpoints**
--   : (New) Create/update receipt settings.
--   : (New) Get receipt settings.
--   : (New) Manually triggers the billing generation process.
--   : (Enhanced) Now changes Mikrotik profile and disconnects session.
--   : (Enhanced) Now updates Mikrotik profile and disconnects session.
--   , , , : (New) Full suite of endpoints for the expense module.
+-   : (New) Full CRUD for discounts.
+-   : (New) Fetches available discounts for a subscriber.
+-   : (Enhanced) Updated to accept and record applied discounts.
+-   : (New) Authenticates a subscriber.
+-   : (New) Fetches details for the logged-in subscriber.
+-   : (New) Fetches bills for the logged-in subscriber.
+-   : (New) Fetches payment history for the logged-in subscriber.
+-   : (New) Fetches job orders for the logged-in subscriber.
 
 **Critical Info for New Agent**
--   The immediate task is to continue building the **Receipt Printing** feature. The very next step is to **add the route for  in ** to make the new page visible.
--   The user's initial requirement is for a **mobile Bluetooth printer**. This will likely require using the **Web Bluetooth API**, which is experimental and mostly supported only in Chrome-based browsers. You should be prepared for this and may need to inform the user of these limitations.
--   The backend now operates entirely in **Philippine Standard Time (UTC+8)** for all billing-related logic.
--   The monolithic  is a major piece of technical debt. Once the receipt printing feature is done, you should strongly advocate for refactoring the backend.
+-   The immediate task is to build the frontend for the **Subscriber Portal**. The necessary backend endpoints are already defined in .
+-   The first frontend step should be creating the login page (), the main dashboard page (), and adding their routes to .
+-   The user has specifically requested that the new portal be **mobile-responsive**.
+-   Once the current task is stable, it is crucial to propose the refactoring of the monolithic  file to the user.
 
 **documents and test reports created in this job**
--   
 -   
 -    (Updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requests receipt printing for the cashier module, starting with setup for a mobile Bluetooth printer. (IN PROGRESS)
-2.  **User:** Reports issues with the billing logic (duplicate invoices, incorrect prorated amounts). (COMPLETED)
-3.  **User:** Reports issues with the unchecked prorated bill scenario and asks for Philippine Standard Time. (COMPLETED)
-4.  **User:** Reports a messy UI on mobile devices. (COMPLETED)
-5.  **User:** Confirms the Mikrotik deactivate/reactivate logic works but notes the PPPoE status badge doesn't update. (COMPLETED)
-6.  **User:** Asks to make several subscriber fields required. (COMPLETED)
-7.  **User:** Asks for clarification on deployment costs for future modifications. (ADDRESSED)
-8.  **User:** Requests a deployment health check. (COMPLETED)
-9.  **User:** Reports that newly created job orders are missing IDs and subscriber names. (COMPLETED)
-10. **User:** Reports  and Mikrotik connection errors after deployment. (COMPLETED)
+1.  **User:** Requested to start work on the Subscriber Portal, outlining key features.
+2.  **User:** Gave approval to proceed with the Subscriber Portal plan.
+3.  **User:** Approved the plan to change the text on the login page.
+4.  **User:** Requested to change Billing System to APL Billing System on the login page.
+5.  **User:** Reported that the select subscriber feature in the discount module was not working. (FIXED)
+6.  **User:** Provided clarification and choices for how the discount/rebates feature should work.
+7.  **User:** Requested the implementation of a discount/rebates feature.
+8.  **User:** Asked to allow newlines (paragraphs) in the receipt footer. (FIXED)
+9.  **User:** Reported issues with the printed receipt: logo and address not showing, and font sizes were too large. (FIXED)
+10. **Agent:** Finished the initial implementation of the receipt printing feature.
 
 **Project Health Check:**
 -   **Broken:**
     -   None.
 -   **Partially Implemented:**
-    -   **Receipt Printing:** Backend endpoints and frontend component file exist, but the UI is not built and it's not routed.
-    -   **Admin Settings:** Placeholders for Rebates, Printer, and SOA Setup still exist.
+    -   **Subscriber Portal:** Backend endpoints are created, but the entire frontend is missing.
 -   **Mocked:**
     -   Address data (provinces, municipalities, barangays) is sample data.
 -   **Technical Debt:**
     -   The  babel plugin is disabled in .
-    -    is a critically large monolithic file (>4700 lines).
+    -    is a critically large monolithic file (>5000 lines).
 
 **3rd Party Integrations**
 -   **Mikrotik RouterOS API:** Using the  Python library for PPPoE management.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES (for Cashier and Expense modules).
+-   **Testing agent used after significant changes:** YES (for receipt printing).
 -   **Troubleshoot agent used after agent stuck in loop:** NO
--   **Test files created:** , 
+-   **Test files created:** 
 -   **Known regressions:** None.
 
 **Credentials to test flow:**
@@ -193,4 +184,4 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
 -   **Technician:**  / 
 
 **What agent forgot to execute**
--   The agent created the new component  but did not add the corresponding route in  to make the page accessible in the UI.</analysis>
+-   The agent successfully identified and fixed all issues raised by the user in this session before moving on to the next major feature. No outstanding unaddressed items were noted.</analysis>
