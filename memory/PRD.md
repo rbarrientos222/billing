@@ -154,6 +154,13 @@ Build a billing system with the following features:
     - Creates payment record with `is_advance_payment: true`
     - Wallet balance updates immediately
     - `/api/subscribers/{account_number}/wallet` POST endpoint
+  - **Receipt Printing** (NEW - Feb 23, 2026)
+    - Connect Bluetooth Printer button (Web Bluetooth API for mobile thermal printers)
+    - Auto-print receipt after payment checkbox
+    - Print Last Receipt button
+    - Print button for each payment in history table
+    - Supports 48mm and 58mm thermal paper formats
+    - Browser print fallback when Bluetooth not available
 - [x] **Subscription Plans Management**
   - Full CRUD (Create, Edit, Delete)
 - [x] **User Management**
