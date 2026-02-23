@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { LogOut, Search, Receipt, DollarSign, Wallet, CreditCard, Check, AlertCircle, History, Calendar, ChevronDown, ChevronUp, Plus, Filter, X } from 'lucide-react';
+import { LogOut, Search, Receipt, DollarSign, Wallet, CreditCard, Check, AlertCircle, History, Calendar, ChevronDown, ChevronUp, Plus, Filter, X, Printer, Bluetooth } from 'lucide-react';
 
 export default function CashierDashboard({ user, onLogout }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,9 +36,18 @@ export default function CashierDashboard({ user, onLogout }) {
   const [advanceAmount, setAdvanceAmount] = useState('');
   const [advancePaymentMode, setAdvancePaymentMode] = useState('cash');
   const [processingAdvance, setProcessingAdvance] = useState(false);
-  // Fetch today's payment stats on load
+  
+  // Receipt printing state
+  const [receiptSettings, setReceiptSettings] = useState(null);
+  const [autoPrintReceipt, setAutoPrintReceipt] = useState(false);
+  const [printing, setPrinting] = useState(false);
+  const [bluetoothDevice, setBluetoothDevice] = useState(null);
+  const printCharacteristicRef = useRef(null);
+
+  // Fetch today's payment stats and receipt settings on load
   useEffect(() => {
     fetchTodayStats();
+    fetchReceiptSettings();
   }, []);
 
   const fetchTodayStats = async () => {
