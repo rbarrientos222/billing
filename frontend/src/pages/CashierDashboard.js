@@ -841,8 +841,52 @@ export default function CashierDashboard({ user, onLogout }) {
                       <CardContent className="space-y-4">
                         <div className="flex justify-between items-center bg-muted p-3 rounded-lg">
                           <span className="text-sm text-muted-foreground">Total Outstanding:</span>
-                          <span className="text-2xl font-bold text-red-600">₱{totalUnpaid.toLocaleString()}</span>
+                          <div className="text-right">
+                            <span className="text-2xl font-bold text-red-600">₱{totalUnpaid.toLocaleString()}</span>
+                            {totalDiscountAmount > 0 && (
+                              <div className="text-sm text-green-600">
+                                - ₱{totalDiscountAmount.toLocaleString()} discount
+                              </div>
+                            )}
+                          </div>
                         </div>
+                        
+                        {/* Available Discounts */}
+                        {availableDiscounts.length > 0 && (
+                          <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                            <Label className="text-green-800 dark:text-green-300 mb-2 flex items-center gap-2">
+                              <Percent className="h-4 w-4" />
+                              Available Discounts/Rebates
+                            </Label>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {availableDiscounts.map((discount) => {
+                                const isSelected = selectedDiscounts.find(d => d.discount_id === discount.discount_id);
+                                const discountAmt = calculateDiscountAmount(discount, totalUnpaid);
+                                return (
+                                  <Button
+                                    key={discount.discount_id}
+                                    variant={isSelected ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => toggleDiscount(discount)}
+                                    className={isSelected ? "bg-green-600 hover:bg-green-700" : "border-green-500 text-green-700 dark:text-green-400"}
+                                    data-testid={`discount-${discount.discount_id}`}
+                                  >
+                                    {discount.name}: {discount.discount_type === 'percentage' ? `${discount.value}%` : `₱${discount.value}`}
+                                    {isSelected && ` (-₱${discountAmt.toLocaleString()})`}
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                            {totalDiscountAmount > 0 && (
+                              <div className="mt-2 pt-2 border-t border-green-200 dark:border-green-800 flex justify-between">
+                                <span className="text-sm text-green-700 dark:text-green-400">Amount to pay after discount:</span>
+                                <span className="font-bold text-green-700 dark:text-green-400">
+                                  ₱{Math.max(0, totalUnpaid - totalDiscountAmount).toLocaleString()}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div className="sm:col-span-1">
@@ -856,6 +900,11 @@ export default function CashierDashboard({ user, onLogout }) {
                               className="text-lg font-medium"
                               data-testid="payment-amount-input"
                             />
+                            {totalDiscountAmount > 0 && (
+                              <p className="text-xs text-green-600 mt-1">
+                                Pay ₱{Math.max(0, totalUnpaid - totalDiscountAmount).toLocaleString()} to clear all invoices
+                              </p>
+                            )}
                           </div>
                           <div>
                             <Label>Payment Mode</Label>
