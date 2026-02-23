@@ -219,8 +219,8 @@ export default function ReceiptSettings() {
         
         <div class="divider"></div>
         
-        <div class="footer center">
-          ${settings.footer_text || 'Thank you for your payment!'}
+        <div class="footer center" style="white-space: pre-line;">
+          ${(settings.footer_text || 'Thank you for your payment!').replace(/\n/g, '<br>')}
         </div>
       </body>
       </html>
