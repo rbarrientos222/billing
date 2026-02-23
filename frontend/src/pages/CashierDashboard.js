@@ -527,6 +527,8 @@ export default function CashierDashboard({ user, onLogout }) {
     setSelectedSubscriber(subscriber);
     setSearchResults([]);
     setPaymentResult(null);
+    setSelectedDiscounts([]);
+    setTotalDiscountAmount(0);
     
     try {
       const [invoicesRes, paymentsRes] = await Promise.all([
@@ -543,6 +545,14 @@ export default function CashierDashboard({ user, onLogout }) {
         setWalletBalance(walletRes.data.balance || 0);
       } catch (e) {
         setWalletBalance(0);
+      }
+      
+      // Fetch available discounts for this subscriber
+      try {
+        const discountsRes = await axios.get(`/subscribers/${subscriber.account_number}/discounts`);
+        setAvailableDiscounts(discountsRes.data || []);
+      } catch (e) {
+        setAvailableDiscounts([]);
       }
     } catch (error) {
       toast.error('Failed to load subscriber details');
