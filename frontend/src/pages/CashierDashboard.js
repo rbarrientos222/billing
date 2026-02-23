@@ -559,6 +559,46 @@ export default function CashierDashboard({ user, onLogout }) {
     }
   };
 
+  // Calculate discount amount based on discount type and total bill
+  const calculateDiscountAmount = (discount, billAmount) => {
+    if (discount.discount_type === 'percentage') {
+      return (billAmount * discount.value) / 100;
+    }
+    return discount.value;
+  };
+
+  // Toggle discount selection
+  const toggleDiscount = (discount) => {
+    const totalBill = invoices.filter(inv => !inv.paid).reduce((sum, inv) => 
+      sum + (inv.amount - (inv.paid_amount || 0)), 0
+    );
+    
+    setSelectedDiscounts(prev => {
+      const exists = prev.find(d => d.discount_id === discount.discount_id);
+      if (exists) {
+        // Remove discount
+        const newSelected = prev.filter(d => d.discount_id !== discount.discount_id);
+        const newTotal = newSelected.reduce((sum, d) => sum + d.discount_amount, 0);
+        setTotalDiscountAmount(newTotal);
+        return newSelected;
+      } else {
+        // Add discount
+        const discountAmount = calculateDiscountAmount(discount, totalBill);
+        const newDiscount = {
+          discount_id: discount.discount_id,
+          name: discount.name,
+          discount_type: discount.discount_type,
+          value: discount.value,
+          discount_amount: discountAmount
+        };
+        const newSelected = [...prev, newDiscount];
+        const newTotal = newSelected.reduce((sum, d) => sum + d.discount_amount, 0);
+        setTotalDiscountAmount(newTotal);
+        return newSelected;
+      }
+    });
+  };
+
   const handleCentralizedPayment = async () => {
     if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
       toast.error('Please enter a valid amount');
@@ -570,7 +610,8 @@ export default function CashierDashboard({ user, onLogout }) {
       const response = await axios.post('/payments/centralized', {
         subscriber_id: selectedSubscriber.account_number,
         amount: parseFloat(paymentAmount),
-        mode: paymentMode
+        mode: paymentMode,
+        applied_discounts: selectedDiscounts
       });
       
       // Show detailed result
