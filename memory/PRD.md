@@ -345,6 +345,8 @@ Build a billing system with the following features:
 
 - **Admin:** admin / @Gello1006
 - **Cashier:** cashier1 / test123
+- **Technician:** tech1 / test123
+- **Subscriber:** ACC4307BC6B / 0000 (Test Subscriber)
 
 ---
 
