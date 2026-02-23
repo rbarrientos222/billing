@@ -935,6 +935,9 @@ async def get_subscriber_dashboard(current_subscriber: dict = Depends(get_curren
     
     total_payables = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid_invoices)
     
+    # Get wallet balance
+    wallet_balance = current_subscriber.get('wallet_balance', 0)
+    
     # Get job orders
     job_orders = await db.job_orders.find({
         "subscriber_id": account_number
@@ -974,6 +977,15 @@ async def get_subscriber_dashboard(current_subscriber: dict = Depends(get_curren
             "created_at": get_ph_now().isoformat()
         })
     
+    # Add wallet credit notification if has balance
+    if wallet_balance > 0:
+        status_notifications.append({
+            "type": "info",
+            "title": "Wallet Credit Available",
+            "message": f"You have ₱{wallet_balance:,.2f} wallet credit that will be automatically applied to your next bill.",
+            "created_at": get_ph_now().isoformat()
+        })
+    
     return {
         "subscriber": {
             "account_number": current_subscriber['account_number'],
@@ -984,11 +996,15 @@ async def get_subscriber_dashboard(current_subscriber: dict = Depends(get_curren
             "mobile": current_subscriber.get('mobile', ''),
             "email": current_subscriber.get('email', ''),
             "installation_date": current_subscriber.get('installation_date'),
-            "billing_day": current_subscriber.get('billing_day', 1)
+            "billing_day": current_subscriber.get('billing_day', 1),
+            "wallet_balance": wallet_balance
         },
         "payables": {
             "total": total_payables,
             "invoice_count": len(unpaid_invoices)
+        },
+        "wallet": {
+            "balance": wallet_balance
         },
         "job_orders": {
             "open": open_jobs,
