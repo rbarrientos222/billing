@@ -4527,6 +4527,144 @@ async def get_receipt_data(or_number: str, current_user: dict = Depends(get_curr
         }
     }
 
+# ========== DISCOUNTS/REBATES ==========
+@api_router.get("/discounts")
+async def get_discounts(current_user: dict = Depends(get_current_user)):
+    """Get all discounts/rebates"""
+    discounts = await db.discounts.find({}, {"_id": 0}).to_list(1000)
+    return discounts
+
+@api_router.get("/discounts/{discount_id}")
+async def get_discount(discount_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a single discount by ID"""
+    discount = await db.discounts.find_one({"discount_id": discount_id}, {"_id": 0})
+    if not discount:
+        raise HTTPException(status_code=404, detail="Discount not found")
+    return discount
+
+@api_router.post("/discounts")
+async def create_discount(discount: DiscountCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new discount/rebate"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    discount_id = f"DISC{uuid.uuid4().hex[:8].upper()}"
+    discount_doc = {
+        "discount_id": discount_id,
+        "name": discount.name,
+        "discount_type": discount.discount_type,
+        "value": discount.value,
+        "duration": discount.duration,
+        "apply_to": discount.apply_to,
+        "subscriber_ids": discount.subscriber_ids,
+        "plan_ids": discount.plan_ids,
+        "is_active": discount.is_active,
+        "created_at": get_ph_now().isoformat(),
+        "created_by": current_user['username'],
+        "times_used": 0,
+        "total_amount_discounted": 0
+    }
+    
+    await db.discounts.insert_one(discount_doc)
+    discount_doc.pop('_id', None)
+    return discount_doc
+
+@api_router.put("/discounts/{discount_id}")
+async def update_discount(discount_id: str, discount: DiscountUpdate, current_user: dict = Depends(get_current_user)):
+    """Update a discount/rebate"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    existing = await db.discounts.find_one({"discount_id": discount_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Discount not found")
+    
+    update_data = {k: v for k, v in discount.model_dump().items() if v is not None}
+    update_data["updated_at"] = get_ph_now().isoformat()
+    
+    await db.discounts.update_one({"discount_id": discount_id}, {"$set": update_data})
+    
+    updated = await db.discounts.find_one({"discount_id": discount_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/discounts/{discount_id}")
+async def delete_discount(discount_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a discount/rebate"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    result = await db.discounts.delete_one({"discount_id": discount_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Discount not found")
+    
+    return {"message": "Discount deleted successfully"}
+
+@api_router.get("/subscribers/{account_number}/discounts")
+async def get_subscriber_discounts(account_number: str, current_user: dict = Depends(get_current_user)):
+    """Get all applicable discounts for a subscriber"""
+    subscriber = await db.subscribers.find_one({"account_number": account_number}, {"_id": 0})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    # Get all active discounts
+    all_discounts = await db.discounts.find({"is_active": True}, {"_id": 0}).to_list(1000)
+    
+    applicable_discounts = []
+    for discount in all_discounts:
+        is_applicable = False
+        
+        # Check apply_to rules
+        if discount['apply_to'] == 'all_active' and subscriber.get('status') == 'active':
+            is_applicable = True
+        elif discount['apply_to'] == 'selected_subscribers':
+            if account_number in discount.get('subscriber_ids', []):
+                is_applicable = True
+        elif discount['apply_to'] == 'by_plan':
+            subscriber_plan = subscriber.get('plan_name') or subscriber.get('plan', {}).get('name', '')
+            if subscriber_plan in discount.get('plan_ids', []):
+                is_applicable = True
+        
+        if is_applicable:
+            applicable_discounts.append(discount)
+    
+    return applicable_discounts
+
+@api_router.post("/discounts/{discount_id}/apply")
+async def record_discount_usage(discount_id: str, amount_discounted: float, current_user: dict = Depends(get_current_user)):
+    """Record that a discount was used (called after payment with discount)"""
+    discount = await db.discounts.find_one({"discount_id": discount_id})
+    if not discount:
+        raise HTTPException(status_code=404, detail="Discount not found")
+    
+    # Update usage stats
+    await db.discounts.update_one(
+        {"discount_id": discount_id},
+        {
+            "$inc": {
+                "times_used": 1,
+                "total_amount_discounted": amount_discounted
+            }
+        }
+    )
+    
+    # If one-time discount, mark as used for the subscriber (we'll track this separately)
+    return {"message": "Discount usage recorded"}
+
+@api_router.get("/discounts/stats/total")
+async def get_total_discounts_stats(current_user: dict = Depends(get_current_user)):
+    """Get total discount statistics for dashboard"""
+    discounts = await db.discounts.find({}, {"_id": 0}).to_list(1000)
+    
+    total_discounts_given = sum(d.get('total_amount_discounted', 0) for d in discounts)
+    total_times_used = sum(d.get('times_used', 0) for d in discounts)
+    active_discounts = len([d for d in discounts if d.get('is_active', False)])
+    
+    return {
+        "total_discounts_given": total_discounts_given,
+        "total_times_used": total_times_used,
+        "active_discounts": active_discounts
+    }
+
 # ========== DASHBOARD STATS ==========
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
