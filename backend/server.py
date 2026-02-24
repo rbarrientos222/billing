@@ -5196,9 +5196,6 @@ async def get_upcoming_billing(current_user: dict = Depends(get_current_user)):
     
     return result
 
-# Include router
-app.include_router(api_router)
-
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
