@@ -149,7 +149,7 @@ export default function PaymongoSettings() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="p-3 bg-accent/50 rounded-lg">
                 <p className="text-xs text-muted-foreground">Status</p>
                 <div className="flex items-center gap-2 mt-1">
@@ -189,6 +189,16 @@ export default function PaymongoSettings() {
                     <><AlertTriangle className="w-4 h-4 text-yellow-500" /><span className="font-medium">Optional</span></>
                   )}
                 </div>
+              </div>
+              <div className="p-3 bg-accent/50 rounded-lg">
+                <p className="text-xs text-muted-foreground">Service Fee</p>
+                <p className="font-medium mt-1">
+                  {currentSettings.service_fee > 0 ? (
+                    <span className="text-amber-600">₱{currentSettings.service_fee.toFixed(2)}</span>
+                  ) : (
+                    <span className="text-muted-foreground">None</span>
+                  )}
+                </p>
               </div>
             </div>
             
