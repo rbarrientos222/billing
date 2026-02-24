@@ -5343,6 +5343,7 @@ async def save_paymongo_settings(settings: PaymongoSettings, current_user: dict 
         "webhook_secret_encrypted": encrypt_password(settings.webhook_secret) if settings.webhook_secret else None,
         "is_live_mode": settings.is_live_mode,
         "enabled": settings.enabled,
+        "service_fee": settings.service_fee,
         "updated_at": get_ph_now().isoformat(),
         "updated_by": current_user['username']
     }
