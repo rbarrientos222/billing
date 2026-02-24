@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users, UserCircle, Wifi, Settings, 
   Package, DollarSign, FileText, LogOut, Menu, X,
   TrendingUp, TrendingDown, Activity, AlertCircle, CalendarDays, ShoppingCart, CreditCard,
-  ClipboardList, ChevronDown, ChevronRight, Percent, Printer, FileSpreadsheet, Receipt
+  ClipboardList, ChevronDown, ChevronRight, Percent, Printer, FileSpreadsheet, Receipt, BarChart3
 } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
