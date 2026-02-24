@@ -5717,3 +5717,6 @@ async def get_paymongo_public_key():
         "public_key": settings.get('public_key'),
         "is_live_mode": settings.get('is_live_mode', False)
     }
+
+# Include router (MUST be after all route definitions)
+app.include_router(api_router)
