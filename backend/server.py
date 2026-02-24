@@ -5267,6 +5267,7 @@ class PaymongoSettings(BaseModel):
     webhook_secret: Optional[str] = Field(None, description="Webhook secret key")
     is_live_mode: bool = Field(False, description="True for production, False for test mode")
     enabled: bool = Field(True, description="Enable/disable PayMongo payments")
+    service_fee: float = Field(0, description="Service fee to add on online payments")
 
 class PaymongoSettingsResponse(BaseModel):
     """Safe response model that hides sensitive data"""
@@ -5276,6 +5277,7 @@ class PaymongoSettingsResponse(BaseModel):
     has_secret_key: bool
     has_webhook_secret: bool
     configured: bool
+    service_fee: float = 0
 
 @api_router.get("/settings/paymongo")
 async def get_paymongo_settings(current_user: dict = Depends(get_current_user)):
