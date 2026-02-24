@@ -312,9 +312,13 @@ Build a billing system with the following features:
 
 ## Upcoming Tasks (P0-P1)
 
-1. ~~**Subscriber Portal - Online Payments**~~ ✅ COMPLETED (Feb 24, 2026) - PayMongo integration
+1. ~~**Subscriber Portal - Online Payments**~~ ✅ COMPLETED (Feb 24, 2026) - PayMongo integration with service fee
+   - Admin can configure service fee in PayMongo settings
+   - Service fee displayed as separate line item during checkout
+   - Breakdown shows Subtotal + Service Fee = Total
 2. **Billing PDF/SOA Generation** - Generate PDF statements
 3. **Mikrotik Management Page** - UI for admin to configure Mikrotik credentials
+4. **Backend Refactoring (P0 - CRITICAL)** - server.py is 6000+ lines, needs modularization into routes/, models/, services/
 
 ---
 
