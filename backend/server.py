@@ -5811,6 +5811,11 @@ async def get_receivables_report(current_user: dict = Depends(get_current_user))
     # Get all unpaid invoices
     unpaid_invoices = await db.invoices.find({"paid": False}, {"_id": 0}).to_list(10000)
     
+    # Get all subscribers for name lookup (cache for efficiency)
+    subscribers_cursor = db.subscribers.find({}, {"_id": 0, "account_number": 1, "first_name": 1, "last_name": 1})
+    subscribers_list = await subscribers_cursor.to_list(10000)
+    subscriber_names = {s['account_number']: f"{s.get('first_name', '')} {s.get('last_name', '')}".strip() for s in subscribers_list}
+    
     # Initialize aging buckets
     aging = {
         "current": {"count": 0, "amount": 0, "invoices": []},
@@ -5843,10 +5848,14 @@ async def get_receivables_report(current_user: dict = Depends(get_current_user))
         
         days_overdue = (today - due_date).days
         
+        # Get subscriber name - from invoice or lookup from subscribers collection
+        subscriber_id = inv.get('subscriber_id', '')
+        subscriber_name = inv.get('subscriber_name') or subscriber_names.get(subscriber_id, '')
+        
         invoice_summary = {
             "invoice_number": inv.get('invoice_number'),
-            "subscriber_id": inv.get('subscriber_id'),
-            "subscriber_name": inv.get('subscriber_name', ''),
+            "subscriber_id": subscriber_id,
+            "subscriber_name": subscriber_name,
             "amount": remaining,
             "due_date": due_date.strftime('%Y-%m-%d'),
             "days_overdue": max(0, days_overdue)
