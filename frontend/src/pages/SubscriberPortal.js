@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +21,7 @@ import Notifications from '@/components/subscriber/Notifications';
 const API = process.env.REACT_APP_BACKEND_URL;
 
 export default function SubscriberPortal({ user, onLogout }) {
+  const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [payments, setPayments] = useState([]);
