@@ -81,6 +81,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { name: 'Plans', path: '/admin/settings/plans', icon: CreditCard },
     { name: 'Receipt Setup', path: '/admin/settings/receipt', icon: Receipt },
     { name: 'Rebates', path: '/admin/settings/rebates', icon: Percent },
+    { name: 'PayMongo', path: '/admin/settings/paymongo', icon: DollarSign },
     { name: 'Printer Setup', path: '/admin/settings/printer', icon: Printer },
     { name: 'SOA Setup', path: '/admin/settings/soa', icon: FileSpreadsheet },
     { name: 'Company', path: '/admin/settings/company', icon: Settings },
