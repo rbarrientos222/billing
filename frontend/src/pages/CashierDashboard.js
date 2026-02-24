@@ -1310,9 +1310,9 @@ export default function CashierDashboard({ user, onLogout }) {
             <Card className="bg-gradient-to-br from-green-600 to-green-700 text-white">
               <CardContent className="pt-6">
                 <DollarSign className="h-8 w-8 mb-2 opacity-80" />
-                <p className="text-sm opacity-90">Today's Collections</p>
+                <p className="text-sm opacity-90">My Collections Today</p>
                 <p className="text-3xl font-bold font-heading mt-1">₱{todayStats.total?.toLocaleString() || '0.00'}</p>
-                <p className="text-xs opacity-75 mt-2">{todayStats.count || 0} payment(s) processed today</p>
+                <p className="text-xs opacity-75 mt-2">{todayStats.count || 0} payment(s) I processed today</p>
               </CardContent>
             </Card>
             
