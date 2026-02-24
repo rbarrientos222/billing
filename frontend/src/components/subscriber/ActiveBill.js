@@ -49,8 +49,10 @@ export default function ActiveBill({ invoices, totalPayables, onPaymentSuccess }
     try {
       const response = await axios.get(`${API}/api/paymongo/public-key`);
       setPaymentEnabled(response.data.enabled);
+      setServiceFee(response.data.service_fee || 0);
     } catch (error) {
       setPaymentEnabled(false);
+      setServiceFee(0);
     }
   };
 
