@@ -68,8 +68,9 @@ export default function SubscriberPortal({ user, onLogout }) {
 
   // Custom logout handler for subscriber - redirects to subscriber login
   const handleSubscriberLogout = () => {
-    onLogout(); // Clear user state and localStorage
-    navigate('/subscriber/login'); // Redirect to subscriber login page
+    localStorage.clear(); // Clear localStorage directly
+    navigate('/subscriber/login', { replace: true }); // Redirect to subscriber login page
+    onLogout(); // Then update React state
   };
 
   const handleRefresh = async () => {
