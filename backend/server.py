@@ -5795,5 +5795,229 @@ async def get_paymongo_public_key():
         "service_fee": settings.get('service_fee', 0)
     }
 
+# ========== REPORTS MODULE ==========
+
+@api_router.get("/reports/receivables")
+async def get_receivables_report(current_user: dict = Depends(get_current_user)):
+    """
+    Get receivables report with aging buckets.
+    Returns: current, 1-30 days, 31-60 days, 61-90 days, over 90 days
+    """
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    today = get_ph_now()
+    
+    # Get all unpaid invoices
+    unpaid_invoices = await db.invoices.find({"paid": False}, {"_id": 0}).to_list(10000)
+    
+    # Initialize aging buckets
+    aging = {
+        "current": {"count": 0, "amount": 0, "invoices": []},
+        "1_30_days": {"count": 0, "amount": 0, "invoices": []},
+        "31_60_days": {"count": 0, "amount": 0, "invoices": []},
+        "61_90_days": {"count": 0, "amount": 0, "invoices": []},
+        "over_90_days": {"count": 0, "amount": 0, "invoices": []}
+    }
+    
+    total_receivable = 0
+    
+    for inv in unpaid_invoices:
+        due_date = inv.get('due_date')
+        if not due_date:
+            continue
+            
+        # Parse due_date if it's a string
+        if isinstance(due_date, str):
+            try:
+                due_date = datetime.fromisoformat(due_date.replace('Z', '+00:00'))
+            except:
+                continue
+        
+        # Make timezone-aware if naive
+        if due_date.tzinfo is None:
+            due_date = due_date.replace(tzinfo=timezone.utc)
+        
+        remaining = (inv.get('amount', 0) - inv.get('paid_amount', 0))
+        total_receivable += remaining
+        
+        days_overdue = (today - due_date).days
+        
+        invoice_summary = {
+            "invoice_number": inv.get('invoice_number'),
+            "subscriber_id": inv.get('subscriber_id'),
+            "subscriber_name": inv.get('subscriber_name', ''),
+            "amount": remaining,
+            "due_date": due_date.strftime('%Y-%m-%d'),
+            "days_overdue": max(0, days_overdue)
+        }
+        
+        if days_overdue <= 0:
+            aging["current"]["count"] += 1
+            aging["current"]["amount"] += remaining
+            aging["current"]["invoices"].append(invoice_summary)
+        elif days_overdue <= 30:
+            aging["1_30_days"]["count"] += 1
+            aging["1_30_days"]["amount"] += remaining
+            aging["1_30_days"]["invoices"].append(invoice_summary)
+        elif days_overdue <= 60:
+            aging["31_60_days"]["count"] += 1
+            aging["31_60_days"]["amount"] += remaining
+            aging["31_60_days"]["invoices"].append(invoice_summary)
+        elif days_overdue <= 90:
+            aging["61_90_days"]["count"] += 1
+            aging["61_90_days"]["amount"] += remaining
+            aging["61_90_days"]["invoices"].append(invoice_summary)
+        else:
+            aging["over_90_days"]["count"] += 1
+            aging["over_90_days"]["amount"] += remaining
+            aging["over_90_days"]["invoices"].append(invoice_summary)
+    
+    return {
+        "total_receivable": total_receivable,
+        "aging": aging,
+        "generated_at": today.isoformat()
+    }
+
+@api_router.get("/reports/collections")
+async def get_collections_report(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get collections report filtered by date range.
+    """
+    if current_user['role'] not in ['admin', 'billing', 'cashier']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Build date filter
+    query = {}
+    
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            start_dt = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+            query["payment_date"] = {"$gte": start_dt}
+        except:
+            pass
+    
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+            if "payment_date" in query:
+                query["payment_date"]["$lte"] = end_dt
+            else:
+                query["payment_date"] = {"$lte": end_dt}
+        except:
+            pass
+    
+    # If no date filter, default to today
+    if not query:
+        today = get_ph_now().replace(hour=0, minute=0, second=0, microsecond=0)
+        query["payment_date"] = {"$gte": today}
+    
+    # Get payments
+    payments = await db.payments.find(query, {"_id": 0}).sort("payment_date", -1).to_list(10000)
+    
+    # Calculate totals by payment mode
+    by_mode = {}
+    total_amount = 0
+    
+    for p in payments:
+        mode = p.get('payment_mode', 'unknown')
+        amount = p.get('total_amount', p.get('amount', 0))
+        
+        if mode not in by_mode:
+            by_mode[mode] = {"count": 0, "amount": 0}
+        
+        by_mode[mode]["count"] += 1
+        by_mode[mode]["amount"] += amount
+        total_amount += amount
+    
+    return {
+        "total_amount": total_amount,
+        "total_count": len(payments),
+        "by_mode": by_mode,
+        "payments": payments[:100],  # Limit to 100 for display
+        "start_date": start_date,
+        "end_date": end_date
+    }
+
+@api_router.get("/reports/collections-by-collector")
+async def get_collections_by_collector(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get collections grouped by collector (received_by) for chart display.
+    """
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Build date filter
+    match_filter = {}
+    
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            start_dt = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+            match_filter["payment_date"] = {"$gte": start_dt}
+        except:
+            pass
+    
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+            if "payment_date" in match_filter:
+                match_filter["payment_date"]["$lte"] = end_dt
+            else:
+                match_filter["payment_date"] = {"$lte": end_dt}
+        except:
+            pass
+    
+    # If no date filter, default to current month
+    if not match_filter:
+        now = get_ph_now()
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        match_filter["payment_date"] = {"$gte": month_start}
+    
+    # Aggregate by collector
+    pipeline = [
+        {"$match": match_filter},
+        {"$group": {
+            "_id": "$received_by",
+            "total_amount": {"$sum": {"$ifNull": ["$total_amount", {"$ifNull": ["$amount", 0]}]}},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"total_amount": -1}}
+    ]
+    
+    results = await db.payments.aggregate(pipeline).to_list(100)
+    
+    # Format for chart
+    collectors = []
+    total = 0
+    
+    for r in results:
+        collector_name = r['_id'] or 'Unknown'
+        collectors.append({
+            "name": collector_name,
+            "amount": r['total_amount'],
+            "count": r['count']
+        })
+        total += r['total_amount']
+    
+    return {
+        "collectors": collectors,
+        "total_amount": total,
+        "total_count": sum(c['count'] for c in collectors),
+        "start_date": start_date,
+        "end_date": end_date
+    }
+
 # Include router (MUST be after all route definitions)
 app.include_router(api_router)
