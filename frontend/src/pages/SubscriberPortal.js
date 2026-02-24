@@ -71,10 +71,6 @@ export default function SubscriberPortal({ user, onLogout }) {
     toast.success('Data refreshed');
   };
 
-  const handlePayNow = () => {
-    toast.info('Online payment will be available soon. Please visit our office or contact support to make a payment.');
-  };
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-PH', {
       style: 'currency',
