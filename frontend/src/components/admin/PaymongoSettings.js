@@ -48,7 +48,8 @@ export default function PaymongoSettings() {
         setSettings(prev => ({
           ...prev,
           is_live_mode: response.data.is_live_mode,
-          enabled: response.data.enabled
+          enabled: response.data.enabled,
+          service_fee: response.data.service_fee || 0
         }));
       }
     } catch (error) {
