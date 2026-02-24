@@ -5260,3 +5260,463 @@ async def shutdown_db_client():
     
     # Close database connection
     client.close()
+
+# ========== PAYMONGO INTEGRATION ==========
+
+class PaymongoSettings(BaseModel):
+    """PayMongo API settings model"""
+    public_key: str = Field(..., description="PayMongo public key (pk_test_... or pk_live_...)")
+    secret_key: str = Field(..., description="PayMongo secret key (sk_test_... or sk_live_...)")
+    webhook_secret: Optional[str] = Field(None, description="Webhook secret key")
+    is_live_mode: bool = Field(False, description="True for production, False for test mode")
+    enabled: bool = Field(True, description="Enable/disable PayMongo payments")
+
+class PaymongoSettingsResponse(BaseModel):
+    """Safe response model that hides sensitive data"""
+    public_key: str
+    is_live_mode: bool
+    enabled: bool
+    has_secret_key: bool
+    has_webhook_secret: bool
+    configured: bool
+
+@api_router.get("/settings/paymongo")
+async def get_paymongo_settings(current_user: dict = Depends(get_current_user)):
+    """Get PayMongo settings (masked for security)"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    settings = await db.paymongo_settings.find_one({}, {"_id": 0})
+    
+    if not settings:
+        return {
+            "public_key": "",
+            "is_live_mode": False,
+            "enabled": False,
+            "has_secret_key": False,
+            "has_webhook_secret": False,
+            "configured": False
+        }
+    
+    # Mask the keys for security
+    public_key = settings.get('public_key', '')
+    
+    return {
+        "public_key": public_key[:12] + "..." + public_key[-4:] if len(public_key) > 16 else public_key,
+        "is_live_mode": settings.get('is_live_mode', False),
+        "enabled": settings.get('enabled', False),
+        "has_secret_key": bool(settings.get('secret_key_encrypted')),
+        "has_webhook_secret": bool(settings.get('webhook_secret_encrypted')),
+        "configured": bool(settings.get('public_key') and settings.get('secret_key_encrypted'))
+    }
+
+@api_router.post("/settings/paymongo")
+async def save_paymongo_settings(settings: PaymongoSettings, current_user: dict = Depends(get_current_user)):
+    """Save PayMongo settings with encrypted credentials"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Validate key formats
+    if settings.public_key and not settings.public_key.startswith(('pk_test_', 'pk_live_')):
+        raise HTTPException(status_code=400, detail="Invalid public key format. Must start with pk_test_ or pk_live_")
+    
+    if settings.secret_key and not settings.secret_key.startswith(('sk_test_', 'sk_live_')):
+        raise HTTPException(status_code=400, detail="Invalid secret key format. Must start with sk_test_ or sk_live_")
+    
+    # Validate consistency (test keys with test mode, live keys with live mode)
+    if settings.is_live_mode:
+        if settings.public_key and not settings.public_key.startswith('pk_live_'):
+            raise HTTPException(status_code=400, detail="Live mode requires pk_live_ public key")
+        if settings.secret_key and not settings.secret_key.startswith('sk_live_'):
+            raise HTTPException(status_code=400, detail="Live mode requires sk_live_ secret key")
+    else:
+        if settings.public_key and not settings.public_key.startswith('pk_test_'):
+            raise HTTPException(status_code=400, detail="Test mode requires pk_test_ public key")
+        if settings.secret_key and not settings.secret_key.startswith('sk_test_'):
+            raise HTTPException(status_code=400, detail="Test mode requires sk_test_ secret key")
+    
+    # Encrypt sensitive data
+    settings_doc = {
+        "public_key": settings.public_key,
+        "secret_key_encrypted": encrypt_password(settings.secret_key) if settings.secret_key else None,
+        "webhook_secret_encrypted": encrypt_password(settings.webhook_secret) if settings.webhook_secret else None,
+        "is_live_mode": settings.is_live_mode,
+        "enabled": settings.enabled,
+        "updated_at": get_ph_now().isoformat(),
+        "updated_by": current_user['username']
+    }
+    
+    await db.paymongo_settings.delete_many({})
+    await db.paymongo_settings.insert_one(settings_doc)
+    
+    return {"message": "PayMongo settings saved successfully"}
+
+@api_router.post("/settings/paymongo/test")
+async def test_paymongo_connection(current_user: dict = Depends(get_current_user)):
+    """Test PayMongo API connection"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    settings = await db.paymongo_settings.find_one({}, {"_id": 0})
+    if not settings or not settings.get('secret_key_encrypted'):
+        raise HTTPException(status_code=400, detail="PayMongo not configured")
+    
+    try:
+        secret_key = decrypt_password(settings['secret_key_encrypted'])
+        
+        # Test API connection by retrieving account info
+        auth_header = base64.b64encode(f"{secret_key}:".encode()).decode()
+        
+        async with httpx.AsyncClient(timeout=30) as client:
+            # Test with a simple API call - list payment methods
+            response = await client.get(
+                "https://api.paymongo.com/v1/payment_intents",
+                headers={
+                    "Authorization": f"Basic {auth_header}",
+                    "Content-Type": "application/json"
+                },
+                params={"limit": 1}
+            )
+            
+            if response.status_code == 200:
+                return {
+                    "success": True,
+                    "message": "PayMongo API connection successful",
+                    "mode": "live" if settings.get('is_live_mode') else "test"
+                }
+            elif response.status_code == 401:
+                return {
+                    "success": False,
+                    "message": "Invalid API key - authentication failed"
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": f"API returned status {response.status_code}: {response.text[:200]}"
+                }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Connection failed: {str(e)}"
+        }
+
+# ========== PAYMONGO PAYMENT ENDPOINTS ==========
+
+class CreatePaymentRequest(BaseModel):
+    """Request model for creating a payment"""
+    amount: float = Field(..., gt=0, description="Amount in PHP")
+    invoice_ids: List[str] = Field(..., description="List of invoice IDs to pay")
+    description: Optional[str] = None
+
+@api_router.post("/subscriber/pay/create-checkout")
+async def create_subscriber_checkout(
+    request: CreatePaymentRequest,
+    current_subscriber: dict = Depends(get_current_subscriber)
+):
+    """Create a PayMongo checkout session for subscriber payment"""
+    
+    # Check if PayMongo is configured
+    pm_settings = await db.paymongo_settings.find_one({}, {"_id": 0})
+    if not pm_settings or not pm_settings.get('enabled'):
+        raise HTTPException(status_code=400, detail="Online payment is not available")
+    
+    if not pm_settings.get('secret_key_encrypted'):
+        raise HTTPException(status_code=400, detail="Payment gateway not configured")
+    
+    try:
+        secret_key = decrypt_password(pm_settings['secret_key_encrypted'])
+        auth_header = base64.b64encode(f"{secret_key}:".encode()).decode()
+        
+        # Verify invoices belong to this subscriber and calculate total
+        total_amount = 0
+        invoice_details = []
+        
+        for inv_id in request.invoice_ids:
+            invoice = await db.invoices.find_one({
+                "invoice_number": inv_id,
+                "subscriber_id": current_subscriber['account_number'],
+                "paid": False
+            })
+            
+            if not invoice:
+                raise HTTPException(status_code=400, detail=f"Invoice {inv_id} not found or already paid")
+            
+            remaining = (invoice.get('amount', 0) - invoice.get('paid_amount', 0))
+            total_amount += remaining
+            invoice_details.append({
+                "invoice_number": inv_id,
+                "amount": remaining,
+                "description": invoice.get('description', 'Invoice Payment')
+            })
+        
+        # Create a unique reference ID
+        reference_id = f"PAY{uuid.uuid4().hex[:12].upper()}"
+        
+        # Get frontend URL for redirects
+        frontend_url = os.environ.get('FRONTEND_URL', 'https://subscriber-hub-16.preview.emergentagent.com')
+        
+        # Create checkout session
+        payload = {
+            "data": {
+                "attributes": {
+                    "line_items": [{
+                        "name": f"Invoice Payment - {current_subscriber['account_number']}",
+                        "amount": int(total_amount * 100),  # Convert to centavos
+                        "currency": "PHP",
+                        "quantity": 1,
+                        "description": request.description or f"Payment for {len(invoice_details)} invoice(s)"
+                    }],
+                    "payment_method_types": ["gcash", "grab_pay", "card", "paymaya"],
+                    "success_url": f"{frontend_url}/subscriber?payment=success&ref={reference_id}",
+                    "cancel_url": f"{frontend_url}/subscriber?payment=cancelled",
+                    "description": f"Bill Payment - {current_subscriber['account_number']}",
+                    "reference_number": reference_id,
+                    "metadata": {
+                        "subscriber_id": current_subscriber['account_number'],
+                        "invoice_ids": ",".join(request.invoice_ids),
+                        "reference_id": reference_id
+                    }
+                }
+            }
+        }
+        
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.post(
+                "https://api.paymongo.com/v1/checkout_sessions",
+                headers={
+                    "Authorization": f"Basic {auth_header}",
+                    "Content-Type": "application/json"
+                },
+                json=payload
+            )
+            
+            if response.status_code != 200:
+                error_detail = response.json().get('errors', [{}])[0].get('detail', 'Unknown error')
+                raise HTTPException(status_code=400, detail=f"Payment gateway error: {error_detail}")
+            
+            result = response.json()
+            checkout_url = result['data']['attributes']['checkout_url']
+            session_id = result['data']['id']
+            
+            # Store pending payment record
+            payment_record = {
+                "reference_id": reference_id,
+                "session_id": session_id,
+                "subscriber_id": current_subscriber['account_number'],
+                "invoice_ids": request.invoice_ids,
+                "amount": total_amount,
+                "status": "pending",
+                "created_at": get_ph_now().isoformat(),
+                "checkout_url": checkout_url
+            }
+            await db.pending_payments.insert_one(payment_record)
+            
+            return {
+                "checkout_url": checkout_url,
+                "session_id": session_id,
+                "reference_id": reference_id,
+                "amount": total_amount
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"PayMongo checkout error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create payment session")
+
+@api_router.get("/subscriber/pay/status/{reference_id}")
+async def check_payment_status(
+    reference_id: str,
+    current_subscriber: dict = Depends(get_current_subscriber)
+):
+    """Check payment status by reference ID"""
+    
+    pending_payment = await db.pending_payments.find_one({
+        "reference_id": reference_id,
+        "subscriber_id": current_subscriber['account_number']
+    }, {"_id": 0})
+    
+    if not pending_payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # If already processed, return status
+    if pending_payment.get('status') in ['completed', 'failed']:
+        return {
+            "status": pending_payment['status'],
+            "amount": pending_payment['amount'],
+            "processed_at": pending_payment.get('processed_at')
+        }
+    
+    # Check with PayMongo
+    pm_settings = await db.paymongo_settings.find_one({}, {"_id": 0})
+    if not pm_settings or not pm_settings.get('secret_key_encrypted'):
+        return {"status": "pending", "amount": pending_payment['amount']}
+    
+    try:
+        secret_key = decrypt_password(pm_settings['secret_key_encrypted'])
+        auth_header = base64.b64encode(f"{secret_key}:".encode()).decode()
+        
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(
+                f"https://api.paymongo.com/v1/checkout_sessions/{pending_payment['session_id']}",
+                headers={
+                    "Authorization": f"Basic {auth_header}",
+                    "Content-Type": "application/json"
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                pm_status = data['data']['attributes'].get('status')
+                
+                if pm_status == 'paid':
+                    # Process the payment
+                    await process_successful_payment(reference_id, pending_payment)
+                    return {
+                        "status": "completed",
+                        "amount": pending_payment['amount'],
+                        "message": "Payment successful!"
+                    }
+                elif pm_status == 'expired':
+                    await db.pending_payments.update_one(
+                        {"reference_id": reference_id},
+                        {"$set": {"status": "expired"}}
+                    )
+                    return {"status": "expired", "amount": pending_payment['amount']}
+                
+        return {"status": "pending", "amount": pending_payment['amount']}
+        
+    except Exception as e:
+        logger.error(f"Payment status check error: {str(e)}")
+        return {"status": "pending", "amount": pending_payment['amount']}
+
+async def process_successful_payment(reference_id: str, pending_payment: dict):
+    """Process a successful payment from PayMongo"""
+    
+    subscriber_id = pending_payment['subscriber_id']
+    invoice_ids = pending_payment['invoice_ids']
+    total_amount = pending_payment['amount']
+    
+    # Create payment record using centralized payment system
+    now = get_ph_now()
+    
+    # Generate OR number
+    receipt_settings = await db.receipt_settings.find_one({}, {"_id": 0}) or {}
+    or_prefix = receipt_settings.get('or_prefix', 'OR')
+    or_number = f"{or_prefix}{now.strftime('%Y%m%d')}{reference_id[-6:]}"
+    
+    # Get subscriber details
+    subscriber = await db.subscribers.find_one({"account_number": subscriber_id})
+    
+    invoices_settled = []
+    remaining_amount = total_amount
+    
+    # Settle invoices
+    for inv_id in invoice_ids:
+        if remaining_amount <= 0:
+            break
+            
+        invoice = await db.invoices.find_one({"invoice_number": inv_id, "paid": False})
+        if not invoice:
+            continue
+            
+        inv_remaining = invoice.get('amount', 0) - invoice.get('paid_amount', 0)
+        payment_for_invoice = min(remaining_amount, inv_remaining)
+        
+        new_paid_amount = invoice.get('paid_amount', 0) + payment_for_invoice
+        is_fully_paid = new_paid_amount >= invoice.get('amount', 0)
+        
+        await db.invoices.update_one(
+            {"invoice_number": inv_id},
+            {"$set": {
+                "paid_amount": new_paid_amount,
+                "paid": is_fully_paid,
+                "paid_date": now.isoformat() if is_fully_paid else None,
+                "payment_method": "online"
+            }}
+        )
+        
+        invoices_settled.append({
+            "invoice_number": inv_id,
+            "amount": payment_for_invoice,
+            "description": invoice.get('description', '')
+        })
+        
+        remaining_amount -= payment_for_invoice
+    
+    # Create payment record
+    payment_doc = {
+        "or_number": or_number,
+        "subscriber_id": subscriber_id,
+        "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
+        "total_amount": total_amount,
+        "payment_mode": "online_paymongo",
+        "payment_date": now,
+        "received_by": "Online Payment",
+        "invoices_settled": invoices_settled,
+        "reference_id": reference_id,
+        "description": f"Online Payment via PayMongo",
+        "is_advance_payment": remaining_amount > 0,
+        "wallet_credit": remaining_amount if remaining_amount > 0 else 0
+    }
+    
+    await db.payments.insert_one(payment_doc)
+    
+    # If there's remaining amount, add to wallet
+    if remaining_amount > 0:
+        await db.subscribers.update_one(
+            {"account_number": subscriber_id},
+            {"$inc": {"wallet_balance": remaining_amount}}
+        )
+    
+    # Update pending payment status
+    await db.pending_payments.update_one(
+        {"reference_id": reference_id},
+        {"$set": {
+            "status": "completed",
+            "processed_at": now.isoformat(),
+            "or_number": or_number
+        }}
+    )
+
+@api_router.post("/webhooks/paymongo")
+async def paymongo_webhook(request: dict):
+    """Handle PayMongo webhook events"""
+    
+    try:
+        event_type = request.get("data", {}).get("attributes", {}).get("type")
+        event_data = request.get("data", {}).get("attributes", {}).get("data", {})
+        
+        logger.info(f"PayMongo webhook received: {event_type}")
+        
+        if event_type == "checkout_session.payment.paid":
+            # Extract metadata
+            metadata = event_data.get("attributes", {}).get("metadata", {})
+            reference_id = metadata.get("reference_id")
+            
+            if reference_id:
+                pending_payment = await db.pending_payments.find_one({"reference_id": reference_id})
+                if pending_payment and pending_payment.get('status') == 'pending':
+                    await process_successful_payment(reference_id, pending_payment)
+                    logger.info(f"Payment processed via webhook: {reference_id}")
+        
+        return {"status": "received"}
+        
+    except Exception as e:
+        logger.error(f"Webhook processing error: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+@api_router.get("/paymongo/public-key")
+async def get_paymongo_public_key():
+    """Get PayMongo public key for frontend (no auth required for subscriber checkout)"""
+    
+    settings = await db.paymongo_settings.find_one({}, {"_id": 0})
+    
+    if not settings or not settings.get('enabled'):
+        return {"enabled": False, "public_key": None}
+    
+    return {
+        "enabled": True,
+        "public_key": settings.get('public_key'),
+        "is_live_mode": settings.get('is_live_mode', False)
+    }
