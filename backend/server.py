@@ -5936,7 +5936,7 @@ async def get_collections_report(
     total_amount = 0
     
     for p in payments:
-        mode = p.get('payment_mode', 'unknown')
+        mode = p.get('payment_mode') or p.get('mode', 'unknown')
         amount = p.get('total_amount', p.get('amount', 0))
         
         if mode not in by_mode:
