@@ -5472,23 +5472,42 @@ async def create_subscriber_checkout(
                 "description": invoice.get('description', 'Invoice Payment')
             })
         
+        # Get service fee from settings
+        service_fee = pm_settings.get('service_fee', 0)
+        
         # Create a unique reference ID
         reference_id = f"PAY{uuid.uuid4().hex[:12].upper()}"
         
         # Get frontend URL for redirects
         frontend_url = os.environ.get('FRONTEND_URL', 'https://tech-joborders.preview.emergentagent.com')
         
+        # Build line items - invoice amount + service fee (if any)
+        line_items = [{
+            "name": f"Invoice Payment - {current_subscriber['account_number']}",
+            "amount": int(total_amount * 100),  # Convert to centavos
+            "currency": "PHP",
+            "quantity": 1,
+            "description": request.description or f"Payment for {len(invoice_details)} invoice(s)"
+        }]
+        
+        # Add service fee as separate line item if configured
+        if service_fee > 0:
+            line_items.append({
+                "name": "Service Fee",
+                "amount": int(service_fee * 100),  # Convert to centavos
+                "currency": "PHP",
+                "quantity": 1,
+                "description": "Online payment processing fee"
+            })
+        
+        # Calculate grand total
+        grand_total = total_amount + service_fee
+        
         # Create checkout session
         payload = {
             "data": {
                 "attributes": {
-                    "line_items": [{
-                        "name": f"Invoice Payment - {current_subscriber['account_number']}",
-                        "amount": int(total_amount * 100),  # Convert to centavos
-                        "currency": "PHP",
-                        "quantity": 1,
-                        "description": request.description or f"Payment for {len(invoice_details)} invoice(s)"
-                    }],
+                    "line_items": line_items,
                     "payment_method_types": ["gcash", "grab_pay", "card", "paymaya"],
                     "success_url": f"{frontend_url}/subscriber?payment=success&ref={reference_id}",
                     "cancel_url": f"{frontend_url}/subscriber?payment=cancelled",
@@ -5497,7 +5516,8 @@ async def create_subscriber_checkout(
                     "metadata": {
                         "subscriber_id": current_subscriber['account_number'],
                         "invoice_ids": ",".join(request.invoice_ids),
-                        "reference_id": reference_id
+                        "reference_id": reference_id,
+                        "service_fee": str(service_fee)
                     }
                 }
             }
