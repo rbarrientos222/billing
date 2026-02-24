@@ -5768,12 +5768,13 @@ async def get_paymongo_public_key():
     settings = await db.paymongo_settings.find_one({}, {"_id": 0})
     
     if not settings or not settings.get('enabled'):
-        return {"enabled": False, "public_key": None}
+        return {"enabled": False, "public_key": None, "service_fee": 0}
     
     return {
         "enabled": True,
         "public_key": settings.get('public_key'),
-        "is_live_mode": settings.get('is_live_mode', False)
+        "is_live_mode": settings.get('is_live_mode', False),
+        "service_fee": settings.get('service_fee', 0)
     }
 
 # Include router (MUST be after all route definitions)
