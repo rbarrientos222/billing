@@ -309,9 +309,21 @@ export default function ActiveBill({ invoices, totalPayables, onPaymentSuccess }
                   </div>
                 ))
               }
-              <div className="pt-2 border-t flex justify-between font-bold">
-                <span>Total</span>
-                <span className="text-blue-600">{formatCurrency(calculateSelectedTotal())}</span>
+              <div className="pt-2 border-t">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal</span>
+                  <span className="font-medium">{formatCurrency(calculateSelectedTotal())}</span>
+                </div>
+                {serviceFee > 0 && (
+                  <div className="flex justify-between text-sm text-amber-600 mt-1">
+                    <span>Service Fee</span>
+                    <span className="font-medium">{formatCurrency(serviceFee)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold mt-2 pt-2 border-t">
+                  <span>Total to Pay</span>
+                  <span className="text-blue-600">{formatCurrency(calculateSelectedTotal() + serviceFee)}</span>
+                </div>
               </div>
             </div>
 
