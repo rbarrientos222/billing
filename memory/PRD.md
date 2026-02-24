@@ -310,7 +310,7 @@ Build a billing system with the following features:
 
 ## Upcoming Tasks (P0-P1)
 
-1. **Subscriber Portal - Online Payments** - Integrate payment gateway (PayMongo) for "Pay Now" button
+1. ~~**Subscriber Portal - Online Payments**~~ ✅ COMPLETED (Feb 24, 2026) - PayMongo integration
 2. **Billing PDF/SOA Generation** - Generate PDF statements
 3. **Mikrotik Management Page** - UI for admin to configure Mikrotik credentials
 
