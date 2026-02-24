@@ -365,6 +365,31 @@ export default function PaymongoSettings() {
             />
           </div>
 
+          {/* Service Fee */}
+          <div className="space-y-2">
+            <Label htmlFor="service_fee">
+              Service Fee (₱) <span className="text-muted-foreground">(Optional)</span>
+            </Label>
+            <Input
+              id="service_fee"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+              value={settings.service_fee}
+              onChange={(e) => setSettings(prev => ({ ...prev, service_fee: parseFloat(e.target.value) || 0 }))}
+              className="max-w-[200px]"
+            />
+            <p className="text-xs text-muted-foreground">
+              Additional fee charged to subscribers for online payments. This will be added as a separate line item during checkout.
+              {settings.service_fee > 0 && (
+                <span className="block mt-1 text-amber-600">
+                  Current fee: ₱{settings.service_fee.toFixed(2)} will be added to each transaction
+                </span>
+              )}
+            </p>
+          </div>
+
           {/* Save Button */}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
