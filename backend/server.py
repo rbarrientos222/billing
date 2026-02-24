@@ -5361,18 +5361,17 @@ async def test_paymongo_connection(current_user: dict = Depends(get_current_user
     try:
         secret_key = decrypt_password(settings['secret_key_encrypted'])
         
-        # Test API connection by retrieving account info
+        # Test API connection using webhooks list endpoint
         auth_header = base64.b64encode(f"{secret_key}:".encode()).decode()
         
         async with httpx.AsyncClient(timeout=30) as client:
-            # Test with a simple API call - list payment methods
+            # Test with webhooks endpoint - this is a reliable way to verify API key
             response = await client.get(
-                "https://api.paymongo.com/v1/payment_intents",
+                "https://api.paymongo.com/v1/webhooks",
                 headers={
                     "Authorization": f"Basic {auth_header}",
                     "Content-Type": "application/json"
-                },
-                params={"limit": 1}
+                }
             )
             
             if response.status_code == 200:
@@ -5387,10 +5386,32 @@ async def test_paymongo_connection(current_user: dict = Depends(get_current_user
                     "message": "Invalid API key - authentication failed"
                 }
             else:
-                return {
-                    "success": False,
-                    "message": f"API returned status {response.status_code}: {response.text[:200]}"
-                }
+                # Try alternative test - create a minimal checkout session test
+                # If webhooks endpoint fails, try listing links
+                response2 = await client.get(
+                    "https://api.paymongo.com/v1/links",
+                    headers={
+                        "Authorization": f"Basic {auth_header}",
+                        "Content-Type": "application/json"
+                    }
+                )
+                
+                if response2.status_code == 200:
+                    return {
+                        "success": True,
+                        "message": "PayMongo API connection successful",
+                        "mode": "live" if settings.get('is_live_mode') else "test"
+                    }
+                elif response2.status_code == 401:
+                    return {
+                        "success": False,
+                        "message": "Invalid API key - authentication failed"
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "message": f"Could not verify API connection. Status: {response2.status_code}"
+                    }
     except Exception as e:
         return {
             "success": False,
