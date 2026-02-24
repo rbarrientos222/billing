@@ -297,7 +297,7 @@ export default function SubscriberPortal({ user, onLogout }) {
             <ActiveBill 
               invoices={invoices} 
               totalPayables={payables?.total}
-              onPayNow={handlePayNow}
+              onPaymentSuccess={handleRefresh}
             />
           </TabsContent>
 
