@@ -138,7 +138,7 @@ export default function SubscriberPortal({ user, onLogout }) {
                 <p className="text-sm font-medium">{subscriber?.name}</p>
                 <p className="text-xs text-muted-foreground">{subscriber?.plan}</p>
               </div>
-              <Button variant="outline" size="sm" onClick={onLogout} data-testid="logout-button">
+              <Button variant="outline" size="sm" onClick={handleSubscriberLogout} data-testid="logout-button">
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
@@ -181,7 +181,7 @@ export default function SubscriberPortal({ user, onLogout }) {
                 </Badge>
               </div>
             </div>
-            <Button variant="outline" className="w-full" onClick={onLogout}>
+            <Button variant="outline" className="w-full" onClick={handleSubscriberLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
