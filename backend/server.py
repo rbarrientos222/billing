@@ -5547,7 +5547,9 @@ async def create_subscriber_checkout(
                 "session_id": session_id,
                 "subscriber_id": current_subscriber['account_number'],
                 "invoice_ids": request.invoice_ids,
-                "amount": total_amount,
+                "invoice_amount": total_amount,
+                "service_fee": service_fee,
+                "amount": grand_total,
                 "status": "pending",
                 "created_at": get_ph_now().isoformat(),
                 "checkout_url": checkout_url
@@ -5558,7 +5560,9 @@ async def create_subscriber_checkout(
                 "checkout_url": checkout_url,
                 "session_id": session_id,
                 "reference_id": reference_id,
-                "amount": total_amount
+                "invoice_amount": total_amount,
+                "service_fee": service_fee,
+                "amount": grand_total
             }
             
     except HTTPException:
