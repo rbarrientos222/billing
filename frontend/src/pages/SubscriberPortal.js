@@ -57,13 +57,19 @@ export default function SubscriberPortal({ user, onLogout }) {
       console.error('Error fetching data:', error);
       if (error.response?.status === 401) {
         toast.error('Session expired. Please login again.');
-        onLogout();
+        handleSubscriberLogout();
       } else {
         toast.error('Failed to load dashboard data');
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Custom logout handler for subscriber - redirects to subscriber login
+  const handleSubscriberLogout = () => {
+    onLogout(); // Clear user state and localStorage
+    navigate('/subscriber/login'); // Redirect to subscriber login page
   };
 
   const handleRefresh = async () => {
