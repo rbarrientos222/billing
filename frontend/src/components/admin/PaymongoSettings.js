@@ -400,7 +400,8 @@ export default function PaymongoSettings() {
                   secret_key: '',
                   webhook_secret: '',
                   is_live_mode: currentSettings?.is_live_mode || false,
-                  enabled: currentSettings?.enabled || false
+                  enabled: currentSettings?.enabled || false,
+                  service_fee: currentSettings?.service_fee || 0
                 });
               }}
             >
