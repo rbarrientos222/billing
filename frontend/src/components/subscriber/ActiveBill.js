@@ -14,6 +14,7 @@ export default function ActiveBill({ invoices, totalPayables, onPaymentSuccess }
   const [unpaidInvoices, setUnpaidInvoices] = useState([]);
   const [selectedInvoices, setSelectedInvoices] = useState([]);
   const [paymentEnabled, setPaymentEnabled] = useState(false);
+  const [serviceFee, setServiceFee] = useState(0);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
