@@ -5650,7 +5650,11 @@ async def process_successful_payment(reference_id: str, pending_payment: dict):
     
     subscriber_id = pending_payment['subscriber_id']
     invoice_ids = pending_payment['invoice_ids']
-    total_amount = pending_payment['amount']
+    # Use invoice_amount (without service fee) for settling invoices
+    # Fall back to 'amount' for backwards compatibility with old records
+    invoice_amount = pending_payment.get('invoice_amount', pending_payment['amount'])
+    service_fee = pending_payment.get('service_fee', 0)
+    total_paid = pending_payment['amount']  # Grand total including service fee
     
     # Create payment record using centralized payment system
     now = get_ph_now()
@@ -5664,7 +5668,7 @@ async def process_successful_payment(reference_id: str, pending_payment: dict):
     subscriber = await db.subscribers.find_one({"account_number": subscriber_id})
     
     invoices_settled = []
-    remaining_amount = total_amount
+    remaining_amount = invoice_amount  # Only the invoice portion, not service fee
     
     # Settle invoices
     for inv_id in invoice_ids:
@@ -5704,13 +5708,15 @@ async def process_successful_payment(reference_id: str, pending_payment: dict):
         "or_number": or_number,
         "subscriber_id": subscriber_id,
         "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
-        "total_amount": total_amount,
+        "total_amount": total_paid,  # Record the full amount paid including service fee
+        "invoice_amount": invoice_amount,
+        "service_fee": service_fee,
         "payment_mode": "online_paymongo",
         "payment_date": now,
         "received_by": "Online Payment",
         "invoices_settled": invoices_settled,
         "reference_id": reference_id,
-        "description": f"Online Payment via PayMongo",
+        "description": f"Online Payment via PayMongo" + (f" (incl. ₱{service_fee} service fee)" if service_fee > 0 else ""),
         "is_advance_payment": remaining_amount > 0,
         "wallet_credit": remaining_amount if remaining_amount > 0 else 0
     }
