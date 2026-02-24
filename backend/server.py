@@ -5294,7 +5294,8 @@ async def get_paymongo_settings(current_user: dict = Depends(get_current_user)):
             "enabled": False,
             "has_secret_key": False,
             "has_webhook_secret": False,
-            "configured": False
+            "configured": False,
+            "service_fee": 0
         }
     
     # Mask the keys for security
@@ -5306,7 +5307,8 @@ async def get_paymongo_settings(current_user: dict = Depends(get_current_user)):
         "enabled": settings.get('enabled', False),
         "has_secret_key": bool(settings.get('secret_key_encrypted')),
         "has_webhook_secret": bool(settings.get('webhook_secret_encrypted')),
-        "configured": bool(settings.get('public_key') and settings.get('secret_key_encrypted'))
+        "configured": bool(settings.get('public_key') and settings.get('secret_key_encrypted')),
+        "service_fee": settings.get('service_fee', 0)
     }
 
 @api_router.post("/settings/paymongo")
