@@ -537,6 +537,7 @@ export default function AdminDashboard({ user, onLogout }) {
             <Route path="/settings/plans" element={<SubscriptionPlans />} />
             <Route path="/settings/receipt" element={<ReceiptSettings />} />
             <Route path="/settings/rebates" element={<RebatesSettings />} />
+            <Route path="/settings/paymongo" element={<PaymongoSettings />} />
             <Route path="/settings/printer" element={<PrinterSettings />} />
             <Route path="/settings/soa" element={<SOASettings />} />
             <Route path="/settings/company" element={<CompanySettings />} />
