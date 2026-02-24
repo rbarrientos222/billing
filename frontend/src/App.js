@@ -31,8 +31,22 @@ axios.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.clear();
-      window.location.href = '/login';
+      // Check if this is a subscriber-related request or if we're on subscriber pages
+      const isSubscriberRequest = error.config?.url?.includes('/subscriber/');
+      const isSubscriberPage = window.location.pathname.startsWith('/subscriber');
+      
+      // Only redirect if there was an existing token (session expired)
+      // Don't redirect on login attempts (no token yet)
+      const hadToken = localStorage.getItem('token');
+      
+      if (hadToken) {
+        localStorage.clear();
+        if (isSubscriberRequest || isSubscriberPage) {
+          window.location.href = '/subscriber/login';
+        } else {
+          window.location.href = '/login';
+        }
+      }
     }
     return Promise.reject(error);
   }
