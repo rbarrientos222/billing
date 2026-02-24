@@ -84,12 +84,16 @@ function App() {
   }
 
   const ProtectedRoute = ({ children, allowedRoles }) => {
+    const location = window.location.pathname;
+    const isSubscriberRoute = location.startsWith('/subscriber');
+    
     if (!user) {
-      return <Navigate to="/login" replace />;
+      // Redirect to subscriber login if on subscriber route, otherwise staff login
+      return <Navigate to={isSubscriberRoute ? "/subscriber/login" : "/login"} replace />;
     }
     if (allowedRoles && !allowedRoles.includes(user.role)) {
       toast.error('Access denied');
-      return <Navigate to="/login" replace />;
+      return <Navigate to={isSubscriberRoute ? "/subscriber/login" : "/login"} replace />;
     }
     return children;
   };
