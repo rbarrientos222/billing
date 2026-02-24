@@ -2928,6 +2928,7 @@ async def process_centralized_payment(data: dict, current_user: dict = Depends(g
         "original_amount": amount + total_discount,  # Original bill amount before discount
         "applied_discounts": applied_discounts,  # Details of each discount
         "mode": mode,
+        "payment_mode": mode,  # Also store as payment_mode for consistency
         "payment_date": now,
         "received_by": current_user['username'],
         "invoices_settled": [p['invoice_number'] for p in invoices_settled],
