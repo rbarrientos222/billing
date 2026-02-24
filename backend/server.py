@@ -5585,9 +5585,17 @@ async def check_payment_status(
             
             if response.status_code == 200:
                 data = response.json()
-                pm_status = data['data']['attributes'].get('status')
+                attrs = data['data']['attributes']
+                pm_status = attrs.get('status')
+                payments = attrs.get('payments', [])
                 
-                if pm_status == 'paid':
+                # Check if there's a successful payment in the payments array
+                has_paid_payment = any(
+                    p.get('attributes', {}).get('status') == 'paid' 
+                    for p in payments
+                )
+                
+                if has_paid_payment or pm_status == 'paid':
                     # Process the payment
                     await process_successful_payment(reference_id, pending_payment)
                     return {
