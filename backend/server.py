@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import routeros_api
 from cryptography.fernet import Fernet
 import base64
+import httpx
 from bson import ObjectId
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -26,6 +27,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 import asyncio
 from zoneinfo import ZoneInfo
+import hmac
+import hashlib
 
 # Philippine Standard Time (UTC+8)
 PH_TIMEZONE = ZoneInfo("Asia/Manila")
