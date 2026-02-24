@@ -5471,7 +5471,7 @@ async def create_subscriber_checkout(
         reference_id = f"PAY{uuid.uuid4().hex[:12].upper()}"
         
         # Get frontend URL for redirects
-        frontend_url = os.environ.get('FRONTEND_URL', 'https://subscriber-hub-16.preview.emergentagent.com')
+        frontend_url = os.environ.get('FRONTEND_URL', 'https://tech-joborders.preview.emergentagent.com')
         
         # Create checkout session
         payload = {

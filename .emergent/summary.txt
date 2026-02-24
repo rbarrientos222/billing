@@ -5,49 +5,38 @@ Key features requested include:
 -   **Admin Backend:** Dashboard, User Management, Mikrotik Integration, Subscriber Management, Company Setup, Inventory, Expenses, Billing Module, and a Discount/Rebates system.
 -   **Cashier Module:** Login, dashboard, fast search, payment processing, and receipt printing.
 -   **Technician Module:** Login, dashboard, and job order fulfillment.
--   **Subscriber Portal:** A new portal for subscribers to log in, view their bills and payment history, see job order status, and eventually get support and pay online.
+-   **Subscriber Portal:** A new portal for subscribers to log in, view their bills and payment history, see job order status, get support, and pay online.
+-   **Online Payments:** Integrate PayMongo for subscribers to pay their bills.
+-   **Wallet System:** Display advance payments (wallet credits) to the subscriber.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A comprehensive full-stack billing application with a FastAPI backend, React frontend, and MongoDB database.
-
-*   **Backend:** Supports JWT authentication for Admin, Cashier, and Technician roles. It includes management for users, subscribers, plans, inventory, job orders, and expenses. The backend features robust Mikrotik integration, a complete subscriber lifecycle with prorated billing, a centralized payment system, and a newly implemented discount/rebate module. All date/time operations are standardized to Philippine Standard Time (UTC+8). The initial endpoints for the new Subscriber Portal have been created.
-*   **Frontend:** A mobile-responsive UI with distinct dashboards for Admin, Cashier, and Technician roles.
-    *   **Admin:** Features a data-driven dashboard (including new stats for discounts), comprehensive management tables, a full expense module with analytics, a Run Billing button, and detailed settings pages for receipt configuration and discount management.
-    *   **Cashier:** The dashboard includes a centralized payment system that now reflects and applies available discounts, a togglable payment history, and a fully functional receipt printing feature using the Web Bluetooth API.
-    *   **Technician:** A dashboard to view and manage assigned job orders.
+A comprehensive full-stack billing application with a FastAPI backend, React frontend, and MongoDB. The system includes role-based access for Admins, Cashiers, and Technicians. A fully functional, mobile-responsive **Subscriber Portal** has been built, allowing subscribers to log in, view their dashboard (stats, active status, wallet credit), browse bills, payment history, and job orders. The portal is integrated with **PayMongo**, enabling online payments. A secure admin page exists for managing PayMongo API credentials.
 
 **Last working item**:
-- **Last item agent was working:** The agent began implementing the **Subscriber Portal** by creating the necessary backend API endpoints for subscriber authentication and data retrieval.
-- **Status:** IN PROGRESS
-- **Agent Testing Done:** N
-- **Which testing method agent to use?** both
-- **User Testing Done:** N
+-   **Last item agent was working:** Fixing a critical bug where payments successfully processed by PayMongo were not being recorded in the application. The user completed a payment on PayMongo, and it was reflected in their PayMongo account, but the corresponding invoices in the billing app remained Unpaid.
+-   **Reasoning:** The backend verification logic () was incorrectly checking the top-level  of the PayMongo checkout session, which remained active. The fix involved updating the logic to inspect the nested  array within the checkout session response, which correctly contains the paid status of the actual payment attempt. The agent then manually re-processed the stuck payments to update the database.
+-   **Status:** USER VERIFICATION PENDING
+-   **Agent Testing Done:** Y
+-   **Which testing method agent to use?** both (Frontend and Backend testing agents to simulate a full user payment journey and verify invoice status changes).
+-   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** (P0) Implement Subscriber Portal Frontend
--   **Issue 2:** (P1) Babel Plugin Failure for 
+-   **Issue 1:** (P0) PayMongo successful payment is not updating invoice status.
+-   **Issue 2:** (P1) Babel Plugin Failure for .
 
 **Issues Detail:**
 -   **Issue 1:**
-    -   **Description:** The user has requested a new portal for subscribers. The backend endpoints have been laid out, but the entire frontend needs to be built. Requirements include:
-        1.  A dedicated login page for subscribers.
-        2.  A mobile-responsive dashboard showing Payables and Job Order stats.
-        3.  Sections to view the active bill (with a Pay Now button for future payment gateway integration), payment history, and job order status.
-        4.  Placeholders for future features like Chat Support and a Knowledge Base.
-        5.  A notification system for service interruptions, billing reminders, and disconnection notices.
+    -   **Description:** Payments completed on PayMongo's checkout page are not marking the corresponding invoices as Paid in the app's database, even though the money is received by PayMongo.
+    -   **Attempted fixes:** The agent identified that the backend was checking the wrong status field in the PayMongo API response. The logic in  at the  endpoint was modified to look for a  inside the nested  array of the checkout session object, instead of the parent object's status. The agent successfully used this fixed logic to manually process the user's previously stuck payments.
     -   **Next debug checklist:**
-        1.  **Frontend ():** Add new routes for  and .
-        2.  **Frontend ():** Create the new subscriber portal pages and components:
-            *   Create  for the subscriber login form.
-            *   Create  to serve as the main layout for the logged-in subscriber.
-            *   Create a new directory  for child components (e.g., , , ).
-        3.  **Frontend ():** Implement the UI and logic to call the  endpoint.
-        4.  **Frontend ():** Implement the UI to call the , , etc., endpoints and display the data as requested.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a major new feature that will provide value to the end-users (the ISP's subscribers) by giving them a self-service platform.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
+        1.  Ask the user to perform a new end-to-end test payment for a small amount.
+        2.  If it fails again, immediately inspect the backend logs during the  call.
+        3.  Manually call the PayMongo API with the new  to analyze the full JSON response and confirm if its structure matches the implemented logic.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a critical blocker for the online payment feature. Fixing it enables automated, reliable payment processing for subscribers.
+    -   **Status:** USER VERIFICATION PENDING
+    -   **Is recurring issue?** Y
     -   **Should Test frontend/backend/both after fix?** both
     -   **Blocked on other issue:** None
 
@@ -60,40 +49,37 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
     -   **Should Test frontend/backend/both after fix?** Frontend
 
 **In progress Task List**:
--   **Task 1:** Build the Subscriber Portal Frontend
-    -   **Where to resume:** The backend endpoints are ready in . The next step is to start building the frontend, beginning with creating the necessary files (, ), adding routes in , and implementing the login functionality.
-    -   **What will be achieved with this?** A functional subscriber portal that allows users to log in and view their account information.
-    -   **Status:** IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?** both
+-   None.
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
--   **Subscriber Portal - Online Payments (P0):** Integrate a payment gateway (e.g., PayMongo) for the Pay Now button.
+-   **Admin - Refactor Backend (P0):** Propose refactoring the monolithic  file into a modular structure (e.g., , , ) to improve maintainability.
 -   **Subscriber Portal - Chat Support (P1):** Implement a real-time chat feature.
--   **Subscriber Portal - Notifications (P1):** Build the notification system.
 -   **Admin - PDF Generation (P1):** Implement PDF generation for Statements of Account (SOA).
 
 **Future Tasks:**
 -   **Subscriber Portal - Knowledge Base:** Add a section for FAQs and help articles.
 -   **Billing Automations:** Implement automatic emailing of SOAs and SMS notifications.
--   **Admin - Wallet Management:** Create a UI for admins to manually manage subscriber wallet credits.
+-   **Admin - Wallet Management:** Create a UI for admins to manually add/deduct subscriber wallet credits.
 
 **Completed work in this session**
--   **Discounts/Rebates Module:**
-    -   Implemented a full CRUD interface for Admins to manage fixed-amount or percentage-based discounts.
-    -   Discounts can be applied to all subscribers, all active subscribers, or selected subscribers, and can be set as one-time or recurring.
-    -   Integrated the discount system into the Cashier's payment workflow, allowing cashiers to apply eligible discounts.
-    -   Added a Total Discounts card to the Admin dashboard.
-    -   Fixed a bug where the subscriber selection list was not appearing when creating a targeted discount.
--   **Receipt Printing Feature & Fixes:**
-    -   Completed the Receipt Setup page for Admins to configure company details, logo, and receipt appearance.
-    -   Implemented receipt printing from the Cashier module using the Web Bluetooth API.
-    -   Fixed issues based on user feedback: added an optional Branch field, adjusted font sizes, ensured the subscriber's address appears correctly, and enabled multi-line footers.
--   **UI Tweak:**
-    -   Updated the application name on the login page to APL Billing System.
+-   **Subscriber Portal (Full Implementation):**
+    -   Created dedicated login () and dashboard () pages.
+    -   Built a mobile-responsive dashboard with stats (Payables, Status, Wallet Credit), and tabs for Bills, Payments, Job Orders, and Account Info.
+    -   Fixed a bug in displaying ordinal numbers for billing dates (e.g., 1st instead of 1th).
+-   **Subscriber Status Management (Bug Fixes):**
+    -   Fixed bugs where deactivating/reactivating a subscriber did not correctly update their status in the portal.
+    -   Added a hide/show toggle for the notification panel on the subscriber dashboard.
+-   **Wallet Credit Display:**
+    -   Implemented backend and frontend changes to display a subscriber's advance payments (wallet credit) on their dashboard and account page.
+-   **PayMongo Integration (Full Implementation & Bug Fixes):**
+    -   Created a secure admin settings page to manage PayMongo API keys, including encryption and a connection test feature.
+    -   Implemented the Pay Now button flow, which creates a PayMongo checkout session and redirects the user for payment.
+    -   Fixed an issue where the Pay Now button was not appearing because the integration was disabled by default in the settings.
+    -   **Resolved the critical payment reflection bug** by correcting the backend verification logic.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1:** The address data for municipalities and barangays is incomplete sample data.
+-   **Issue 1:** Address data for municipalities and barangays is incomplete sample data.
 
 **Known issue recurrence from previous fork**
 -   None.
@@ -102,78 +88,73 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, Pydantic, pymongo, JWT authentication.
--   **Frontend:** React, React Router, Axios, TailwindCSS, Shadcn/UI, Recharts.
--   **Integrations:**  for Mikrotik, Web Bluetooth API for printing.
+-   **Backend:** FastAPI, Pydantic, pymongo, JWT,  for Fernet encryption.
+-   **Frontend:** React, React Router, Axios, TailwindCSS, Shadcn/UI.
+-   **Integrations:**  (Mikrotik), Web Bluetooth API, PayMongo API (via ).
 
 **key DB schema**
--   **receipt_settings:** Added optional  field.
--   **discounts:** (New) , ,  ('fixed', 'percentage'), , , , , .
--   **payments:** Added , , .
+-   **subscribers:** Added  (string),  (float). The  field is now reliably updated.
+-   **settings:** Added encrypted , , and boolean toggles , .
+-   **online_payments:** (New) Tracks PayMongo checkout sessions with fields like , , , , and .
 
 **changes in tech stack**
--   None.
+-    was added to backend dependencies for PayMongo API communication.
 
 **All files of reference**
--   : Heavily modified with Discount, Rebate, and Subscriber Portal endpoints.
--   : Text change.
--   : Added discount stats card.
--   : Major updates for discount application and receipt printing fixes.
--   : Updated for branch field and multi-line footer.
--   : New component for managing discounts.
--   : Updated with completed features.
+-   : Heavily modified for Subscriber Portal, Wallet, and full PayMongo integration (settings, checkout, verification). Includes fixes for subscriber activation/deactivation and PayMongo payment status logic.
+-   : Added routes for the subscriber portal.
+-   : New file for subscriber login.
+-   : Main subscriber dashboard, heavily modified.
+-   : New directory containing dashboard components.
+-   : New file for the PayMongo settings UI.
+-   : Updated to add PayMongo to the settings menu.
+-   : Updated to reflect completion of Subscriber Portal and PayMongo integration.
 
 **Areas that need refactoring**:
--   **CRITICAL:** The  file is now over 5000 lines. It is imperative to propose a refactoring task to the user to modularize the backend into a proper , , and  structure. This will improve maintainability and prevent future development from slowing down.
+-   **CRITICAL:** The  file is now over 6000 lines. It is imperative to propose a refactoring task to the user to modularize the backend into a proper , , and  structure. This has become a significant maintainability risk.
 
 **key api endpoints**
--   : (New) Full CRUD for discounts.
--   : (New) Fetches available discounts for a subscriber.
--   : (Enhanced) Updated to accept and record applied discounts.
--   : (New) Authenticates a subscriber.
--   : (New) Fetches details for the logged-in subscriber.
--   : (New) Fetches bills for the logged-in subscriber.
--   : (New) Fetches payment history for the logged-in subscriber.
--   : (New) Fetches job orders for the logged-in subscriber.
+-   : Authenticates a subscriber.
+-   : Fetches data for the subscriber dashboard, including wallet and status.
+-   : Saves encrypted PayMongo API keys.
+-   : Creates a payment session with PayMongo.
+-   : (Modified) Verifies payment status with PayMongo. This was the endpoint containing the critical fix.
+-   , : (Modified) Updated to correctly set the subscriber  field.
 
 **Critical Info for New Agent**
--   The immediate task is to build the frontend for the **Subscriber Portal**. The necessary backend endpoints are already defined in .
--   The first frontend step should be creating the login page (), the main dashboard page (), and adding their routes to .
--   The user has specifically requested that the new portal be **mobile-responsive**.
--   Once the current task is stable, it is crucial to propose the refactoring of the monolithic  file to the user.
+-   The immediate priority is confirming with the user that the PayMongo payment reflection fix works for a new transaction. Do not start new tasks until this is verified.
+-   The user last reported a successful payment on PayMongo's side that did not update in the app. The agent implemented a fix by changing how the payment status is checked in the PayMongo API response.
+-   Once the payment issue is resolved, the most important next step is to propose the refactoring of the monolithic  file. This is a critical piece of technical debt that will hinder future development.
 
 **documents and test reports created in this job**
 -   
--    (Updated)
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requested to start work on the Subscriber Portal, outlining key features.
-2.  **User:** Gave approval to proceed with the Subscriber Portal plan.
-3.  **User:** Approved the plan to change the text on the login page.
-4.  **User:** Requested to change Billing System to APL Billing System on the login page.
-5.  **User:** Reported that the select subscriber feature in the discount module was not working. (FIXED)
-6.  **User:** Provided clarification and choices for how the discount/rebates feature should work.
-7.  **User:** Requested the implementation of a discount/rebates feature.
-8.  **User:** Asked to allow newlines (paragraphs) in the receipt footer. (FIXED)
-9.  **User:** Reported issues with the printed receipt: logo and address not showing, and font sizes were too large. (FIXED)
-10. **Agent:** Finished the initial implementation of the receipt printing feature.
+-   **10.  (User confirms the bug, provides image proof) - PENDING VERIFICATION**
+-   9.  (User reports bug)
+-   8.  (Fixed - PayMongo was disabled in settings)
+-   7.  (User prompt to continue)
+-   6.  (User requests PayMongo integration)
+-   5.  (Investigated - no bug found)
+-   4.  (Investigated - no bug found)
+-   3.  (Fixed)
+-   2.  (Fixed)
+-   1.  (Implemented)
 
 **Project Health Check:**
--   **Broken:**
-    -   None.
--   **Partially Implemented:**
-    -   **Subscriber Portal:** Backend endpoints are created, but the entire frontend is missing.
--   **Mocked:**
-    -   Address data (provinces, municipalities, barangays) is sample data.
+-   **Broken:** Online payment processing is pending user verification after a critical bug fix.
+-   **Mocked:** Address data (provinces, municipalities, barangays) is sample data.
 -   **Technical Debt:**
-    -   The  babel plugin is disabled in .
-    -    is a critically large monolithic file (>5000 lines).
+    -   The  babel plugin is disabled.
+    -    is a critically large monolithic file (>6000 lines).
 
 **3rd Party Integrations**
--   **Mikrotik RouterOS API:** Using the  Python library for PPPoE management.
+-   **Mikrotik RouterOS API:** Using  for PPPoE management.
+-   **PayMongo:** Using  to interact with the REST API for online payments.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES (for receipt printing).
+-   **Testing agent used after significant changes:** YES
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** 
 -   **Known regressions:** None.
@@ -182,6 +163,7 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
 -   **Admin:**  / 
 -   **Cashier:**  / 
 -   **Technician:**  / 
+-   **Subscriber:** Use an existing account from the DB (e.g.,  with pw , or others with default pw ).
 
 **What agent forgot to execute**
--   The agent successfully identified and fixed all issues raised by the user in this session before moving on to the next major feature. No outstanding unaddressed items were noted.</analysis>
+-   The agent did not yet propose the critical refactoring of  to the user. This should be the next action item after the current PayMongo bug is confirmed to be resolved.</analysis>
