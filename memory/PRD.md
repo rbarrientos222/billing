@@ -1,5 +1,7 @@
 # Billing System - Product Requirements Document
 
+## Last Updated: February 24, 2026
+
 ## Original Problem Statement
 Build a billing system with the following features:
 
