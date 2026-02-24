@@ -21,7 +21,8 @@ export default function PaymongoSettings() {
     secret_key: '',
     webhook_secret: '',
     is_live_mode: false,
-    enabled: false
+    enabled: false,
+    service_fee: 0
   });
   const [currentSettings, setCurrentSettings] = useState(null);
   const [loading, setLoading] = useState(true);
