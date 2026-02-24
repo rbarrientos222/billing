@@ -2107,16 +2107,26 @@ async def get_subscriber_equipment(account_number: str, current_user: dict = Dep
 async def get_today_payment_stats(current_user: dict = Depends(get_current_user)):
     """
     Get payment statistics for today.
+    For cashiers, only show their own collections.
+    For admins/billing, show all collections.
     """
     if current_user['role'] not in ['admin', 'cashier', 'billing']:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    # Get start of today
-    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    # Get start of today in Philippine timezone
+    ph_now = get_ph_now()
+    today_start = ph_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Build match filter
+    match_filter = {"payment_date": {"$gte": today_start}}
+    
+    # For cashiers, only show their own collections
+    if current_user['role'] == 'cashier':
+        match_filter["received_by"] = current_user['username']
     
     # Count and sum today's payments - handle both legacy 'amount' and centralized 'total_amount'
     pipeline = [
-        {"$match": {"payment_date": {"$gte": today_start}}},
+        {"$match": match_filter},
         {"$group": {
             "_id": None,
             "total": {"$sum": {"$ifNull": ["$total_amount", {"$ifNull": ["$amount", 0]}]}},
@@ -2130,13 +2140,15 @@ async def get_today_payment_stats(current_user: dict = Depends(get_current_user)
         return {
             "total": result[0]['total'],
             "count": result[0]['count'],
-            "date": today_start.strftime("%Y-%m-%d")
+            "date": today_start.strftime("%Y-%m-%d"),
+            "filtered_by": current_user['username'] if current_user['role'] == 'cashier' else "all"
         }
     else:
         return {
             "total": 0,
             "count": 0,
-            "date": today_start.strftime("%Y-%m-%d")
+            "date": today_start.strftime("%Y-%m-%d"),
+            "filtered_by": current_user['username'] if current_user['role'] == 'cashier' else "all"
         }
 
 @api_router.post("/billing/preview-prorated")
