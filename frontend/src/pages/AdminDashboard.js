@@ -534,6 +534,7 @@ export default function AdminDashboard({ user, onLogout }) {
               </React.Suspense>
             } />
             <Route path="/expenses" element={<ExpenseManagement />} />
+            <Route path="/reports" element={<Reports />} />
             {/* Settings Sub-routes */}
             <Route path="/settings/users" element={<UserManagement />} />
             <Route path="/settings/plans" element={<SubscriptionPlans />} />
