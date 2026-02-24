@@ -75,6 +75,7 @@ export default function AdminDashboard({ user, onLogout }) {
     { name: 'Purchasing', path: '/admin/purchasing', icon: ShoppingCart },
     { name: 'Inventory', path: '/admin/inventory', icon: Package },
     { name: 'Expenses', path: '/admin/expenses', icon: DollarSign },
+    { name: 'Reports', path: '/admin/reports', icon: BarChart3 },
   ];
 
   const settingsSubMenu = [
