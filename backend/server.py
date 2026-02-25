@@ -6328,7 +6328,7 @@ async def get_import_template(type: str, current_user: dict = Depends(get_curren
             'account_number', 'first_name', 'last_name', 'email', 'contact_number',
             'address', 'barangay', 'municipality', 'province',
             'plan_name', 'plan_amount', 'billing_day', 'status',
-            'pppoe_username', 'mac_address'
+            'pppoe_username', 'mac_address', 'installation_date'
         ],
         "expenses": [
             'expense_id', 'date', 'category', 'description', 'amount',
@@ -6346,7 +6346,7 @@ async def get_import_template(type: str, current_user: dict = Depends(get_curren
     if type == "subscribers":
         writer.writerow(['', 'John', 'Doe', 'john@example.com', '09123456789',
                         '123 Main St', 'Barangay 1', 'City', 'Province',
-                        'Plan A', '999', '1', 'active', '', ''])
+                        'Plan A', '999', '1', 'active', 'johndoe', '', '2026-01-15'])
     elif type == "expenses":
         writer.writerow(['', '2026-02-24', 'Utilities', 'Electric Bill', '1500',
                         'cash', 'Meralco', '', ''])
