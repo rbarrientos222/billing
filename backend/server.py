@@ -6576,6 +6576,15 @@ async def get_import_template(type: str, current_user: dict = Depends(get_curren
         "expenses": [
             'expense_id', 'date', 'category', 'description', 'amount',
             'payment_method', 'vendor', 'reference_number', 'notes'
+        ],
+        "invoices": [
+            'invoice_number', 'subscriber_id', 'subscriber_name', 'description',
+            'amount', 'paid_amount', 'paid', 'due_date', 'billing_period_start',
+            'billing_period_end', 'invoice_type'
+        ],
+        "payments": [
+            'or_number', 'payment_date', 'subscriber_id', 'subscriber_name',
+            'total_amount', 'payment_mode', 'received_by', 'description', 'invoices_settled'
         ]
     }
     
@@ -6595,6 +6604,12 @@ async def get_import_template(type: str, current_user: dict = Depends(get_curren
     elif type == "expenses":
         writer.writerow(['', '2026-02-24', 'Utilities', 'Electric Bill', '1500',
                         'cash', 'Meralco', '', ''])
+    elif type == "invoices":
+        writer.writerow(['', 'ACC123456', 'John Doe', 'Monthly Bill - February 2026',
+                        '999', '0', 'false', '2026-02-28', '2026-02-01', '2026-02-28', 'monthly'])
+    elif type == "payments":
+        writer.writerow(['', '2026-02-24', 'ACC123456', 'John Doe',
+                        '999', 'cash', 'cashier1', 'Monthly payment', 'INV20260224ABC123'])
     
     output.seek(0)
     
