@@ -591,6 +591,157 @@ export default function Reports() {
             <p className="text-center text-muted-foreground py-8">Click "Generate Report" to view collector data</p>
           )}
         </TabsContent>
+
+        {/* DATA IMPORT TAB */}
+        <TabsContent value="import" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Invoices Import/Export */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Invoices
+                </CardTitle>
+                <CardDescription>
+                  Import/Export invoice records for billing integration
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <ExportButton 
+                    endpoint="/export/invoices" 
+                    filename={`invoices_${new Date().toISOString().split('T')[0]}.csv`}
+                    label="Export Invoices"
+                  />
+                  <ImportButton 
+                    endpoint="/import/invoices" 
+                    templateType="invoices"
+                    label="Import Invoices"
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p><strong>Export:</strong> Downloads all invoices as CSV</p>
+                  <p><strong>Import:</strong> Creates/updates invoices from CSV</p>
+                  <p><strong>Required fields:</strong> subscriber_id, amount</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Payments Import/Export */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Payments
+                </CardTitle>
+                <CardDescription>
+                  Import/Export payment records for historical data migration
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <ExportButton 
+                    endpoint="/export/payments" 
+                    filename={`payments_${new Date().toISOString().split('T')[0]}.csv`}
+                    label="Export Payments"
+                  />
+                  <ImportButton 
+                    endpoint="/import/payments" 
+                    templateType="payments"
+                    label="Import Payments"
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p><strong>Export:</strong> Downloads all payments as CSV</p>
+                  <p><strong>Import:</strong> Imports historical payment records</p>
+                  <p><strong>Required fields:</strong> subscriber_id, total_amount</p>
+                  <p className="text-amber-600"><strong>Note:</strong> Duplicate OR numbers are skipped</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Subscribers Import/Export */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Subscribers
+                </CardTitle>
+                <CardDescription>
+                  Import/Export subscriber records
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <ExportButton 
+                    endpoint="/export/subscribers" 
+                    filename={`subscribers_${new Date().toISOString().split('T')[0]}.csv`}
+                    label="Export Subscribers"
+                  />
+                  <ImportButton 
+                    endpoint="/import/subscribers" 
+                    templateType="subscribers"
+                    label="Import Subscribers"
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p><strong>Export:</strong> Downloads all subscribers as CSV</p>
+                  <p><strong>Import:</strong> Creates/updates subscriber accounts</p>
+                  <p><strong>Note:</strong> New accounts get default portal password: 0000</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Expenses Import/Export */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Expenses
+                </CardTitle>
+                <CardDescription>
+                  Import/Export expense records
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <ExportButton 
+                    endpoint="/export/expenses" 
+                    filename={`expenses_${new Date().toISOString().split('T')[0]}.csv`}
+                    label="Export Expenses"
+                  />
+                  <ImportButton 
+                    endpoint="/import/expenses" 
+                    templateType="expenses"
+                    label="Import Expenses"
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p><strong>Export:</strong> Downloads all expenses as CSV</p>
+                  <p><strong>Import:</strong> Imports new expense records</p>
+                  <p><strong>Required fields:</strong> date, amount, category</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Import Tips */}
+          <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200">
+            <CardContent className="pt-6">
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-blue-600" />
+                Import Tips
+              </h4>
+              <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                <li>Download the template first to see the required column format</li>
+                <li>Leave account_number/invoice_number/or_number empty to auto-generate</li>
+                <li>Dates should be in YYYY-MM-DD format</li>
+                <li>For status fields, use: active/inactive, true/false, yes/no</li>
+                <li>Existing records are updated, new records are created</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
