@@ -6122,6 +6122,9 @@ async def import_subscribers(file: UploadFile = File(...), current_user: dict = 
                 "status": row.get('status', 'active').strip().lower(),
                 "is_active": row.get('status', 'active').strip().lower() == 'active',
                 "pppoe_username": row.get('pppoe_username', '').strip(),
+                "pppoe_password": row.get('pppoe_password', '').strip(),
+                "pppoe_profile": row.get('pppoe_profile', '').strip(),
+                "pppoe_activated": row.get('pppoe_activated', '').strip().lower() in ['true', 'yes', '1', 'activated'],
                 "mac_address": row.get('mac_address', '').strip(),
             }
             
