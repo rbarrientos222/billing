@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ExportButton } from '@/components/admin/ImportExport';
+import { ExportButton, ImportButton } from '@/components/admin/ImportExport';
 import { toast } from 'sonner';
 import { 
   FileText, Calendar, DollarSign, Users, TrendingUp, 
   AlertCircle, Clock, Filter, Download, RefreshCw, Loader2,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Upload, Database
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 
