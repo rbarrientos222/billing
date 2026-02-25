@@ -1037,7 +1037,7 @@ export default function SubscriberManagement() {
                         <TableCell className="font-mono text-xs">{sub.account_number}</TableCell>
                         <TableCell className="font-medium">{sub.first_name} {sub.last_name}</TableCell>
                         <TableCell>{sub.phone}</TableCell>
-                        <TableCell>{sub.plan_id}</TableCell>
+                        <TableCell>{sub.plan_id || sub.plan_name || '-'}</TableCell>
                         <TableCell className="text-xs">
                           {sub.installation_date ? new Date(sub.installation_date).toLocaleDateString() : '-'}
                         </TableCell>
