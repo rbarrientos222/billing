@@ -6106,7 +6106,8 @@ async def import_subscribers(file: UploadFile = File(...), current_user: dict = 
                 "first_name": row.get('first_name', '').strip(),
                 "last_name": row.get('last_name', '').strip(),
                 "email": row.get('email', '').strip(),
-                "contact_number": row.get('contact_number', '').strip(),
+                "phone": row.get('contact_number', '').strip(),  # Map to 'phone' field used by UI
+                "contact_number": row.get('contact_number', '').strip(),  # Keep for compatibility
                 "address": row.get('address', '').strip(),
                 "barangay": row.get('barangay', '').strip(),
                 "municipality": row.get('municipality', '').strip(),
