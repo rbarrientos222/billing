@@ -339,7 +339,7 @@ export default function Reports() {
                   Generate Report
                 </Button>
                 <ExportButton 
-                  endpoint="/api/export/payments" 
+                  endpoint="/export/payments" 
                   filename={`payments_${new Date().toISOString().split('T')[0]}.csv`}
                   filters={{ start_date: collectionStartDate, end_date: collectionEndDate }}
                   label="Export CSV"
