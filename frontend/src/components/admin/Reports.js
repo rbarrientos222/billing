@@ -163,7 +163,7 @@ export default function Reports() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="receivables" className="flex items-center gap-2">
             <AlertCircle className="w-4 h-4" />
             Receivables
@@ -175,6 +175,10 @@ export default function Reports() {
           <TabsTrigger value="collectors" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             By Collector
+          </TabsTrigger>
+          <TabsTrigger value="import" className="flex items-center gap-2">
+            <Database className="w-4 h-4" />
+            Data Import
           </TabsTrigger>
         </TabsList>
 
