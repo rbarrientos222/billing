@@ -36,36 +36,45 @@ export function ExportButton({ endpoint, filename, label = "Export CSV", filters
         responseType: 'blob'
       });
       
-      // Create download using FileSaver-style approach
-      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
-      const downloadFilename = filename || 'export.csv';
-      
-      // Check for IE/Edge
-      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-        window.navigator.msSaveOrOpenBlob(blob, downloadFilename);
-      } else {
-        // Create a temporary anchor element
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.style.display = 'none';
-        link.href = downloadUrl;
-        link.setAttribute('download', downloadFilename);
-        
-        // Append to body, click, and cleanup
-        document.body.appendChild(link);
-        link.click();
-        
-        // Cleanup after a small delay to ensure download starts
-        setTimeout(() => {
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(downloadUrl);
-        }, 100);
+      // Verify we got data
+      if (!response.data || response.data.size === 0) {
+        toast.error('No data to export');
+        return;
       }
       
-      toast.success(`Export downloaded: ${downloadFilename}`);
+      const downloadFilename = filename || 'export.csv';
+      
+      // Create blob with BOM for Excel compatibility
+      const BOM = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([BOM, response.data], { type: 'text/csv;charset=utf-8;' });
+      
+      // Create object URL
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Create and configure link
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = downloadFilename;
+      link.style.visibility = 'hidden';
+      link.style.position = 'absolute';
+      link.style.left = '-9999px';
+      
+      // Add to DOM
+      document.body.appendChild(link);
+      
+      // Trigger download
+      link.click();
+      
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      }, 1000);
+      
+      toast.success(`Downloaded: ${downloadFilename}`);
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Failed to export data');
+      toast.error(error.response?.data?.detail || 'Failed to export data');
     } finally {
       setLoading(false);
     }
