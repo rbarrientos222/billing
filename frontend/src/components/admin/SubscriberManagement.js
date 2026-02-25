@@ -577,12 +577,12 @@ export default function SubscriberManagement() {
         </div>
         <div className="flex items-center gap-2">
           <ExportButton 
-            endpoint="/api/export/subscribers" 
+            endpoint="/export/subscribers" 
             filename={`subscribers_${new Date().toISOString().split('T')[0]}.csv`}
             label="Export"
           />
           <ImportButton 
-            endpoint="/api/import/subscribers" 
+            endpoint="/import/subscribers" 
             templateType="subscribers"
             onSuccess={fetchSubscribers}
             label="Import"
