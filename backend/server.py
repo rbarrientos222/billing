@@ -6188,8 +6188,13 @@ async def export_payments(
         if isinstance(p.get('payment_date'), datetime):
             row['payment_date'] = p['payment_date'].strftime('%Y-%m-%d %H:%M:%S')
         # Format invoices settled as comma-separated
-        if isinstance(p.get('invoices_settled'), list):
-            row['invoices_settled'] = ', '.join(p['invoices_settled'])
+        invoices = p.get('invoices_settled', [])
+        if isinstance(invoices, list):
+            # Handle both string list and dict list (invoice_number field)
+            if invoices and isinstance(invoices[0], dict):
+                row['invoices_settled'] = ', '.join([inv.get('invoice_number', str(inv)) for inv in invoices])
+            else:
+                row['invoices_settled'] = ', '.join([str(inv) for inv in invoices])
         # Use payment_mode or mode
         row['payment_mode'] = p.get('payment_mode') or p.get('mode', '')
         writer.writerow(row)
