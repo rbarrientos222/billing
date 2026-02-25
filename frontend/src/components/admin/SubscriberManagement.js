@@ -952,6 +952,7 @@ export default function SubscriberManagement() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card>
