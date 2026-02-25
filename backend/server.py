@@ -6045,7 +6045,8 @@ async def export_subscribers(current_user: dict = Depends(get_current_user)):
         'account_number', 'first_name', 'last_name', 'email', 'contact_number',
         'address', 'barangay', 'municipality', 'province',
         'plan_name', 'plan_id', 'plan_amount', 'billing_day', 'status',
-        'pppoe_username', 'mac_address', 'installation_date', 'created_at'
+        'pppoe_username', 'pppoe_password', 'pppoe_profile', 'pppoe_activated',
+        'mac_address', 'installation_date', 'created_at'
     ]
     
     output = StringIO()
