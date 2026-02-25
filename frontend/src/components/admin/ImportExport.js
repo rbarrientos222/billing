@@ -36,19 +36,35 @@ export function ExportButton({ endpoint, filename, label = "Export CSV", filters
         responseType: 'blob'
       });
       
-      // Create download link
-      const blob = new Blob([response.data], { type: 'text/csv' });
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = filename || 'export.csv';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(downloadUrl);
+      // Create download using FileSaver-style approach
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const downloadFilename = filename || 'export.csv';
       
-      toast.success('Export downloaded successfully');
+      // Check for IE/Edge
+      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+        window.navigator.msSaveOrOpenBlob(blob, downloadFilename);
+      } else {
+        // Create a temporary anchor element
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        link.href = downloadUrl;
+        link.setAttribute('download', downloadFilename);
+        
+        // Append to body, click, and cleanup
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup after a small delay to ensure download starts
+        setTimeout(() => {
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(downloadUrl);
+        }, 100);
+      }
+      
+      toast.success(`Export downloaded: ${downloadFilename}`);
     } catch (error) {
+      console.error('Export error:', error);
       toast.error('Failed to export data');
     } finally {
       setLoading(false);
