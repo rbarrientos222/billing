@@ -6030,5 +6030,324 @@ async def get_collections_by_collector(
         "end_date": end_date
     }
 
+# ========== IMPORT/EXPORT MODULE ==========
+
+@api_router.get("/export/subscribers")
+async def export_subscribers(current_user: dict = Depends(get_current_user)):
+    """Export all subscribers to CSV"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    subscribers = await db.subscribers.find({}, {"_id": 0}).to_list(10000)
+    
+    # Define CSV columns
+    columns = [
+        'account_number', 'first_name', 'last_name', 'email', 'contact_number',
+        'address', 'barangay', 'municipality', 'province',
+        'plan_name', 'plan_amount', 'billing_day', 'status',
+        'pppoe_username', 'mac_address', 'installation_date', 'created_at'
+    ]
+    
+    output = StringIO()
+    writer = csv.DictWriter(output, fieldnames=columns, extrasaction='ignore')
+    writer.writeheader()
+    
+    for sub in subscribers:
+        # Flatten nested address if present
+        row = {**sub}
+        if 'address_details' in sub:
+            addr = sub.get('address_details', {})
+            row['barangay'] = addr.get('barangay', sub.get('barangay', ''))
+            row['municipality'] = addr.get('municipality', sub.get('municipality', ''))
+            row['province'] = addr.get('province', sub.get('province', ''))
+        writer.writerow(row)
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=subscribers_{get_ph_now().strftime('%Y%m%d')}.csv"}
+    )
+
+@api_router.post("/import/subscribers")
+async def import_subscribers(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    """Import subscribers from CSV"""
+    if current_user['role'] not in ['admin']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Please upload a CSV file")
+    
+    content = await file.read()
+    decoded = content.decode('utf-8-sig')  # Handle BOM
+    reader = csv.DictReader(StringIO(decoded))
+    
+    imported = 0
+    updated = 0
+    errors = []
+    
+    for row_num, row in enumerate(reader, start=2):  # Start at 2 to account for header
+        try:
+            account_number = row.get('account_number', '').strip()
+            
+            if not account_number:
+                # Generate new account number if not provided
+                account_number = f"ACC{uuid.uuid4().hex[:8].upper()}"
+            
+            # Check if subscriber exists
+            existing = await db.subscribers.find_one({"account_number": account_number})
+            
+            subscriber_data = {
+                "account_number": account_number,
+                "first_name": row.get('first_name', '').strip(),
+                "last_name": row.get('last_name', '').strip(),
+                "email": row.get('email', '').strip(),
+                "contact_number": row.get('contact_number', '').strip(),
+                "address": row.get('address', '').strip(),
+                "barangay": row.get('barangay', '').strip(),
+                "municipality": row.get('municipality', '').strip(),
+                "province": row.get('province', '').strip(),
+                "plan_name": row.get('plan_name', '').strip(),
+                "plan_amount": float(row.get('plan_amount', 0) or 0),
+                "billing_day": int(row.get('billing_day', 1) or 1),
+                "status": row.get('status', 'active').strip().lower(),
+                "pppoe_username": row.get('pppoe_username', '').strip(),
+                "mac_address": row.get('mac_address', '').strip(),
+            }
+            
+            if existing:
+                # Update existing
+                await db.subscribers.update_one(
+                    {"account_number": account_number},
+                    {"$set": {**subscriber_data, "updated_at": get_ph_now().isoformat()}}
+                )
+                updated += 1
+            else:
+                # Insert new
+                subscriber_data["created_at"] = get_ph_now().isoformat()
+                subscriber_data["portal_password"] = "0000"  # Default password
+                await db.subscribers.insert_one(subscriber_data)
+                imported += 1
+                
+        except Exception as e:
+            errors.append(f"Row {row_num}: {str(e)}")
+    
+    return {
+        "message": f"Import complete: {imported} new, {updated} updated",
+        "imported": imported,
+        "updated": updated,
+        "errors": errors[:10]  # Return first 10 errors
+    }
+
+@api_router.get("/export/payments")
+async def export_payments(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Export payment history to CSV"""
+    if current_user['role'] not in ['admin', 'billing', 'cashier']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Build query
+    query = {}
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            query["payment_date"] = {"$gte": start_dt}
+        except:
+            pass
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            end_dt = end_dt.replace(hour=23, minute=59, second=59)
+            if "payment_date" in query:
+                query["payment_date"]["$lte"] = end_dt
+            else:
+                query["payment_date"] = {"$lte": end_dt}
+        except:
+            pass
+    
+    payments = await db.payments.find(query, {"_id": 0}).sort("payment_date", -1).to_list(50000)
+    
+    # Define CSV columns
+    columns = [
+        'or_number', 'payment_date', 'subscriber_id', 'subscriber_name',
+        'total_amount', 'payment_mode', 'received_by', 'description',
+        'invoices_settled', 'wallet_credit'
+    ]
+    
+    output = StringIO()
+    writer = csv.DictWriter(output, fieldnames=columns, extrasaction='ignore')
+    writer.writeheader()
+    
+    for p in payments:
+        row = {**p}
+        # Format payment date
+        if isinstance(p.get('payment_date'), datetime):
+            row['payment_date'] = p['payment_date'].strftime('%Y-%m-%d %H:%M:%S')
+        # Format invoices settled as comma-separated
+        if isinstance(p.get('invoices_settled'), list):
+            row['invoices_settled'] = ', '.join(p['invoices_settled'])
+        # Use payment_mode or mode
+        row['payment_mode'] = p.get('payment_mode') or p.get('mode', '')
+        writer.writerow(row)
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=payments_{get_ph_now().strftime('%Y%m%d')}.csv"}
+    )
+
+@api_router.get("/export/expenses")
+async def export_expenses(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Export expenses to CSV"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Build query
+    query = {}
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            query["date"] = {"$gte": start_dt.strftime('%Y-%m-%d')}
+        except:
+            pass
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            if "date" in query:
+                query["date"]["$lte"] = end_dt.strftime('%Y-%m-%d')
+            else:
+                query["date"] = {"$lte": end_dt.strftime('%Y-%m-%d')}
+        except:
+            pass
+    
+    expenses = await db.expenses.find(query, {"_id": 0}).sort("date", -1).to_list(50000)
+    
+    # Define CSV columns
+    columns = [
+        'expense_id', 'date', 'category', 'description', 'amount',
+        'payment_method', 'vendor', 'reference_number', 'notes', 'created_by'
+    ]
+    
+    output = StringIO()
+    writer = csv.DictWriter(output, fieldnames=columns, extrasaction='ignore')
+    writer.writeheader()
+    
+    for exp in expenses:
+        writer.writerow(exp)
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=expenses_{get_ph_now().strftime('%Y%m%d')}.csv"}
+    )
+
+@api_router.post("/import/expenses")
+async def import_expenses(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    """Import expenses from CSV"""
+    if current_user['role'] not in ['admin']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Please upload a CSV file")
+    
+    content = await file.read()
+    decoded = content.decode('utf-8-sig')
+    reader = csv.DictReader(StringIO(decoded))
+    
+    imported = 0
+    errors = []
+    
+    for row_num, row in enumerate(reader, start=2):
+        try:
+            expense_id = row.get('expense_id', '').strip()
+            if not expense_id:
+                expense_id = f"EXP{uuid.uuid4().hex[:8].upper()}"
+            
+            # Check if expense exists
+            existing = await db.expenses.find_one({"expense_id": expense_id})
+            if existing:
+                errors.append(f"Row {row_num}: Expense {expense_id} already exists")
+                continue
+            
+            expense_data = {
+                "expense_id": expense_id,
+                "date": row.get('date', get_ph_now().strftime('%Y-%m-%d')).strip(),
+                "category": row.get('category', 'Other').strip(),
+                "description": row.get('description', '').strip(),
+                "amount": float(row.get('amount', 0) or 0),
+                "payment_method": row.get('payment_method', 'cash').strip(),
+                "vendor": row.get('vendor', '').strip(),
+                "reference_number": row.get('reference_number', '').strip(),
+                "notes": row.get('notes', '').strip(),
+                "created_by": current_user['username'],
+                "created_at": get_ph_now().isoformat()
+            }
+            
+            await db.expenses.insert_one(expense_data)
+            imported += 1
+            
+        except Exception as e:
+            errors.append(f"Row {row_num}: {str(e)}")
+    
+    return {
+        "message": f"Import complete: {imported} expenses imported",
+        "imported": imported,
+        "errors": errors[:10]
+    }
+
+@api_router.get("/export/template/{type}")
+async def get_import_template(type: str, current_user: dict = Depends(get_current_user)):
+    """Get CSV template for import"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    templates = {
+        "subscribers": [
+            'account_number', 'first_name', 'last_name', 'email', 'contact_number',
+            'address', 'barangay', 'municipality', 'province',
+            'plan_name', 'plan_amount', 'billing_day', 'status',
+            'pppoe_username', 'mac_address'
+        ],
+        "expenses": [
+            'expense_id', 'date', 'category', 'description', 'amount',
+            'payment_method', 'vendor', 'reference_number', 'notes'
+        ]
+    }
+    
+    if type not in templates:
+        raise HTTPException(status_code=400, detail=f"Invalid template type. Available: {list(templates.keys())}")
+    
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(templates[type])
+    # Add sample row
+    if type == "subscribers":
+        writer.writerow(['', 'John', 'Doe', 'john@example.com', '09123456789',
+                        '123 Main St', 'Barangay 1', 'City', 'Province',
+                        'Plan A', '999', '1', 'active', '', ''])
+    elif type == "expenses":
+        writer.writerow(['', '2026-02-24', 'Utilities', 'Electric Bill', '1500',
+                        'cash', 'Meralco', '', ''])
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={type}_template.csv"}
+    )
+
 # Include router (MUST be after all route definitions)
 app.include_router(api_router)
