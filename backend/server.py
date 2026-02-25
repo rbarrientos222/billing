@@ -6044,7 +6044,7 @@ async def export_subscribers(current_user: dict = Depends(get_current_user)):
     columns = [
         'account_number', 'first_name', 'last_name', 'email', 'contact_number',
         'address', 'barangay', 'municipality', 'province',
-        'plan_name', 'plan_amount', 'billing_day', 'status',
+        'plan_name', 'plan_id', 'plan_amount', 'billing_day', 'status',
         'pppoe_username', 'mac_address', 'installation_date', 'created_at'
     ]
     
@@ -6060,6 +6060,9 @@ async def export_subscribers(current_user: dict = Depends(get_current_user)):
             row['barangay'] = addr.get('barangay', sub.get('barangay', ''))
             row['municipality'] = addr.get('municipality', sub.get('municipality', ''))
             row['province'] = addr.get('province', sub.get('province', ''))
+        # Ensure plan_name is set from plan_id if missing
+        if not row.get('plan_name') and row.get('plan_id'):
+            row['plan_name'] = row['plan_id']
         writer.writerow(row)
     
     output.seek(0)
