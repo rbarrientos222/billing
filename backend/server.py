@@ -6116,6 +6116,11 @@ async def import_subscribers(file: UploadFile = File(...), current_user: dict = 
                 "mac_address": row.get('mac_address', '').strip(),
             }
             
+            # Handle installation_date if provided
+            install_date = row.get('installation_date', '').strip()
+            if install_date:
+                subscriber_data["installation_date"] = install_date
+            
             if existing:
                 # Update existing
                 await db.subscribers.update_one(
