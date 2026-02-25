@@ -575,13 +575,25 @@ export default function SubscriberManagement() {
           <h2 className="text-3xl font-heading font-bold" data-testid="subscriber-management-title">Subscriber Management</h2>
           <p className="text-muted-foreground mt-1">Manage subscriber accounts</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="add-subscriber-button">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Subscriber
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <ExportButton 
+            endpoint="/api/export/subscribers" 
+            filename={`subscribers_${new Date().toISOString().split('T')[0]}.csv`}
+            label="Export"
+          />
+          <ImportButton 
+            endpoint="/api/import/subscribers" 
+            templateType="subscribers"
+            onSuccess={fetchSubscribers}
+            label="Import"
+          />
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="add-subscriber-button">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Subscriber
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Register New Subscriber</DialogTitle>
