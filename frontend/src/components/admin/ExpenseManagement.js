@@ -260,6 +260,18 @@ export default function ExpenseManagement() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-3xl font-heading font-bold">Expense Management</h2>
         <div className="flex gap-2">
+          <ExportButton 
+            endpoint="/api/export/expenses" 
+            filename={`expenses_${new Date().toISOString().split('T')[0]}.csv`}
+            filters={{ start_date: filters.startDate, end_date: filters.endDate }}
+            label="Export"
+          />
+          <ImportButton 
+            endpoint="/api/import/expenses" 
+            templateType="expenses"
+            onSuccess={fetchExpenses}
+            label="Import"
+          />
           <Button variant="outline" onClick={() => setShowManageCategories(true)} data-testid="manage-categories-btn">
             <Tag className="h-4 w-4 mr-2" />
             Categories
