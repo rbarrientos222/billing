@@ -338,6 +338,12 @@ export default function Reports() {
                   {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
                   Generate Report
                 </Button>
+                <ExportButton 
+                  endpoint="/api/export/payments" 
+                  filename={`payments_${new Date().toISOString().split('T')[0]}.csv`}
+                  filters={{ start_date: collectionStartDate, end_date: collectionEndDate }}
+                  label="Export CSV"
+                />
                 <Button 
                   variant="outline" 
                   onClick={() => {
