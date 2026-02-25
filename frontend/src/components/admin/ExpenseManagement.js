@@ -261,13 +261,13 @@ export default function ExpenseManagement() {
         <h2 className="text-3xl font-heading font-bold">Expense Management</h2>
         <div className="flex gap-2">
           <ExportButton 
-            endpoint="/api/export/expenses" 
+            endpoint="/export/expenses" 
             filename={`expenses_${new Date().toISOString().split('T')[0]}.csv`}
             filters={{ start_date: dateFrom, end_date: dateTo }}
             label="Export"
           />
           <ImportButton 
-            endpoint="/api/import/expenses" 
+            endpoint="/import/expenses" 
             templateType="expenses"
             onSuccess={fetchExpenses}
             label="Import"
