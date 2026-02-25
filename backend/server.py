@@ -6330,6 +6330,235 @@ async def import_expenses(file: UploadFile = File(...), current_user: dict = Dep
         "errors": errors[:10]
     }
 
+@api_router.get("/export/invoices")
+async def export_invoices(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    status: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Export invoices to CSV"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Build query
+    query = {}
+    if start_date:
+        try:
+            query["created_at"] = {"$gte": start_date}
+        except:
+            pass
+    if end_date:
+        try:
+            if "created_at" in query:
+                query["created_at"]["$lte"] = end_date
+            else:
+                query["created_at"] = {"$lte": end_date}
+        except:
+            pass
+    if status:
+        if status.lower() == 'paid':
+            query["paid"] = True
+        elif status.lower() == 'unpaid':
+            query["paid"] = False
+    
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("created_at", -1).to_list(50000)
+    
+    # Define CSV columns
+    columns = [
+        'invoice_number', 'subscriber_id', 'subscriber_name', 'description',
+        'amount', 'paid_amount', 'paid', 'due_date', 'billing_period_start',
+        'billing_period_end', 'invoice_type', 'created_at'
+    ]
+    
+    output = StringIO()
+    writer = csv.DictWriter(output, fieldnames=columns, extrasaction='ignore')
+    writer.writeheader()
+    
+    for inv in invoices:
+        row = {**inv}
+        # Format dates
+        for date_field in ['due_date', 'billing_period_start', 'billing_period_end', 'created_at']:
+            if isinstance(inv.get(date_field), datetime):
+                row[date_field] = inv[date_field].strftime('%Y-%m-%d')
+        writer.writerow(row)
+    
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=invoices_{get_ph_now().strftime('%Y%m%d')}.csv"}
+    )
+
+@api_router.post("/import/invoices")
+async def import_invoices(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    """Import invoices from CSV"""
+    if current_user['role'] not in ['admin']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Please upload a CSV file")
+    
+    content = await file.read()
+    decoded = content.decode('utf-8-sig')
+    reader = csv.DictReader(StringIO(decoded))
+    
+    imported = 0
+    updated = 0
+    errors = []
+    
+    for row_num, row in enumerate(reader, start=2):
+        try:
+            invoice_number = row.get('invoice_number', '').strip()
+            subscriber_id = row.get('subscriber_id', '').strip()
+            
+            if not subscriber_id:
+                errors.append(f"Row {row_num}: subscriber_id is required")
+                continue
+            
+            if not invoice_number:
+                # Generate invoice number
+                invoice_number = f"INV{get_ph_now().strftime('%Y%m%d')}{uuid.uuid4().hex[:6].upper()}"
+            
+            # Check if invoice exists
+            existing = await db.invoices.find_one({"invoice_number": invoice_number})
+            
+            # Get subscriber name if not provided
+            subscriber_name = row.get('subscriber_name', '').strip()
+            if not subscriber_name:
+                sub = await db.subscribers.find_one({"account_number": subscriber_id})
+                if sub:
+                    subscriber_name = f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip()
+            
+            amount = float(row.get('amount', 0) or 0)
+            paid_amount = float(row.get('paid_amount', 0) or 0)
+            paid_str = row.get('paid', '').strip().lower()
+            is_paid = paid_str in ['true', 'yes', '1'] or paid_amount >= amount
+            
+            invoice_data = {
+                "invoice_number": invoice_number,
+                "subscriber_id": subscriber_id,
+                "subscriber_name": subscriber_name,
+                "description": row.get('description', '').strip(),
+                "amount": amount,
+                "paid_amount": paid_amount,
+                "paid": is_paid,
+                "due_date": row.get('due_date', '').strip(),
+                "billing_period_start": row.get('billing_period_start', '').strip(),
+                "billing_period_end": row.get('billing_period_end', '').strip(),
+                "invoice_type": row.get('invoice_type', 'monthly').strip(),
+            }
+            
+            if existing:
+                await db.invoices.update_one(
+                    {"invoice_number": invoice_number},
+                    {"$set": {**invoice_data, "updated_at": get_ph_now().isoformat()}}
+                )
+                updated += 1
+            else:
+                invoice_data["created_at"] = get_ph_now().isoformat()
+                await db.invoices.insert_one(invoice_data)
+                imported += 1
+                
+        except Exception as e:
+            errors.append(f"Row {row_num}: {str(e)}")
+    
+    return {
+        "message": f"Import complete: {imported} new, {updated} updated",
+        "imported": imported,
+        "updated": updated,
+        "errors": errors[:10]
+    }
+
+@api_router.post("/import/payments")
+async def import_payments(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    """Import payment records from CSV (for historical data migration)"""
+    if current_user['role'] not in ['admin']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Please upload a CSV file")
+    
+    content = await file.read()
+    decoded = content.decode('utf-8-sig')
+    reader = csv.DictReader(StringIO(decoded))
+    
+    imported = 0
+    skipped = 0
+    errors = []
+    
+    for row_num, row in enumerate(reader, start=2):
+        try:
+            or_number = row.get('or_number', '').strip()
+            subscriber_id = row.get('subscriber_id', '').strip()
+            
+            if not subscriber_id:
+                errors.append(f"Row {row_num}: subscriber_id is required")
+                continue
+            
+            if not or_number:
+                # Generate OR number
+                or_number = f"OR{get_ph_now().strftime('%Y%m%d')}{uuid.uuid4().hex[:6].upper()}"
+            
+            # Check if payment exists
+            existing = await db.payments.find_one({"or_number": or_number})
+            if existing:
+                skipped += 1
+                continue
+            
+            # Get subscriber name if not provided
+            subscriber_name = row.get('subscriber_name', '').strip()
+            if not subscriber_name:
+                sub = await db.subscribers.find_one({"account_number": subscriber_id})
+                if sub:
+                    subscriber_name = f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip()
+            
+            # Parse payment date
+            payment_date_str = row.get('payment_date', '').strip()
+            if payment_date_str:
+                try:
+                    payment_date = datetime.fromisoformat(payment_date_str.replace('Z', '+00:00'))
+                except:
+                    try:
+                        payment_date = datetime.strptime(payment_date_str, '%Y-%m-%d %H:%M:%S')
+                    except:
+                        try:
+                            payment_date = datetime.strptime(payment_date_str, '%Y-%m-%d')
+                        except:
+                            payment_date = get_ph_now()
+            else:
+                payment_date = get_ph_now()
+            
+            payment_data = {
+                "or_number": or_number,
+                "subscriber_id": subscriber_id,
+                "subscriber_name": subscriber_name,
+                "total_amount": float(row.get('total_amount', 0) or 0),
+                "payment_mode": row.get('payment_mode', 'cash').strip(),
+                "mode": row.get('payment_mode', 'cash').strip(),
+                "payment_date": payment_date,
+                "received_by": row.get('received_by', 'Imported').strip(),
+                "description": row.get('description', 'Imported payment').strip(),
+                "invoices_settled": row.get('invoices_settled', '').strip().split(',') if row.get('invoices_settled') else [],
+                "imported": True,
+                "imported_at": get_ph_now().isoformat(),
+                "imported_by": current_user['username']
+            }
+            
+            await db.payments.insert_one(payment_data)
+            imported += 1
+                
+        except Exception as e:
+            errors.append(f"Row {row_num}: {str(e)}")
+    
+    return {
+        "message": f"Import complete: {imported} payments imported, {skipped} skipped (already exist)",
+        "imported": imported,
+        "skipped": skipped,
+        "errors": errors[:10]
+    }
+
 @api_router.get("/export/template/{type}")
 async def get_import_template(type: str, current_user: dict = Depends(get_current_user)):
     """Get CSV template for import"""
