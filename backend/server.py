@@ -6108,6 +6108,7 @@ async def import_subscribers(file: UploadFile = File(...), current_user: dict = 
                 "barangay": row.get('barangay', '').strip(),
                 "municipality": row.get('municipality', '').strip(),
                 "province": row.get('province', '').strip(),
+                "plan_id": row.get('plan_name', '').strip(),  # Map plan_name to plan_id
                 "plan_name": row.get('plan_name', '').strip(),
                 "plan_amount": float(row.get('plan_amount', 0) or 0),
                 "billing_day": int(row.get('billing_day', 1) or 1),
