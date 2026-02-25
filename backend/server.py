@@ -6063,6 +6063,9 @@ async def export_subscribers(current_user: dict = Depends(get_current_user)):
         # Ensure plan_name is set from plan_id if missing
         if not row.get('plan_name') and row.get('plan_id'):
             row['plan_name'] = row['plan_id']
+        # Map phone to contact_number for export
+        if not row.get('contact_number') and row.get('phone'):
+            row['contact_number'] = row['phone']
         writer.writerow(row)
     
     output.seek(0)
