@@ -114,14 +114,30 @@ export function ImportButton({ endpoint, templateType, onSuccess, label = "Impor
         responseType: 'blob'
       });
       
-      const blob = new Blob([response.data], { type: 'text/csv' });
-      const downloadUrl = window.URL.createObjectURL(blob);
+      const downloadFilename = `${templateType}_template.csv`;
+      
+      // Create blob with BOM for Excel compatibility
+      const BOM = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([BOM, response.data], { type: 'text/csv;charset=utf-8;' });
+      
+      // Create object URL
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Create and configure link
       const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `${templateType}_template.csv`;
+      link.href = blobUrl;
+      link.download = downloadFilename;
+      link.style.visibility = 'hidden';
+      
+      // Add to DOM and trigger
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      }, 1000);
       
       toast.success('Template downloaded');
     } catch (error) {
