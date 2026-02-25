@@ -84,7 +84,7 @@ export function ImportButton({ endpoint, templateType, onSuccess, label = "Impor
 
   const handleDownloadTemplate = async () => {
     try {
-      const response = await axios.get(`${API}/api/export/template/${templateType}`, {
+      const response = await axios.get(`/export/template/${templateType}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         responseType: 'blob'
       });
