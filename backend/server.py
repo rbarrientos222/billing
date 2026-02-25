@@ -6116,6 +6116,7 @@ async def import_subscribers(file: UploadFile = File(...), current_user: dict = 
                 "plan_amount": float(row.get('plan_amount', 0) or 0),
                 "billing_day": int(row.get('billing_day', 1) or 1),
                 "status": row.get('status', 'active').strip().lower(),
+                "is_active": row.get('status', 'active').strip().lower() == 'active',
                 "pppoe_username": row.get('pppoe_username', '').strip(),
                 "mac_address": row.get('mac_address', '').strip(),
             }
