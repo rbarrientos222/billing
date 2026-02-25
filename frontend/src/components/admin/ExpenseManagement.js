@@ -263,7 +263,7 @@ export default function ExpenseManagement() {
           <ExportButton 
             endpoint="/api/export/expenses" 
             filename={`expenses_${new Date().toISOString().split('T')[0]}.csv`}
-            filters={{ start_date: filters.startDate, end_date: filters.endDate }}
+            filters={{ start_date: dateFrom, end_date: dateTo }}
             label="Export"
           />
           <ImportButton 
