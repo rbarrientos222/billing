@@ -4705,7 +4705,7 @@ async def get_expense_analytics(current_user: dict = Depends(get_current_user)):
             "description": e.get('description', 'Unknown'),
             "category": e.get('category', 'Uncategorized'),
             "amount": e.get('amount', 0),
-            "date": e.get('expense_date').strftime("%Y-%m-%d") if e.get('expense_date') else None
+            "date": parse_expense_date(e.get('expense_date')).strftime("%Y-%m-%d") if parse_expense_date(e.get('expense_date')) else None
         }
         for e in sorted_expenses
     ]
@@ -4719,11 +4719,11 @@ async def get_expense_analytics(current_user: dict = Depends(get_current_user)):
     
     this_month_total = sum(
         e['amount'] for e in all_expenses 
-        if e.get('expense_date') and e['expense_date'].replace(tzinfo=timezone.utc) >= this_month_start
+        if parse_expense_date(e.get('expense_date')) and parse_expense_date(e.get('expense_date')) >= this_month_start
     )
     last_month_total = sum(
         e['amount'] for e in all_expenses 
-        if e.get('expense_date') and last_month_start <= e['expense_date'].replace(tzinfo=timezone.utc) < this_month_start
+        if parse_expense_date(e.get('expense_date')) and last_month_start <= parse_expense_date(e.get('expense_date')) < this_month_start
     )
     
     month_comparison = {
