@@ -543,7 +543,14 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    """Verify password with graceful handling of unknown hash formats"""
+    try:
+        return pwd_context.verify(plain, hashed)
+    except Exception as e:
+        # Handle unknown hash formats (e.g., plain text passwords from imports)
+        # Fall back to direct comparison for plain text passwords
+        logger.warning(f"Password verification fallback - hash format not recognized: {str(e)}")
+        return plain == hashed
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
