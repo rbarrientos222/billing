@@ -14,7 +14,7 @@ import { TablePagination, useTablePagination } from '@/components/ui/table-pagin
 import { ExportButton, ImportButton } from '@/components/admin/ImportExport';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw, Wifi, Package, FileText, Receipt, ChevronDown, User } from 'lucide-react';
+import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw, Wifi, Package, FileText, Receipt, ChevronDown, User, CreditCard } from 'lucide-react';
 
 export default function SubscriberManagement() {
   const [subscribers, setSubscribers] = useState([]);
