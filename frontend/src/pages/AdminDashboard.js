@@ -663,6 +663,7 @@ export default function AdminDashboard({ user, onLogout }) {
             {/* Settings Sub-routes */}
             <Route path="/settings/users" element={<UserManagement />} />
             <Route path="/settings/plans" element={<SubscriptionPlans />} />
+            <Route path="/settings/subscriber-portal" element={<SubscriberPortalSettings />} />
             <Route path="/settings/receipt" element={<ReceiptSettings />} />
             <Route path="/settings/rebates" element={<RebatesSettings />} />
             <Route path="/settings/paymongo" element={<PaymongoSettings />} />
