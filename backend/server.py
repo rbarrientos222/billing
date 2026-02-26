@@ -5255,10 +5255,10 @@ async def get_billing_overview(
     # Pending invoices (all time - this is current state)
     pending_invoices = await db.invoices.count_documents({"paid": False})
     
-    # Total amount collected in period
+    # Total amount collected in period - use payment_date
     payment_query = {}
     if date_filter:
-        payment_query["created_at"] = date_filter
+        payment_query["payment_date"] = date_filter
     payments = await db.payments.find(payment_query).to_list(10000)
     total_collected = sum(p.get('total_amount', p.get('amount', 0)) for p in payments)
     
@@ -5280,8 +5280,8 @@ async def get_billing_overview(
     # Subscribers with arrears (have unpaid invoices)
     subscribers_with_arrears = len(set([inv.get('subscriber_id') for inv in unpaid if inv.get('subscriber_id')]))
     
-    # Recent billing activity
-    recent_payments = await db.payments.find({}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
+    # Recent billing activity - sort by payment_date
+    recent_payments = await db.payments.find({}, {"_id": 0}).sort("payment_date", -1).limit(5).to_list(5)
     
     return {
         "total_subscribers": total_subscribers,
