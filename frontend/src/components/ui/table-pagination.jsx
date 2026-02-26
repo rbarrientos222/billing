@@ -16,11 +16,12 @@ export function TablePagination({
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
   return (
-    <div className="flex items-center justify-between px-2 py-4 border-t">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-2 py-4 border-t">
+      {/* Items info and page size selector */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <span>Showing {startItem}-{endItem} of {totalItems}</span>
+        <span className="whitespace-nowrap">{startItem}-{endItem} of {totalItems}</span>
         <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
-          <SelectTrigger className="h-8 w-[70px]">
+          <SelectTrigger className="h-8 w-[65px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -29,9 +30,10 @@ export function TablePagination({
             ))}
           </SelectContent>
         </Select>
-        <span>per page</span>
+        <span className="hidden sm:inline">per page</span>
       </div>
       
+      {/* Pagination controls */}
       <div className="flex items-center gap-1">
         <Button
           variant="outline"
@@ -52,8 +54,8 @@ export function TablePagination({
           <ChevronLeft className="h-4 w-4" />
         </Button>
         
-        <span className="px-3 text-sm">
-          Page {currentPage} of {totalPages || 1}
+        <span className="px-2 sm:px-3 text-sm whitespace-nowrap">
+          <span className="hidden sm:inline">Page </span>{currentPage}/{totalPages || 1}
         </span>
         
         <Button
