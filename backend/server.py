@@ -886,14 +886,14 @@ async def subscriber_login(data: SubscriberLogin):
     if not subscriber:
         raise HTTPException(status_code=401, detail="Account not found")
     
-    # Check password - use stored password or default to last 4 digits of mobile
+    # Check password - use stored password or default to last 4 digits of mobile/phone
     stored_password = subscriber.get('portal_password')
     if stored_password:
         if not verify_password(data.password, stored_password):
             raise HTTPException(status_code=401, detail="Invalid password")
     else:
-        # Default password: last 4 digits of mobile number
-        mobile = subscriber.get('mobile', '')
+        # Default password: last 4 digits of mobile or phone number
+        mobile = subscriber.get('mobile') or subscriber.get('phone') or ''
         default_password = mobile[-4:] if len(mobile) >= 4 else '0000'
         if data.password != default_password:
             raise HTTPException(status_code=401, detail="Invalid password. Default is last 4 digits of your mobile number.")
