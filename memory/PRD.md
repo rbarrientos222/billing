@@ -383,6 +383,24 @@ Build a billing system with the following features:
 
 ## Changelog (Feb 26, 2026)
 
+### Feature: Subscriber Management Mobile Optimization
+- **Search Bar:** Now full-width on mobile, stacks vertically with other controls
+- **Table:** Responsive design with combined columns for mobile
+  - Account + Name combined (shows phone, plan, wallet on mobile)
+  - Contact, Plan, Installation, Wallet columns hide on smaller screens
+  - Status column shows Active/Inactive + PPPoE status
+- **Pagination:** Improved mobile layout with stacked rows and compact controls
+- **Tab Headers (Record Modal):** Auto-wrap on mobile with icons stacked vertically
+- **Files Modified:**
+  - `/app/frontend/src/components/admin/SubscriberManagement.js`
+  - `/app/frontend/src/components/ui/table-pagination.jsx`
+
+### Bug Fix: Subscriber Portal Login
+- **Issue:** Subscribers couldn't log in because the system checked `mobile` field but data was in `phone` field
+- **Fix:** Updated login to check both `mobile` OR `phone` field for default password generation
+- **File Modified:** `/app/backend/server.py` - `subscriber_login` endpoint
+- **Default Password:** Last 4 digits of mobile/phone number, or '0000' if not set
+
 ### Feature: Dashboard Time Period Filters
 - **Added:** Time-based filter buttons (Today, This Week, This Month, This Year, All Time) to the Admin Dashboard
 - **Added:** New `/api/dashboard/stats` endpoint now accepts `period` query parameter
