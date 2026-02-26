@@ -39,6 +39,17 @@ export default function AdminDashboard({ user, onLogout }) {
   const [stats, setStats] = useState({});
   const [mikrotikStats, setMikrotikStats] = useState(null);
   const [monthlySales, setMonthlySales] = useState([]);
+  const [billingOverview, setBillingOverview] = useState({});
+  const [selectedPeriod, setSelectedPeriod] = useState('all');
+
+  // Period filter options
+  const periodOptions = [
+    { value: 'daily', label: 'Today', icon: Clock },
+    { value: 'weekly', label: 'This Week', icon: Calendar },
+    { value: 'monthly', label: 'This Month', icon: CalendarDays },
+    { value: 'yearly', label: 'This Year', icon: CalendarRange },
+    { value: 'all', label: 'All Time', icon: BarChart3 },
+  ];
 
   // Check if screen is desktop size
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
