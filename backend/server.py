@@ -1473,16 +1473,37 @@ async def test_mikrotik_connection(test_config: dict, current_user: dict = Depen
 async def get_mikrotik_stats(current_user: dict = Depends(get_current_user)):
     config = await db.mikrotik_configs.find_one({})
     if not config:
-        raise HTTPException(status_code=404, detail="Mikrotik not configured")
+        # Return empty stats if not configured (graceful for production)
+        return {
+            "cpu_load": 0,
+            "memory_used": 0,
+            "memory_free": 0,
+            "uptime": "N/A",
+            "active_clients": [],
+            "connection_status": "not_configured"
+        }
     
-    service = MikrotikService(config)
-    if service.connect():
-        stats = service.get_resource_stats()
-        active_clients = service.get_active_clients()
-        service.disconnect()
-        stats['active_clients'] = active_clients
-        return stats
-    raise HTTPException(status_code=500, detail="Failed to connect to Mikrotik")
+    try:
+        service = MikrotikService(config)
+        if service.connect():
+            stats = service.get_resource_stats()
+            active_clients = service.get_active_clients()
+            service.disconnect()
+            stats['active_clients'] = active_clients
+            stats['connection_status'] = "connected"
+            return stats
+    except Exception as e:
+        logger.error(f"Mikrotik connection failed: {str(e)}")
+    
+    # Return empty stats on connection failure (graceful for production)
+    return {
+        "cpu_load": 0,
+        "memory_used": 0,
+        "memory_free": 0,
+        "uptime": "N/A",
+        "active_clients": [],
+        "connection_status": "disconnected"
+    }
 
 @api_router.post("/mikrotik/pppoe")
 async def create_mikrotik_pppoe(account: PPPoEAccount, current_user: dict = Depends(get_current_user)):
