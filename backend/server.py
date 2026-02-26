@@ -5106,10 +5106,10 @@ async def get_dashboard_stats(
     # Calculate stats
     total_subscribers = await db.subscribers.count_documents({"is_active": True})
     
-    # Build query for payments
+    # Build query for payments - use payment_date (not created_at)
     payment_query = {}
     if date_filter:
-        payment_query["created_at"] = date_filter
+        payment_query["payment_date"] = date_filter
     
     # Gross sales - handle both 'amount' (legacy) and 'total_amount' (centralized payments)
     payments = await db.payments.find(payment_query).to_list(10000)
