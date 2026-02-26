@@ -383,6 +383,17 @@ Build a billing system with the following features:
 
 ## Changelog (Feb 26, 2026)
 
+### Feature: Dashboard Time Period Filters
+- **Added:** Time-based filter buttons (Today, This Week, This Month, This Year, All Time) to the Admin Dashboard
+- **Added:** New `/api/dashboard/stats` endpoint now accepts `period` query parameter
+- **Added:** New `/api/dashboard/billing-overview` endpoint for comprehensive billing statistics
+- **Backend:** Both endpoints calculate stats based on selected period and compare with previous period
+- **Frontend:** Filter buttons dynamically update all stats, billing overview, and show period indicator
+- **Files Modified:** 
+  - `/app/backend/server.py` - Enhanced `get_dashboard_stats`, added `get_billing_overview`
+  - `/app/frontend/src/pages/AdminDashboard.js` - Added filter UI and billing overview card
+- **Testing:** Verified via curl and UI screenshots - all filters working correctly
+
 ### Bug Fix: Expense Management Page "Failed to load expenses" Error
 - **Issue:** The Expense Management page was showing a "Failed to load expenses" error
 - **Root Cause:** The `expense_date` field was stored as strings (from CSV imports) but the analytics code assumed they were datetime objects. Calling `.replace(tzinfo=...)` on a string threw `TypeError: str.replace() takes no keyword arguments`
