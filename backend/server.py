@@ -6310,7 +6310,7 @@ async def import_expenses(file: UploadFile = File(...), current_user: dict = Dep
             
             expense_data = {
                 "expense_id": expense_id,
-                "date": row.get('date', get_ph_now().strftime('%Y-%m-%d')).strip(),
+                "expense_date": row.get('expense_date', row.get('date', get_ph_now().strftime('%Y-%m-%d'))).strip(),
                 "category": row.get('category', 'Other').strip(),
                 "description": row.get('description', '').strip(),
                 "amount": float(row.get('amount', 0) or 0),
