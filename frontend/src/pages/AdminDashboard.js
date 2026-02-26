@@ -112,14 +112,24 @@ export default function AdminDashboard({ user, onLogout }) {
     fetchDashboardStats();
     fetchMikrotikStats();
     fetchMonthlySales();
-  }, []);
+    fetchBillingOverview();
+  }, [selectedPeriod]);
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await axios.get('/dashboard/stats');
+      const response = await axios.get(`/dashboard/stats?period=${selectedPeriod}`);
       setStats(response.data);
     } catch (error) {
       console.error('Failed to fetch stats:', error);
+    }
+  };
+
+  const fetchBillingOverview = async () => {
+    try {
+      const response = await axios.get(`/dashboard/billing-overview?period=${selectedPeriod}`);
+      setBillingOverview(response.data);
+    } catch (error) {
+      console.error('Failed to fetch billing overview:', error);
     }
   };
 
