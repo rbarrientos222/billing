@@ -74,6 +74,17 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480
 
 app = FastAPI(title="Billing System API")
+
+# CORS Configuration for production deployment
+cors_origins = os.environ.get('CORS_ORIGINS', '*').split(',')
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins if cors_origins != ['*'] else ['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*']
+)
+
 api_router = APIRouter(prefix="/api")
 
 # Logging
