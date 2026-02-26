@@ -5077,33 +5077,120 @@ async def get_total_discounts_stats(current_user: dict = Depends(get_current_use
 
 # ========== DASHBOARD STATS ==========
 @api_router.get("/dashboard/stats")
-async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
+async def get_dashboard_stats(
+    current_user: dict = Depends(get_current_user),
+    period: str = Query("all", description="Filter period: daily, weekly, monthly, yearly, all")
+):
+    """Get dashboard statistics with optional time period filter"""
+    
+    # Calculate date range based on period
+    now = datetime.now(timezone.utc)
+    date_filter = None
+    
+    if period == "daily":
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        date_filter = {"$gte": start_date}
+    elif period == "weekly":
+        # Start from Monday of current week
+        start_date = now - timedelta(days=now.weekday())
+        start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        date_filter = {"$gte": start_date}
+    elif period == "monthly":
+        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        date_filter = {"$gte": start_date}
+    elif period == "yearly":
+        start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        date_filter = {"$gte": start_date}
+    # "all" means no date filter
+    
     # Calculate stats
     total_subscribers = await db.subscribers.count_documents({"is_active": True})
-    total_invoices = await db.invoices.count_documents({})
-    unpaid_invoices = await db.invoices.count_documents({"paid": False})
+    
+    # Build query for payments
+    payment_query = {}
+    if date_filter:
+        payment_query["created_at"] = date_filter
     
     # Gross sales - handle both 'amount' (legacy) and 'total_amount' (centralized payments)
-    payments = await db.payments.find({}).to_list(10000)
+    payments = await db.payments.find(payment_query).to_list(10000)
     gross_sales = sum(p.get('total_amount', p.get('amount', 0)) for p in payments)
     
-    # Expenses
-    expenses = await db.expenses.find({}).to_list(10000)
+    # Expenses with date filter
+    expense_query = {}
+    if date_filter:
+        expense_query["expense_date"] = date_filter
+    expenses = await db.expenses.find(expense_query).to_list(10000)
     total_expenses = sum(e['amount'] for e in expenses)
     
     # Net sales
     net_sales = gross_sales - total_expenses
     
-    # Receivables
+    # Invoices with date filter
+    invoice_query = {}
+    if date_filter:
+        invoice_query["created_at"] = date_filter
+    total_invoices = await db.invoices.count_documents(invoice_query)
+    
+    # Unpaid invoices (within period)
+    unpaid_query = {"paid": False}
+    if date_filter:
+        unpaid_query["created_at"] = date_filter
+    unpaid_invoices = await db.invoices.count_documents(unpaid_query)
+    
+    # Receivables (all unpaid, regardless of period - this is a balance)
     unpaid = await db.invoices.find({"paid": False}).to_list(10000)
     receivables = sum(inv['amount'] for inv in unpaid)
     
-    # Open tickets
+    # Open tickets (current state, not period-filtered)
     open_tickets = await db.job_orders.count_documents({"status": "Open"})
     
-    # Total discounts given
-    discounts = await db.discounts.find({}, {"_id": 0}).to_list(1000)
+    # Total discounts given (within period if filtered)
+    discount_query = {}
+    if date_filter:
+        discount_query["created_at"] = date_filter
+    discounts = await db.discounts.find(discount_query, {"_id": 0}).to_list(1000)
     total_discounts = sum(d.get('total_amount_discounted', 0) for d in discounts)
+    
+    # Calculate comparison with previous period
+    prev_gross_sales = 0
+    prev_expenses = 0
+    prev_net_sales = 0
+    
+    if period != "all":
+        # Calculate previous period range
+        if period == "daily":
+            prev_start = start_date - timedelta(days=1)
+            prev_end = start_date
+        elif period == "weekly":
+            prev_start = start_date - timedelta(weeks=1)
+            prev_end = start_date
+        elif period == "monthly":
+            if start_date.month == 1:
+                prev_start = start_date.replace(year=start_date.year - 1, month=12)
+            else:
+                prev_start = start_date.replace(month=start_date.month - 1)
+            prev_end = start_date
+        elif period == "yearly":
+            prev_start = start_date.replace(year=start_date.year - 1)
+            prev_end = start_date
+        
+        prev_date_filter = {"$gte": prev_start, "$lt": prev_end}
+        
+        # Previous period payments
+        prev_payments = await db.payments.find({"created_at": prev_date_filter}).to_list(10000)
+        prev_gross_sales = sum(p.get('total_amount', p.get('amount', 0)) for p in prev_payments)
+        
+        # Previous period expenses
+        prev_expenses_list = await db.expenses.find({"expense_date": prev_date_filter}).to_list(10000)
+        prev_expenses = sum(e['amount'] for e in prev_expenses_list)
+        
+        prev_net_sales = prev_gross_sales - prev_expenses
+    
+    # Calculate percentage changes
+    def calc_change(current, previous):
+        if previous == 0:
+            return 100 if current > 0 else 0
+        return round(((current - previous) / previous) * 100, 1)
     
     return {
         "active_subscribers": total_subscribers,
@@ -5114,7 +5201,13 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         "open_tickets": open_tickets,
         "total_invoices": total_invoices,
         "unpaid_invoices": unpaid_invoices,
-        "total_discounts": total_discounts
+        "total_discounts": total_discounts,
+        "period": period,
+        "changes": {
+            "gross_sales": calc_change(gross_sales, prev_gross_sales),
+            "expenses": calc_change(total_expenses, prev_expenses),
+            "net_sales": calc_change(net_sales, prev_net_sales)
+        }
     }
 
 # ========== BILLING CYCLE MANAGEMENT ==========
