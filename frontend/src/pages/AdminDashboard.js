@@ -30,6 +30,7 @@ import PrinterSettings from '@/components/admin/PrinterSettings';
 import SOASettings from '@/components/admin/SOASettings';
 import ReceiptSettings from '@/components/admin/ReceiptSettings';
 import PaymongoSettings from '@/components/admin/PaymongoSettings';
+import SubscriberPortalSettings from '@/components/admin/SubscriberPortalSettings';
 import Reports from '@/components/admin/Reports';
 
 export default function AdminDashboard({ user, onLogout }) {
