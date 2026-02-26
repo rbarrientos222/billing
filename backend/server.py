@@ -4735,7 +4735,7 @@ async def get_expense_analytics(current_user: dict = Depends(get_current_user)):
     
     # 6. Average daily expense
     if all_expenses:
-        dates = [e['expense_date'] for e in all_expenses if e.get('expense_date')]
+        dates = [parse_expense_date(e.get('expense_date')) for e in all_expenses if parse_expense_date(e.get('expense_date'))]
         if dates:
             min_date = min(dates)
             max_date = max(dates)
