@@ -1219,18 +1219,21 @@ export default function SubscriberManagement() {
 
           {/* Tabbed Content */}
           <Tabs defaultValue="invoices" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="invoices" className="flex items-center gap-2" data-testid="tab-invoices">
-                <FileText className="h-4 w-4" />
-                Invoices ({invoiceHistory.length})
+            <TabsList className="grid w-full grid-cols-3 h-auto">
+              <TabsTrigger value="invoices" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm" data-testid="tab-invoices">
+                <FileText className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Invoices ({invoiceHistory.length})</span>
+                <span className="sm:hidden text-center leading-tight">Invoices<br/>({invoiceHistory.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="payments" className="flex items-center gap-2" data-testid="tab-payments">
-                <Receipt className="h-4 w-4" />
-                Payments ({paymentHistory.length})
+              <TabsTrigger value="payments" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm" data-testid="tab-payments">
+                <Receipt className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Payments ({paymentHistory.length})</span>
+                <span className="sm:hidden text-center leading-tight">Payments<br/>({paymentHistory.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="equipment" className="flex items-center gap-2" data-testid="tab-equipment">
-                <Package className="h-4 w-4" />
-                Equipment & Materials ({assignedEquipment.length})
+              <TabsTrigger value="equipment" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm" data-testid="tab-equipment">
+                <Package className="h-4 w-4 shrink-0" />
+                <span className="hidden sm:inline">Equipment & Materials ({assignedEquipment.length})</span>
+                <span className="sm:hidden text-center leading-tight">Equipment<br/>({assignedEquipment.length})</span>
               </TabsTrigger>
             </TabsList>
 
