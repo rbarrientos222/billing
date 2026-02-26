@@ -94,6 +94,7 @@ export default function AdminDashboard({ user, onLogout }) {
   const settingsSubMenu = [
     { name: 'Users', path: '/admin/settings/users', icon: Users },
     { name: 'Plans', path: '/admin/settings/plans', icon: CreditCard },
+    { name: 'Subscriber Portal', path: '/admin/settings/subscriber-portal', icon: UserCircle },
     { name: 'Receipt Setup', path: '/admin/settings/receipt', icon: Receipt },
     { name: 'Rebates', path: '/admin/settings/rebates', icon: Percent },
     { name: 'PayMongo', path: '/admin/settings/paymongo', icon: DollarSign },
