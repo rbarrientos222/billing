@@ -1286,21 +1286,26 @@ export default function SubscriberManagement() {
 
             {/* Payments Tab */}
             <TabsContent value="payments" className="mt-4">
-              <div className="rounded-md border">
+              <div className="rounded-md border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>OR Number</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Mode</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Received By</TableHead>
+                      <TableHead className="min-w-[140px]">
+                        <span className="hidden sm:inline">OR Number / Mode</span>
+                        <span className="sm:hidden">OR/Mode</span>
+                      </TableHead>
+                      <TableHead className="min-w-[120px]">
+                        <span className="hidden sm:inline">Description / Amount</span>
+                        <span className="sm:hidden">Details</span>
+                      </TableHead>
+                      <TableHead className="hidden md:table-cell">Date</TableHead>
+                      <TableHead className="hidden lg:table-cell">Received By</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paymentHistory.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                           <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
                           No payments found
                         </TableCell>
@@ -1308,11 +1313,43 @@ export default function SubscriberManagement() {
                     ) : (
                       paymentHistory.map((payment) => (
                         <TableRow key={payment.or_number}>
-                          <TableCell className="font-mono text-xs">{payment.or_number}</TableCell>
-                          <TableCell className="font-bold text-green-600">₱{(payment.total_amount || payment.amount || 0).toLocaleString()}</TableCell>
-                          <TableCell className="capitalize">{payment.mode}</TableCell>
-                          <TableCell>{new Date(payment.payment_date).toLocaleString()}</TableCell>
-                          <TableCell>{payment.received_by}</TableCell>
+                          {/* OR Number + Mode (combined) */}
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-mono text-xs font-medium">{payment.or_number}</div>
+                              <div className="text-xs text-muted-foreground capitalize flex items-center gap-1">
+                                <CreditCard className="h-3 w-3" />
+                                {payment.mode || 'cash'}
+                              </div>
+                              {/* Show date on mobile */}
+                              <div className="text-xs text-muted-foreground md:hidden">
+                                {new Date(payment.payment_date).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </TableCell>
+                          {/* Description + Amount (combined) */}
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="text-xs text-muted-foreground line-clamp-2">
+                                {payment.description || payment.allocation_details?.map(a => a.invoice_number).join(', ') || 'Payment'}
+                              </div>
+                              <div className="font-bold text-green-600">
+                                ₱{(payment.total_amount || payment.amount || 0).toLocaleString()}
+                              </div>
+                              {/* Show received by on mobile */}
+                              <div className="text-xs text-muted-foreground lg:hidden">
+                                by {payment.received_by || 'System'}
+                              </div>
+                            </div>
+                          </TableCell>
+                          {/* Date - hidden on mobile */}
+                          <TableCell className="hidden md:table-cell text-sm">
+                            {new Date(payment.payment_date).toLocaleString()}
+                          </TableCell>
+                          {/* Received By - hidden on mobile/tablet */}
+                          <TableCell className="hidden lg:table-cell text-sm">
+                            {payment.received_by || 'System'}
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
