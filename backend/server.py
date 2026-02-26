@@ -6235,29 +6235,29 @@ async def export_expenses(
     if current_user['role'] not in ['admin', 'billing']:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    # Build query
+    # Build query - use expense_date field
     query = {}
     if start_date:
         try:
             start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-            query["date"] = {"$gte": start_dt.strftime('%Y-%m-%d')}
+            query["expense_date"] = {"$gte": start_dt}
         except:
             pass
     if end_date:
         try:
             end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-            if "date" in query:
-                query["date"]["$lte"] = end_dt.strftime('%Y-%m-%d')
+            if "expense_date" in query:
+                query["expense_date"]["$lte"] = end_dt
             else:
-                query["date"] = {"$lte": end_dt.strftime('%Y-%m-%d')}
+                query["expense_date"] = {"$lte": end_dt}
         except:
             pass
     
-    expenses = await db.expenses.find(query, {"_id": 0}).sort("date", -1).to_list(50000)
+    expenses = await db.expenses.find(query, {"_id": 0}).sort("expense_date", -1).to_list(50000)
     
-    # Define CSV columns
+    # Define CSV columns - use expense_date to match database
     columns = [
-        'expense_id', 'date', 'category', 'description', 'amount',
+        'expense_id', 'expense_date', 'category', 'description', 'amount',
         'payment_method', 'vendor', 'reference_number', 'notes', 'created_by'
     ]
     
@@ -6266,7 +6266,11 @@ async def export_expenses(
     writer.writeheader()
     
     for exp in expenses:
-        writer.writerow(exp)
+        row = {**exp}
+        # Format expense_date if it's a datetime
+        if isinstance(exp.get('expense_date'), datetime):
+            row['expense_date'] = exp['expense_date'].strftime('%Y-%m-%d')
+        writer.writerow(row)
     
     output.seek(0)
     
