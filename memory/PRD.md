@@ -378,3 +378,14 @@ Build a billing system with the following features:
 - `/app/test_reports/iteration_11.json` - Subscriber Portal testing (100% pass rate)
 - `/app/test_reports/iteration_8.json` - Cashier module enhancements (100% pass rate)
 - `/app/test_reports/iteration_9.json` - Expense module testing (100% pass rate)
+
+---
+
+## Changelog (Feb 26, 2026)
+
+### Bug Fix: Expense Management Page "Failed to load expenses" Error
+- **Issue:** The Expense Management page was showing a "Failed to load expenses" error
+- **Root Cause:** The `expense_date` field was stored as strings (from CSV imports) but the analytics code assumed they were datetime objects. Calling `.replace(tzinfo=...)` on a string threw `TypeError: str.replace() takes no keyword arguments`
+- **Fix:** Added a `parse_expense_date()` helper function in `server.py` that safely converts both strings and datetime objects to timezone-aware datetime
+- **Files Modified:** `/app/backend/server.py` - Lines ~4630-4750 in `get_expense_analytics` endpoint
+- **Testing:** Verified via curl and UI screenshots - all expenses and analytics load correctly
