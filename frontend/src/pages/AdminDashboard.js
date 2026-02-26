@@ -156,12 +156,19 @@ export default function AdminDashboard({ user, onLogout }) {
   };
 
   const DashboardHome = () => {
+    // Helper to format trend with sign
+    const formatTrend = (value) => {
+      if (value === undefined || value === null) return '+0%';
+      const sign = value >= 0 ? '+' : '';
+      return `${sign}${value}%`;
+    };
+
     const statCards = [
       { 
         title: 'Gross Sales', 
         value: `₱${(stats.gross_sales || 0).toLocaleString()}`, 
         icon: TrendingUp, 
-        trend: '+12.5%',
+        trend: formatTrend(stats.changes?.gross_sales),
         color: 'text-green-600',
         bg: 'bg-green-50'
       },
@@ -169,7 +176,7 @@ export default function AdminDashboard({ user, onLogout }) {
         title: 'Net Sales', 
         value: `₱${(stats.net_sales || 0).toLocaleString()}`, 
         icon: DollarSign, 
-        trend: '+8.2%',
+        trend: formatTrend(stats.changes?.net_sales),
         color: 'text-green-600',
         bg: 'bg-green-50'
       },
@@ -177,7 +184,7 @@ export default function AdminDashboard({ user, onLogout }) {
         title: 'Expenses', 
         value: `₱${(stats.expenses || 0).toLocaleString()}`, 
         icon: TrendingDown, 
-        trend: '-3.1%',
+        trend: formatTrend(stats.changes?.expenses),
         color: 'text-red-600',
         bg: 'bg-red-50'
       },
@@ -215,16 +222,50 @@ export default function AdminDashboard({ user, onLogout }) {
       { month: 'Jun', sales: 0 },
     ];
 
+    // Period label for display
+    const getPeriodLabel = () => {
+      const option = periodOptions.find(p => p.value === selectedPeriod);
+      return option ? option.label : 'All Time';
+    };
+
     return (
       <div className="space-y-8">
-        {/* Welcome */}
-        <div>
-          <h1 className="text-4xl font-heading font-bold text-foreground mb-2" data-testid="admin-dashboard-title">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, {user.username}! Here's your business overview.</p>
+        {/* Welcome & Period Filter */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-heading font-bold text-foreground mb-2" data-testid="admin-dashboard-title">Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back, {user.username}! Here's your business overview.</p>
+          </div>
+          
+          {/* Period Filter Buttons */}
+          <div className="flex flex-wrap gap-2" data-testid="period-filter">
+            {periodOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant={selectedPeriod === option.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedPeriod(option.value)}
+                className="gap-1.5"
+                data-testid={`period-${option.value}`}
+              >
+                <option.icon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{option.label}</span>
+                <span className="sm:hidden">{option.value === 'all' ? 'All' : option.label.split(' ')[1] || option.label}</span>
+              </Button>
+            ))}
+          </div>
         </div>
 
+        {/* Period Indicator */}
+        {selectedPeriod !== 'all' && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg px-4 py-2 text-sm text-primary flex items-center gap-2">
+            <CalendarDays className="h-4 w-4" />
+            Showing data for: <span className="font-semibold">{getPeriodLabel()}</span>
+          </div>
+        )}
+
         {/* Main Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {statCards.map((stat, idx) => (
             <Card key={idx} className="hover-lift border-border" data-testid={`stat-card-${idx}`}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -234,12 +275,72 @@ export default function AdminDashboard({ user, onLogout }) {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold font-heading">{stat.value}</div>
-                <p className={`text-xs ${stat.color} mt-1`}>{stat.trend} from last month</p>
+                <div className="text-2xl font-bold font-heading">{stat.value}</div>
+                <p className={`text-xs ${stat.trend?.startsWith('-') ? 'text-red-600' : stat.color} mt-1`}>
+                  {stat.trend} {selectedPeriod !== 'all' ? 'vs prev period' : 'from last month'}
+                </p>
               </CardContent>
             </Card>
           ))}
         </div>
+
+        {/* Billing Overview Card */}
+        <Card className="border-border bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+          <CardHeader>
+            <CardTitle className="font-heading flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-blue-600" />
+              Billing Overview
+              <span className="text-sm font-normal text-muted-foreground ml-2">({getPeriodLabel()})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="bg-white/50 dark:bg-black/20 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-blue-600">{billingOverview.invoices_generated || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">Invoices Generated</p>
+              </div>
+              <div className="bg-white/50 dark:bg-black/20 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-green-600">{billingOverview.invoices_paid || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">Invoices Paid</p>
+              </div>
+              <div className="bg-white/50 dark:bg-black/20 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-amber-600">{billingOverview.pending_invoices || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">Pending Invoices</p>
+              </div>
+              <div className="bg-white/50 dark:bg-black/20 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-red-600">{billingOverview.overdue_invoices || 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">Overdue Invoices</p>
+              </div>
+              <div className="bg-white/50 dark:bg-black/20 rounded-lg p-4 text-center">
+                <p className="text-2xl font-bold text-purple-600">{billingOverview.collection_rate || 0}%</p>
+                <p className="text-xs text-muted-foreground mt-1">Collection Rate</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div className="bg-white/50 dark:bg-black/20 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Total Collected</span>
+                  <DollarSign className="h-4 w-4 text-green-600" />
+                </div>
+                <p className="text-xl font-bold text-green-600 mt-1">₱{(billingOverview.total_collected || 0).toLocaleString()}</p>
+              </div>
+              <div className="bg-white/50 dark:bg-black/20 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Total Receivables</span>
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                </div>
+                <p className="text-xl font-bold text-amber-600 mt-1">₱{(billingOverview.total_receivables || 0).toLocaleString()}</p>
+              </div>
+              <div className="bg-white/50 dark:bg-black/20 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Subscribers with Arrears</span>
+                  <Users className="h-4 w-4 text-red-600" />
+                </div>
+                <p className="text-xl font-bold text-red-600 mt-1">{billingOverview.subscribers_with_arrears || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Charts and Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
