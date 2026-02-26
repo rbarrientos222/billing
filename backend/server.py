@@ -4629,6 +4629,20 @@ async def get_expense_analytics(current_user: dict = Depends(get_current_user)):
     # Get all expenses
     all_expenses = await db.expenses.find({}, {"_id": 0}).to_list(10000)
     
+    # Helper function to safely parse expense_date (may be string or datetime)
+    def parse_expense_date(date_val):
+        if date_val is None:
+            return None
+        if isinstance(date_val, datetime):
+            return date_val.replace(tzinfo=timezone.utc) if date_val.tzinfo is None else date_val
+        if isinstance(date_val, str):
+            try:
+                parsed = datetime.fromisoformat(date_val.replace('Z', '+00:00'))
+                return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed
+            except:
+                return None
+        return None
+    
     # 1. Monthly trend (last 12 months)
     monthly_trend = []
     for i in range(11, -1, -1):
@@ -4643,7 +4657,7 @@ async def get_expense_analytics(current_user: dict = Depends(get_current_user)):
         # Sum expenses for this month
         month_total = sum(
             e['amount'] for e in all_expenses 
-            if e.get('expense_date') and month_start <= e['expense_date'].replace(tzinfo=timezone.utc) < month_end
+            if parse_expense_date(e.get('expense_date')) and month_start <= parse_expense_date(e.get('expense_date')) < month_end
         )
         
         monthly_trend.append({
