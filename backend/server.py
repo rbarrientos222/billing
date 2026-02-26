@@ -5210,6 +5210,94 @@ async def get_dashboard_stats(
         }
     }
 
+
+@api_router.get("/dashboard/billing-overview")
+async def get_billing_overview(
+    current_user: dict = Depends(get_current_user),
+    period: str = Query("all", description="Filter period: daily, weekly, monthly, yearly, all")
+):
+    """Get billing overview statistics for dashboard"""
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    now = datetime.now(timezone.utc)
+    date_filter = None
+    
+    if period == "daily":
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        date_filter = {"$gte": start_date}
+    elif period == "weekly":
+        start_date = now - timedelta(days=now.weekday())
+        start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        date_filter = {"$gte": start_date}
+    elif period == "monthly":
+        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        date_filter = {"$gte": start_date}
+    elif period == "yearly":
+        start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        date_filter = {"$gte": start_date}
+    
+    # Total subscribers
+    total_subscribers = await db.subscribers.count_documents({"is_active": True})
+    
+    # Invoices generated in period
+    invoice_query = {}
+    if date_filter:
+        invoice_query["created_at"] = date_filter
+    invoices_generated = await db.invoices.count_documents(invoice_query)
+    
+    # Invoices paid in period
+    paid_query = {"paid": True}
+    if date_filter:
+        paid_query["paid_at"] = date_filter
+    invoices_paid = await db.invoices.count_documents(paid_query)
+    
+    # Pending invoices (all time - this is current state)
+    pending_invoices = await db.invoices.count_documents({"paid": False})
+    
+    # Total amount collected in period
+    payment_query = {}
+    if date_filter:
+        payment_query["created_at"] = date_filter
+    payments = await db.payments.find(payment_query).to_list(10000)
+    total_collected = sum(p.get('total_amount', p.get('amount', 0)) for p in payments)
+    
+    # Total receivables (outstanding balance - all time)
+    unpaid = await db.invoices.find({"paid": False}).to_list(10000)
+    total_receivables = sum(inv.get('remaining_balance', inv.get('amount', 0)) for inv in unpaid)
+    
+    # Collection rate for period (if invoices were generated)
+    collection_rate = 0
+    if invoices_generated > 0:
+        collection_rate = round((invoices_paid / invoices_generated) * 100, 1)
+    
+    # Overdue invoices (due_date passed and not paid)
+    overdue_invoices = await db.invoices.count_documents({
+        "paid": False,
+        "due_date": {"$lt": now}
+    })
+    
+    # Subscribers with arrears (have unpaid invoices)
+    subscribers_with_arrears = len(set([inv.get('subscriber_id') for inv in unpaid if inv.get('subscriber_id')]))
+    
+    # Recent billing activity
+    recent_payments = await db.payments.find({}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
+    
+    return {
+        "total_subscribers": total_subscribers,
+        "invoices_generated": invoices_generated,
+        "invoices_paid": invoices_paid,
+        "pending_invoices": pending_invoices,
+        "overdue_invoices": overdue_invoices,
+        "total_collected": total_collected,
+        "total_receivables": total_receivables,
+        "collection_rate": collection_rate,
+        "subscribers_with_arrears": subscribers_with_arrears,
+        "period": period,
+        "recent_payments": recent_payments[:5]
+    }
+
+
 # ========== BILLING CYCLE MANAGEMENT ==========
 @api_router.get("/billing/status")
 async def get_billing_status(current_user: dict = Depends(get_current_user)):
