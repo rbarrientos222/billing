@@ -944,6 +944,153 @@ async def subscriber_change_password(data: dict, current_subscriber: dict = Depe
     )
     return {"message": "Password changed successfully"}
 
+
+# ========== SUBSCRIBER PORTAL ADMIN MANAGEMENT ==========
+@api_router.get("/admin/subscriber-portal/logins")
+async def get_subscriber_portal_logins(
+    current_user: dict = Depends(get_current_user),
+    search: str = Query("", description="Search by account number or name"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100)
+):
+    """Get all subscribers with their portal login status"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Build search query
+    query = {}
+    if search:
+        query["$or"] = [
+            {"account_number": {"$regex": search, "$options": "i"}},
+            {"first_name": {"$regex": search, "$options": "i"}},
+            {"last_name": {"$regex": search, "$options": "i"}},
+            {"phone": {"$regex": search, "$options": "i"}}
+        ]
+    
+    # Get total count
+    total = await db.subscribers.count_documents(query)
+    
+    # Get paginated subscribers
+    skip = (page - 1) * limit
+    subscribers = await db.subscribers.find(query, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    
+    # Add login status info
+    result = []
+    for sub in subscribers:
+        mobile = sub.get('mobile') or sub.get('phone') or ''
+        default_pw = mobile[-4:] if len(mobile) >= 4 else '0000'
+        has_custom_pw = bool(sub.get('portal_password'))
+        
+        result.append({
+            "account_number": sub.get('account_number'),
+            "first_name": sub.get('first_name'),
+            "last_name": sub.get('last_name'),
+            "phone": sub.get('phone'),
+            "mobile": sub.get('mobile'),
+            "is_active": sub.get('is_active', False),
+            "has_custom_password": has_custom_pw,
+            "default_password": default_pw if not has_custom_pw else None,
+            "password_type": "Custom" if has_custom_pw else "Default (last 4 digits of phone)",
+            "can_login": len(mobile) >= 4 or has_custom_pw
+        })
+    
+    return {
+        "subscribers": result,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit
+    }
+
+@api_router.post("/admin/subscriber-portal/reset-password/{account_number}")
+async def admin_reset_subscriber_password(
+    account_number: str,
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Admin reset subscriber portal password"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    subscriber = await db.subscribers.find_one({"account_number": account_number.upper()})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    new_password = data.get('new_password')
+    if not new_password or len(new_password) < 4:
+        raise HTTPException(status_code=400, detail="Password must be at least 4 characters")
+    
+    # Hash and save new password
+    hashed = hash_password(new_password)
+    await db.subscribers.update_one(
+        {"account_number": account_number.upper()},
+        {"$set": {"portal_password": hashed}}
+    )
+    
+    return {"message": f"Password reset successfully for {account_number}"}
+
+@api_router.post("/admin/subscriber-portal/reset-to-default/{account_number}")
+async def admin_reset_subscriber_to_default(
+    account_number: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Reset subscriber password to default (remove custom password)"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    subscriber = await db.subscribers.find_one({"account_number": account_number.upper()})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    # Remove custom password - will use default (last 4 digits of phone)
+    await db.subscribers.update_one(
+        {"account_number": account_number.upper()},
+        {"$unset": {"portal_password": ""}}
+    )
+    
+    mobile = subscriber.get('mobile') or subscriber.get('phone') or ''
+    default_pw = mobile[-4:] if len(mobile) >= 4 else '0000'
+    
+    return {
+        "message": f"Password reset to default for {account_number}",
+        "default_password": default_pw
+    }
+
+@api_router.post("/admin/subscriber-portal/bulk-reset")
+async def admin_bulk_reset_passwords(
+    data: dict,
+    current_user: dict = Depends(get_current_user)
+):
+    """Bulk reset passwords for multiple subscribers"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    account_numbers = data.get('account_numbers', [])
+    action = data.get('action', 'reset_to_default')  # 'reset_to_default' or 'set_custom'
+    custom_password = data.get('custom_password')
+    
+    if not account_numbers:
+        raise HTTPException(status_code=400, detail="No accounts selected")
+    
+    updated = 0
+    for acc in account_numbers:
+        subscriber = await db.subscribers.find_one({"account_number": acc.upper()})
+        if subscriber:
+            if action == 'reset_to_default':
+                await db.subscribers.update_one(
+                    {"account_number": acc.upper()},
+                    {"$unset": {"portal_password": ""}}
+                )
+            elif action == 'set_custom' and custom_password:
+                hashed = hash_password(custom_password)
+                await db.subscribers.update_one(
+                    {"account_number": acc.upper()},
+                    {"$set": {"portal_password": hashed}}
+                )
+            updated += 1
+    
+    return {"message": f"Updated {updated} subscriber(s)", "updated_count": updated}
+
+
 @api_router.get("/subscriber/dashboard")
 async def get_subscriber_dashboard(current_subscriber: dict = Depends(get_current_subscriber)):
     """Get subscriber dashboard data"""
