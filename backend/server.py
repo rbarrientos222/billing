@@ -6578,7 +6578,7 @@ async def get_import_template(type: str, current_user: dict = Depends(get_curren
             'mac_address', 'installation_date'
         ],
         "expenses": [
-            'expense_id', 'date', 'category', 'description', 'amount',
+            'expense_id', 'expense_date', 'category', 'description', 'amount',
             'payment_method', 'vendor', 'reference_number', 'notes'
         ],
         "invoices": [
