@@ -956,48 +956,49 @@ export default function SubscriberManagement() {
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle>All Subscribers</CardTitle>
               <CardDescription>{filteredSubscribers.length} total subscribers</CardDescription>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
               {selectedSubscribers.length > 0 && (
                 <Button 
                   onClick={handleBulkActivate} 
                   disabled={activating}
                   data-testid="bulk-activate-button"
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 order-2 sm:order-1"
+                  size="sm"
                 >
                   {activating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Activate Selected ({selectedSubscribers.length})
+                  Activate ({selectedSubscribers.length})
                 </Button>
               )}
-              <div className="relative w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <div className="relative w-full sm:w-64 order-1 sm:order-2">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search subscribers..."
+                  placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
+                  className="pl-8 h-9"
                   data-testid="search-input"
                 />
               </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">
+                    <TableHead className="w-10 px-2">
                       <input
                         type="checkbox"
                         checked={selectedSubscribers.length === filteredSubscribers.length && filteredSubscribers.length > 0}
@@ -1005,28 +1006,29 @@ export default function SubscriberManagement() {
                         className="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary"
                       />
                     </TableHead>
-                    <TableHead>Account #</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Installation</TableHead>
-                    <TableHead>Wallet</TableHead>
-                    <TableHead>PPPoE</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="min-w-[180px]">
+                      <span className="hidden sm:inline">Account / Name</span>
+                      <span className="sm:hidden">Subscriber</span>
+                    </TableHead>
+                    <TableHead className="hidden md:table-cell">Contact</TableHead>
+                    <TableHead className="hidden lg:table-cell">Plan</TableHead>
+                    <TableHead className="hidden xl:table-cell">Installation</TableHead>
+                    <TableHead className="hidden xl:table-cell">Wallet</TableHead>
+                    <TableHead className="min-w-[80px]">Status</TableHead>
+                    <TableHead className="text-right min-w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedSubscribers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                         No subscribers found
                       </TableCell>
                     </TableRow>
                   ) : (
                     paginatedSubscribers.map((sub) => (
                       <TableRow key={sub.account_number}>
-                        <TableCell>
+                        <TableCell className="px-2">
                           <input
                             type="checkbox"
                             checked={selectedSubscribers.includes(sub.account_number)}
@@ -1034,49 +1036,79 @@ export default function SubscriberManagement() {
                             className="w-4 h-4 text-primary bg-white border-gray-300 rounded focus:ring-primary"
                           />
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{sub.account_number}</TableCell>
-                        <TableCell className="font-medium">{sub.first_name} {sub.last_name}</TableCell>
-                        <TableCell>{sub.phone}</TableCell>
-                        <TableCell>{sub.plan_id || sub.plan_name || '-'}</TableCell>
-                        <TableCell className="text-xs">
+                        {/* Account + Name + Status (combined for mobile) */}
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-mono text-xs text-muted-foreground">{sub.account_number}</div>
+                            <div className="font-medium text-sm">{sub.first_name} {sub.last_name}</div>
+                            {/* Show contact info on mobile */}
+                            <div className="md:hidden text-xs text-muted-foreground">{sub.phone || '-'}</div>
+                            {/* Show plan on mobile/tablet */}
+                            <div className="lg:hidden text-xs text-muted-foreground">{sub.plan_id || sub.plan_name || '-'}</div>
+                            {/* Show PPPoE status on mobile */}
+                            <div className="flex items-center gap-1 sm:hidden">
+                              {sub.pppoe_activated ? (
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-green-50 text-green-700 border-green-200">PPPoE</Badge>
+                              ) : null}
+                              {(sub.wallet_balance || 0) > 0 && (
+                                <span className="text-[10px] text-green-600">₱{(sub.wallet_balance || 0).toLocaleString()}</span>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        {/* Contact - hidden on mobile */}
+                        <TableCell className="hidden md:table-cell">
+                          <div className="text-sm">{sub.phone || '-'}</div>
+                        </TableCell>
+                        {/* Plan - hidden on mobile/tablet */}
+                        <TableCell className="hidden lg:table-cell text-sm">
+                          {sub.plan_id || sub.plan_name || '-'}
+                        </TableCell>
+                        {/* Installation - hidden until xl */}
+                        <TableCell className="hidden xl:table-cell text-xs">
                           {sub.installation_date ? new Date(sub.installation_date).toLocaleDateString() : '-'}
                         </TableCell>
-                        <TableCell>
+                        {/* Wallet - hidden until xl */}
+                        <TableCell className="hidden xl:table-cell">
                           {(sub.wallet_balance || 0) > 0 ? (
-                            <span className="text-green-600 font-medium">₱{(sub.wallet_balance || 0).toLocaleString()}</span>
+                            <span className="text-green-600 font-medium text-sm">₱{(sub.wallet_balance || 0).toLocaleString()}</span>
                           ) : (
-                            <span className="text-muted-foreground">₱0</span>
+                            <span className="text-muted-foreground text-sm">₱0</span>
                           )}
                         </TableCell>
+                        {/* Status column - combined PPPoE + Active status */}
                         <TableCell>
-                          {sub.pppoe_activated ? (
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              Active
+                          <div className="flex flex-col gap-1">
+                            <Badge 
+                              variant={sub.is_active ? "default" : "secondary"} 
+                              className={`text-[10px] sm:text-xs w-fit ${sub.is_active ? "bg-green-600" : "bg-red-100 text-red-700"}`}
+                            >
+                              {sub.is_active ? 'Active' : 'Inactive'}
                             </Badge>
-                          ) : sub.pppoe_username ? (
-                            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                              Pending
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-gray-50 text-gray-600">
-                              Not Set
-                            </Badge>
-                          )}
+                            <div className="hidden sm:block">
+                              {sub.pppoe_activated ? (
+                                <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200">
+                                  PPPoE
+                                </Badge>
+                              ) : sub.pppoe_username ? (
+                                <Badge variant="outline" className="text-[10px] bg-yellow-50 text-yellow-700 border-yellow-200">
+                                  Pending
+                                </Badge>
+                              ) : null}
+                            </div>
+                          </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant={sub.is_active ? "default" : "secondary"} className={sub.is_active ? "bg-green-600" : "bg-red-100 text-red-700"}>
-                            {sub.is_active ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
+                        {/* Actions */}
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleViewHistory(sub)}
-                              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                              className="text-blue-600 border-blue-600 hover:bg-blue-50 text-xs px-2 h-8"
                             >
-                              View Records
+                              <span className="hidden sm:inline">View</span>
+                              <User className="h-3.5 w-3.5 sm:hidden" />
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
