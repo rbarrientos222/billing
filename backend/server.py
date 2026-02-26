@@ -5176,8 +5176,8 @@ async def get_dashboard_stats(
         
         prev_date_filter = {"$gte": prev_start, "$lt": prev_end}
         
-        # Previous period payments
-        prev_payments = await db.payments.find({"created_at": prev_date_filter}).to_list(10000)
+        # Previous period payments - use payment_date
+        prev_payments = await db.payments.find({"payment_date": prev_date_filter}).to_list(10000)
         prev_gross_sales = sum(p.get('total_amount', p.get('amount', 0)) for p in prev_payments)
         
         # Previous period expenses
