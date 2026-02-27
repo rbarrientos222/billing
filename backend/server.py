@@ -5438,8 +5438,11 @@ async def get_billing_overview(
         paid_query["paid_at"] = date_filter
     invoices_paid = await db.invoices.count_documents(paid_query)
     
-    # Pending invoices (all time - this is current state)
-    pending_invoices = await db.invoices.count_documents({"paid": False})
+    # Pending invoices - FILTERED by created_at (invoices created in period that are unpaid)
+    pending_query = {"paid": False}
+    if date_filter:
+        pending_query["created_at"] = date_filter
+    pending_invoices = await db.invoices.count_documents(pending_query)
     
     # Total amount collected in period - use payment_date
     payment_query = {}
@@ -5448,27 +5451,26 @@ async def get_billing_overview(
     payments = await db.payments.find(payment_query).to_list(10000)
     total_collected = sum(p.get('total_amount', p.get('amount', 0)) for p in payments)
     
-    # Total receivables - only include invoices WITH due_date (to match Reports calculation)
-    unpaid = await db.invoices.find({"paid": False, "due_date": {"$exists": True, "$ne": None, "$ne": ""}}).to_list(10000)
+    # Total receivables - FILTERED by created_at (receivables from invoices created in period)
+    receivables_query = {"paid": False, "due_date": {"$exists": True, "$ne": None, "$ne": ""}}
+    if date_filter:
+        receivables_query["created_at"] = date_filter
+    unpaid = await db.invoices.find(receivables_query).to_list(10000)
     total_receivables = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid)
-    
-    # Also count ALL unpaid for "pending invoices" stat
-    all_unpaid = await db.invoices.count_documents({"paid": False})
     
     # Collection rate for period (if invoices were generated)
     collection_rate = 0
     if invoices_generated > 0:
         collection_rate = round((invoices_paid / invoices_generated) * 100, 1)
     
-    # Overdue invoices (due_date passed and not paid)
-    overdue_invoices = await db.invoices.count_documents({
-        "paid": False,
-        "due_date": {"$lt": now}
-    })
+    # Overdue invoices - FILTERED by created_at (overdue invoices created in period)
+    overdue_query = {"paid": False, "due_date": {"$lt": now}}
+    if date_filter:
+        overdue_query["created_at"] = date_filter
+    overdue_invoices = await db.invoices.count_documents(overdue_query)
     
-    # Subscribers with arrears (have ANY unpaid invoices)
-    all_unpaid_list = await db.invoices.find({"paid": False}).to_list(10000)
-    subscribers_with_arrears = len(set([inv.get('subscriber_id') for inv in all_unpaid_list if inv.get('subscriber_id')]))
+    # Subscribers with arrears - from invoices created in period
+    subscribers_with_arrears = len(set([inv.get('subscriber_id') for inv in unpaid if inv.get('subscriber_id')]))
     
     # Recent billing activity - sort by payment_date
     recent_payments = await db.payments.find({}, {"_id": 0}).sort("payment_date", -1).limit(5).to_list(5)
