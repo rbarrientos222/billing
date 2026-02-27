@@ -5323,9 +5323,9 @@ async def get_dashboard_stats(
         unpaid_query["created_at"] = date_filter
     unpaid_invoices = await db.invoices.count_documents(unpaid_query)
     
-    # Receivables (all unpaid, regardless of period - this is a balance)
+    # Receivables - calculate correctly using remaining balance (amount - paid_amount)
     unpaid = await db.invoices.find({"paid": False}).to_list(10000)
-    receivables = sum(inv['amount'] for inv in unpaid)
+    receivables = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid)
     
     # Open tickets (current state, not period-filtered)
     open_tickets = await db.job_orders.count_documents({"status": "Open"})
