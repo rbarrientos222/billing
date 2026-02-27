@@ -210,7 +210,7 @@ export default function AdminDashboard({ user, onLogout }) {
 
     const activityCards = [
       { title: 'Active Subscribers', value: stats.active_subscribers || 0, icon: UserCircle, color: 'text-green-600' },
-      { title: 'Open Tickets', value: stats.open_tickets || 0, icon: Activity, color: 'text-blue-600' },
+      { title: 'Unpaid Invoices', value: stats.unpaid_invoices || 0, icon: AlertCircle, color: 'text-amber-600' },
       { title: 'Total Invoices', value: stats.total_invoices || 0, icon: FileText, color: 'text-purple-600' },
     ];
 
