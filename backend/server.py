@@ -5448,9 +5448,12 @@ async def get_billing_overview(
     payments = await db.payments.find(payment_query).to_list(10000)
     total_collected = sum(p.get('total_amount', p.get('amount', 0)) for p in payments)
     
-    # Total receivables (outstanding balance - all time) - use amount - paid_amount
-    unpaid = await db.invoices.find({"paid": False}).to_list(10000)
+    # Total receivables - only include invoices WITH due_date (to match Reports calculation)
+    unpaid = await db.invoices.find({"paid": False, "due_date": {"$exists": True, "$ne": None, "$ne": ""}}).to_list(10000)
     total_receivables = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid)
+    
+    # Also count ALL unpaid for "pending invoices" stat
+    all_unpaid = await db.invoices.count_documents({"paid": False})
     
     # Collection rate for period (if invoices were generated)
     collection_rate = 0
