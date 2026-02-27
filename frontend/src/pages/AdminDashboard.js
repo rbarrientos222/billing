@@ -191,12 +191,12 @@ export default function AdminDashboard({ user, onLogout }) {
         bg: 'bg-red-50'
       },
       { 
-        title: 'Receivables', 
-        value: `₱${(stats.receivables || 0).toLocaleString()}`, 
-        icon: AlertCircle, 
-        trend: `${stats.unpaid_invoices || 0} unpaid`,
-        color: 'text-amber-600',
-        bg: 'bg-amber-50'
+        title: 'Open Tickets', 
+        value: stats.open_tickets || 0, 
+        icon: Activity, 
+        trend: 'support requests',
+        color: 'text-blue-600',
+        bg: 'bg-blue-50'
       },
       { 
         title: 'Total Discounts', 
