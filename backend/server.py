@@ -5466,8 +5466,9 @@ async def get_billing_overview(
         "due_date": {"$lt": now}
     })
     
-    # Subscribers with arrears (have unpaid invoices)
-    subscribers_with_arrears = len(set([inv.get('subscriber_id') for inv in unpaid if inv.get('subscriber_id')]))
+    # Subscribers with arrears (have ANY unpaid invoices)
+    all_unpaid_list = await db.invoices.find({"paid": False}).to_list(10000)
+    subscribers_with_arrears = len(set([inv.get('subscriber_id') for inv in all_unpaid_list if inv.get('subscriber_id')]))
     
     # Recent billing activity - sort by payment_date
     recent_payments = await db.payments.find({}, {"_id": 0}).sort("payment_date", -1).limit(5).to_list(5)
