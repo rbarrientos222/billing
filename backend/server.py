@@ -5476,7 +5476,7 @@ async def get_billing_overview(
         "total_subscribers": total_subscribers,
         "invoices_generated": invoices_generated,
         "invoices_paid": invoices_paid,
-        "pending_invoices": pending_invoices,
+        "pending_invoices": all_unpaid,  # Use count of ALL unpaid invoices
         "overdue_invoices": overdue_invoices,
         "total_collected": total_collected,
         "total_receivables": total_receivables,
