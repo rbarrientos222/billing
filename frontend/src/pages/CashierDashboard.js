@@ -811,26 +811,41 @@ export default function CashierDashboard({ user, onLogout }) {
       </header>
 
       <main className="p-4 sm:p-6 max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          <Card className="lg:col-span-2">
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-lg sm:text-xl">Search Subscriber</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Input 
-                  placeholder="Account #, name, or phone..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  className="flex-1"
-                  data-testid="search-input"
-                />
-                <Button onClick={handleSearch} disabled={searching} data-testid="search-button" className="w-full sm:w-auto">
-                  <Search className="h-4 w-4 mr-2" />
-                  {searching ? 'Searching...' : 'Search'}
-                </Button>
-              </div>
+        {/* Main Tab Navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2 h-auto">
+            <TabsTrigger value="payment" className="flex items-center gap-2 py-2.5 text-sm" data-testid="tab-payment">
+              <Receipt className="h-4 w-4" />
+              <span>Payment</span>
+            </TabsTrigger>
+            <TabsTrigger value="receivables" className="flex items-center gap-2 py-2.5 text-sm" data-testid="tab-receivables">
+              <FileText className="h-4 w-4" />
+              <span>Receivables</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Payment Tab Content */}
+          <TabsContent value="payment" className="mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+              <Card className="lg:col-span-2">
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-lg sm:text-xl">Search Subscriber</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input 
+                      placeholder="Account #, name, or phone..." 
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                      className="flex-1"
+                      data-testid="search-input"
+                    />
+                    <Button onClick={handleSearch} disabled={searching} data-testid="search-button" className="w-full sm:w-auto">
+                      <Search className="h-4 w-4 mr-2" />
+                      {searching ? 'Searching...' : 'Search'}
+                    </Button>
+                  </div>
 
               {/* Search Results List */}
               {searchResults.length > 0 && (
