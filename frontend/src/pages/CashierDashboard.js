@@ -1460,7 +1460,145 @@ export default function CashierDashboard({ user, onLogout }) {
               </CardContent>
             </Card>
           </div>
-        </div>
+            </div>
+          </TabsContent>
+
+          {/* Receivables Tab Content */}
+          <TabsContent value="receivables" className="mt-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Receivables List
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Filters Row */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by account or name..."
+                      value={receivablesSearch}
+                      onChange={(e) => setReceivablesSearch(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleReceivablesSearch()}
+                      className="pl-8"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Select value={receivablesFilter} onValueChange={(v) => { setReceivablesFilter(v); setReceivablesPage(1); }}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="all">All</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button variant="outline" onClick={handleReceivablesSearch}>
+                      <Search className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Receivables Table */}
+                {receivablesLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[160px]">
+                            <span className="hidden sm:inline">Account / Name</span>
+                            <span className="sm:hidden">Subscriber</span>
+                          </TableHead>
+                          <TableHead className="hidden md:table-cell">Contact</TableHead>
+                          <TableHead className="text-right min-w-[100px]">Amount Due</TableHead>
+                          <TableHead className="hidden sm:table-cell">Status</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {receivables.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                              No receivables found
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          receivables.map((item) => (
+                            <TableRow key={item.subscriber_id}>
+                              <TableCell>
+                                <div className="space-y-0.5">
+                                  <div className="font-mono text-xs text-muted-foreground">{item.subscriber_id}</div>
+                                  <div className="font-medium text-sm">{item.subscriber_name || 'Unknown'}</div>
+                                  {/* Mobile: show contact inline */}
+                                  <div className="md:hidden text-xs text-muted-foreground">{item.phone || '-'}</div>
+                                  {/* Mobile: show status badge inline */}
+                                  <div className="sm:hidden">
+                                    <Badge variant={item.is_active ? "default" : "secondary"} className={`text-[10px] ${item.is_active ? "bg-green-600" : ""}`}>
+                                      {item.is_active ? 'Active' : 'Inactive'}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell text-sm">
+                                {item.phone || '-'}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="font-bold text-red-600">₱{(item.total_due || 0).toLocaleString()}</div>
+                                <div className="text-xs text-muted-foreground">{item.invoice_count || 0} invoice(s)</div>
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell">
+                                <Badge variant={item.is_active ? "default" : "secondary"} className={item.is_active ? "bg-green-600" : ""}>
+                                  {item.is_active ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setActiveTab('payment');
+                                    setSearchTerm(item.subscriber_id);
+                                    setTimeout(() => handleSearch(), 100);
+                                  }}
+                                  className="text-xs px-2 h-8"
+                                >
+                                  <DollarSign className="h-3.5 w-3.5 sm:mr-1" />
+                                  <span className="hidden sm:inline">Pay</span>
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {receivables.length > 0 && (
+                  <TablePagination
+                    currentPage={receivablesPage}
+                    totalPages={Math.ceil(receivablesTotal / receivablesPageSize)}
+                    totalItems={receivablesTotal}
+                    pageSize={receivablesPageSize}
+                    onPageChange={setReceivablesPage}
+                    onPageSizeChange={(size) => {
+                      setReceivablesPageSize(size);
+                      setReceivablesPage(1);
+                    }}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
