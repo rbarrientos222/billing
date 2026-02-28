@@ -3647,7 +3647,7 @@ async def generate_soa(
     # Calculate totals
     total_previous = sum(inv.get('paid_amount', 0) for inv in unpaid_invoices)
     total_payments = sum(p.get('total_amount', p.get('amount', 0)) for p in recent_payments)
-    total_current = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid_invoices)
+    total_current = sum(safe_float(inv.get('amount')) - safe_float(inv.get('paid_amount')) for inv in unpaid_invoices)
     total_due = total_current
     
     # Get plan info
