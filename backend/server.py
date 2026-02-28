@@ -185,12 +185,14 @@ async def auto_generate_billing():
                     
                     if days > 0 and days < 30:
                         # Create prorated invoice
+                        prorate_amount = prorate_calc['amount']
                         invoice = {
                             "invoice_number": f"INV{today.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}",
                             "subscriber_id": account_number,
                             "subscriber_name": f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip(),
                             "plan_name": plan['name'],
-                            "amount": prorate_calc['amount'],
+                            "amount": prorate_amount,
+                            "paid_amount": 0,
                             "description": f"Prorated bill for period {installation_date.strftime('%B %d, %Y')} - {today.strftime('%B %d, %Y')} ({days} days)",
                             "billing_day": billing_day,
                             "billing_start": installation_date,
@@ -202,7 +204,40 @@ async def auto_generate_billing():
                         }
                         await db.invoices.insert_one(invoice)
                         invoices_generated += 1
-                        logger.info(f"Generated PRORATED invoice {invoice['invoice_number']} for new subscriber {account_number}: {days} days = ₱{prorate_calc['amount']}")
+                        logger.info(f"Generated PRORATED invoice {invoice['invoice_number']} for new subscriber {account_number}: {days} days = ₱{prorate_amount}")
+                        
+                        # AUTO-APPLY WALLET CREDIT for prorated invoice
+                        wallet_balance = sub.get('wallet_balance', 0)
+                        if wallet_balance > 0:
+                            amount_to_apply = min(wallet_balance, prorate_amount)
+                            new_wallet_balance = wallet_balance - amount_to_apply
+                            
+                            if amount_to_apply >= prorate_amount:
+                                await db.invoices.update_one(
+                                    {"invoice_number": invoice['invoice_number']},
+                                    {"$set": {"paid": True, "paid_amount": prorate_amount, "paid_at": today}}
+                                )
+                                logger.info(f"Prorated invoice {invoice['invoice_number']} fully paid from wallet (₱{amount_to_apply})")
+                            else:
+                                await db.invoices.update_one(
+                                    {"invoice_number": invoice['invoice_number']},
+                                    {"$set": {"paid_amount": amount_to_apply}}
+                                )
+                                logger.info(f"Prorated invoice {invoice['invoice_number']} partially paid from wallet (₱{amount_to_apply})")
+                            
+                            await db.subscribers.update_one(
+                                {"account_number": account_number},
+                                {"$set": {"wallet_balance": new_wallet_balance}}
+                            )
+                            
+                            await db.wallet_transactions.insert_one({
+                                "subscriber_id": account_number,
+                                "type": "debit",
+                                "amount": amount_to_apply,
+                                "description": f"Auto-payment for prorated bill {invoice['invoice_number']}",
+                                "created_at": today
+                            })
+                        
                         continue
             
             # Regular full invoice for existing subscribers
