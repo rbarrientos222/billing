@@ -2962,7 +2962,7 @@ async def add_manual_charge(account_number: str, data: dict, current_user: dict 
         "amount": amount,
         "type": charge_type,
         "charge_date": now,
-        "due_date": now + timedelta(days=15),
+        "due_date": now + timedelta(days=5),
         "paid": False,
         "is_manual_charge": True,
         "created_by": current_user['username'],
