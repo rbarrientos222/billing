@@ -78,7 +78,7 @@ export default function CashierDashboard({ user, onLogout }) {
   const fetchReceivables = async () => {
     setReceivablesLoading(true);
     try {
-      const response = await axios.get('/reports/receivables', {
+      const response = await axios.get('/cashier/receivables', {
         params: {
           status: receivablesFilter,
           search: receivablesSearch,
