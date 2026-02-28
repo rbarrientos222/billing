@@ -6677,6 +6677,74 @@ async def get_paymongo_public_key():
 
 # ========== REPORTS MODULE ==========
 
+@api_router.get("/cashier/receivables")
+async def get_cashier_receivables(
+    current_user: dict = Depends(get_current_user),
+    status: str = Query("active", description="Filter: active, inactive, all"),
+    search: str = Query("", description="Search by account or name"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100)
+):
+    """Get receivables list grouped by subscriber for cashier view"""
+    if current_user['role'] not in ['admin', 'cashier', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Build subscriber filter
+    sub_filter = {}
+    if status == 'active':
+        sub_filter['is_active'] = True
+    elif status == 'inactive':
+        sub_filter['is_active'] = False
+    # 'all' means no is_active filter
+    
+    if search:
+        sub_filter['$or'] = [
+            {"account_number": {"$regex": search, "$options": "i"}},
+            {"first_name": {"$regex": search, "$options": "i"}},
+            {"last_name": {"$regex": search, "$options": "i"}}
+        ]
+    
+    # Get subscribers matching filter
+    total_count = await db.subscribers.count_documents(sub_filter)
+    skip = (page - 1) * limit
+    subscribers = await db.subscribers.find(sub_filter, {"_id": 0}).skip(skip).limit(limit).to_list(limit)
+    
+    # For each subscriber, get their unpaid invoices
+    receivables = []
+    for sub in subscribers:
+        account_number = sub.get('account_number')
+        
+        # Count unpaid invoices
+        unpaid_invoices = await db.invoices.find({
+            "subscriber_id": account_number,
+            "paid": False
+        }).to_list(100)
+        
+        if unpaid_invoices:
+            total_due = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid_invoices)
+            
+            receivables.append({
+                "subscriber_id": account_number,
+                "subscriber_name": f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip(),
+                "phone": sub.get('phone') or sub.get('mobile', ''),
+                "is_active": sub.get('is_active', False),
+                "total_due": total_due,
+                "invoice_count": len(unpaid_invoices),
+                "oldest_due_date": min([inv.get('due_date') for inv in unpaid_invoices if inv.get('due_date')], default=None)
+            })
+    
+    # Sort by total_due descending
+    receivables.sort(key=lambda x: x['total_due'], reverse=True)
+    
+    return {
+        "receivables": receivables,
+        "total_count": total_count,
+        "page": page,
+        "pages": (total_count + limit - 1) // limit
+    }
+
+
+
 @api_router.get("/reports/receivables")
 async def get_receivables_report(current_user: dict = Depends(get_current_user)):
     """
