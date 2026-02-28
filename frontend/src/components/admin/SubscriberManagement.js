@@ -430,6 +430,30 @@ export default function SubscriberManagement() {
     }
   };
 
+  const handlePrintSOA = async (subscriber) => {
+    try {
+      toast.info('Generating SOA...');
+      const response = await axios.get(`/soa/${subscriber.account_number}`, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `SOA_${subscriber.account_number}_${new Date().toISOString().split('T')[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('SOA downloaded successfully');
+    } catch (error) {
+      toast.error('Failed to generate SOA');
+      console.error('SOA generation error:', error);
+    }
+  };
+
   // Action handlers
   const openChangePlanDialog = (subscriber) => {
     setSelectedSubscriber(subscriber);
