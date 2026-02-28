@@ -3871,7 +3871,7 @@ async def get_soa_data(
             if pmt.get(key) and isinstance(pmt[key], datetime):
                 pmt[key] = pmt[key].isoformat()
     
-    total_due = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid_invoices)
+    total_due = sum(safe_float(inv.get('amount')) - safe_float(inv.get('paid_amount')) for inv in unpaid_invoices)
     total_payments = sum(p.get('total_amount', p.get('amount', 0)) for p in recent_payments)
     
     return {
