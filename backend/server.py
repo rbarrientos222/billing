@@ -6720,15 +6720,6 @@ async def get_cashier_receivables(
         }).to_list(100)
         
         if unpaid_invoices:
-            # Calculate total due with safe number conversion
-            def safe_float(val, default=0):
-                if val is None or val == '':
-                    return default
-                try:
-                    return float(val)
-                except (ValueError, TypeError):
-                    return default
-            
             total_due = sum(safe_float(inv.get('amount')) - safe_float(inv.get('paid_amount')) for inv in unpaid_invoices)
             
             receivables.append({
