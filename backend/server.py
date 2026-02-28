@@ -671,6 +671,15 @@ def generate_supplier_id() -> str:
 def generate_payment_id() -> str:
     return f"PAY{str(uuid.uuid4())[:8].upper()}"
 
+def safe_float(val, default=0.0):
+    """Safely convert a value to float, handling None, empty strings, and invalid values"""
+    if val is None or val == '':
+        return default
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
 def get_billing_period_description(billing_day: int, reference_date: datetime = None) -> dict:
     """
     Generate billing period description based on billing day (1-31).
