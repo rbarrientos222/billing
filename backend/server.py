@@ -3616,6 +3616,276 @@ async def generate_receipt(or_number: str):
         "Content-Disposition": f"attachment; filename=receipt_{or_number}.pdf"
     })
 
+
+@api_router.get("/soa/{account_number}")
+async def generate_soa(
+    account_number: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Generate Statement of Account (SOA) PDF for a subscriber"""
+    subscriber = await db.subscribers.find_one({"account_number": account_number.upper()}, {"_id": 0})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    company = await db.company_settings.find_one({}, {"_id": 0})
+    
+    # Get unpaid invoices
+    unpaid_invoices = await db.invoices.find({
+        "subscriber_id": account_number.upper(),
+        "paid": False
+    }).sort("due_date", 1).to_list(100)
+    
+    # Get recent payments
+    recent_payments = await db.payments.find({
+        "subscriber_id": account_number.upper()
+    }).sort("payment_date", -1).limit(5).to_list(5)
+    
+    # Calculate totals
+    total_previous = sum(inv.get('paid_amount', 0) for inv in unpaid_invoices)
+    total_payments = sum(p.get('total_amount', p.get('amount', 0)) for p in recent_payments)
+    total_current = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid_invoices)
+    total_due = total_current
+    
+    # Get plan info
+    plan = None
+    if subscriber.get('plan_id'):
+        plan = await db.plans.find_one({"name": subscriber['plan_id']}, {"_id": 0})
+    
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    y = height - 0.5*inch
+    
+    # Company Header with Logo
+    if company:
+        logo_data = company.get('company_logo') or company.get('logo_url')
+        if logo_data and logo_data.startswith('data:image'):
+            try:
+                import base64
+                from PIL import Image as PILImage
+                header = logo_data.split(',')[0]
+                img_data = base64.b64decode(logo_data.split(',')[1])
+                img_buffer = BytesIO(img_data)
+                img = PILImage.open(img_buffer)
+                img_path = f"/tmp/logo_{account_number}.png"
+                img.save(img_path)
+                p.drawImage(img_path, 0.5*inch, y - 0.8*inch, width=1*inch, height=1*inch, preserveAspectRatio=True)
+            except Exception as e:
+                logger.error(f"Failed to load logo: {e}")
+        
+        # Company name and details
+        p.setFont("Helvetica-Bold", 14)
+        company_name = company.get('company_name') or company.get('business_name', 'Billing System')
+        p.drawString(1.7*inch, y - 0.2*inch, company_name)
+        
+        p.setFont("Helvetica", 9)
+        company_address = company.get('company_address') or company.get('address', '')
+        p.drawString(1.7*inch, y - 0.4*inch, company_address)
+        
+        contact_line = []
+        if company.get('company_mobile') or company.get('mobile'):
+            contact_line.append(company.get('company_mobile') or company.get('mobile'))
+        if company.get('company_email') or company.get('email'):
+            contact_line.append(company.get('company_email') or company.get('email'))
+        p.drawString(1.7*inch, y - 0.55*inch, " | ".join(contact_line))
+    
+    # STATEMENT OF ACCOUNT Title
+    y -= 1.3*inch
+    p.setFont("Helvetica-Bold", 16)
+    p.drawCentredString(width/2, y, "STATEMENT OF ACCOUNT")
+    
+    # Barcode placeholder (account number as text)
+    y -= 0.4*inch
+    p.setFont("Helvetica", 8)
+    p.drawCentredString(width/2, y, f"*{account_number.upper()}*")
+    
+    # Customer Details Box
+    y -= 0.5*inch
+    p.setStrokeColor(colors.black)
+    p.setLineWidth(0.5)
+    p.rect(0.5*inch, y - 1*inch, 3.5*inch, 1*inch)
+    
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(0.6*inch, y - 0.2*inch, "Customer Details")
+    p.setFont("Helvetica", 9)
+    customer_name = f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip()
+    p.drawString(0.6*inch, y - 0.4*inch, customer_name)
+    address = subscriber.get('address', subscriber.get('barangay', ''))
+    p.drawString(0.6*inch, y - 0.55*inch, address[:50] if address else '')
+    phone = subscriber.get('phone') or subscriber.get('mobile', '')
+    p.drawString(0.6*inch, y - 0.7*inch, phone)
+    p.drawString(0.6*inch, y - 0.85*inch, subscriber.get('email', ''))
+    
+    # Bill Information Box
+    p.rect(4.2*inch, y - 1*inch, 3.3*inch, 1*inch)
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(4.3*inch, y - 0.2*inch, "Bill Information")
+    p.setFont("Helvetica", 9)
+    
+    now = datetime.now()
+    billing_period = f"{now.strftime('%B')} {now.year}"
+    p.drawString(4.3*inch, y - 0.4*inch, f"Billing Period: {billing_period}")
+    p.drawString(4.3*inch, y - 0.55*inch, f"Account No.: {account_number.upper()}")
+    tin = company.get('company_tin', '') if company else ''
+    p.drawString(4.3*inch, y - 0.7*inch, f"TIN No.: {tin}")
+    p.drawString(4.3*inch, y - 0.85*inch, f"Date Generated: {now.strftime('%Y-%m-%d')}")
+    
+    # Bill Description Section
+    y -= 1.4*inch
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(0.5*inch, y, "Bill Description")
+    
+    # Previous Bill Charges
+    y -= 0.35*inch
+    p.setFillColor(colors.Color(0.9, 0.9, 0.9))
+    p.rect(0.5*inch, y - 0.25*inch, width - 1*inch, 0.35*inch, fill=True, stroke=False)
+    p.setFillColor(colors.black)
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(0.6*inch, y - 0.15*inch, "Previous Bill Charges")
+    
+    y -= 0.5*inch
+    p.setFont("Helvetica", 9)
+    
+    # Table header
+    p.drawString(0.6*inch, y, "Description")
+    p.drawRightString(width - 0.6*inch, y, "Amount")
+    
+    y -= 0.25*inch
+    p.line(0.5*inch, y + 0.1*inch, width - 0.5*inch, y + 0.1*inch)
+    
+    # Previous balance info
+    previous_balance = sum(inv.get('amount', 0) for inv in unpaid_invoices if inv.get('is_prorated', False) or (inv.get('created_at') and inv['created_at'].month < now.month))
+    
+    p.drawString(0.6*inch, y, "Amount Due as of Last Statement")
+    p.drawRightString(width - 0.6*inch, y, f"₱{previous_balance:,.2f}")
+    
+    y -= 0.25*inch
+    p.drawString(0.6*inch, y, "Payments Received - Thank You!")
+    p.drawRightString(width - 0.6*inch, y, f"(₱{total_payments:,.2f})")
+    
+    y -= 0.25*inch
+    remaining = max(0, previous_balance - total_payments)
+    p.drawString(0.6*inch, y, "Remaining Balance")
+    p.drawRightString(width - 0.6*inch, y, f"₱{remaining:,.2f}")
+    
+    # Current Bill Charges
+    y -= 0.4*inch
+    p.setFillColor(colors.Color(0.9, 0.9, 0.9))
+    p.rect(0.5*inch, y - 0.25*inch, width - 1*inch, 0.35*inch, fill=True, stroke=False)
+    p.setFillColor(colors.black)
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(0.6*inch, y - 0.15*inch, "Current Bill Charges")
+    
+    y -= 0.5*inch
+    p.setFont("Helvetica", 9)
+    
+    # List unpaid invoices
+    for inv in unpaid_invoices[:5]:
+        desc = inv.get('description', inv.get('plan_name', 'Monthly Service'))[:40]
+        amount = inv.get('amount', 0) - inv.get('paid_amount', 0)
+        p.drawString(0.6*inch, y, desc)
+        p.drawRightString(width - 0.6*inch, y, f"₱{amount:,.2f}")
+        y -= 0.25*inch
+    
+    # Total line
+    y -= 0.15*inch
+    p.line(0.5*inch, y + 0.1*inch, width - 0.5*inch, y + 0.1*inch)
+    y -= 0.1*inch
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(0.6*inch, y, "TOTAL AMOUNT DUE")
+    p.drawRightString(width - 0.6*inch, y, f"₱{total_due:,.2f}")
+    
+    # Due date
+    if unpaid_invoices and unpaid_invoices[0].get('due_date'):
+        due_date = unpaid_invoices[0]['due_date']
+        if isinstance(due_date, datetime):
+            due_str = due_date.strftime('%B %d, %Y')
+        else:
+            due_str = str(due_date)
+        y -= 0.3*inch
+        p.setFont("Helvetica", 9)
+        p.drawString(0.6*inch, y, f"Due Date: {due_str}")
+    
+    # Footer message
+    y -= 0.6*inch
+    p.setFont("Helvetica", 8)
+    footer = company.get('soa_footer', 'If you have questions or concerns about this statement please contact on the details provided above.') if company else ''
+    
+    # Word wrap footer
+    words = footer.split()
+    line = ""
+    max_width = width - 1*inch
+    for word in words:
+        test_line = line + " " + word if line else word
+        if p.stringWidth(test_line, "Helvetica", 8) < max_width:
+            line = test_line
+        else:
+            p.drawString(0.5*inch, y, line)
+            y -= 0.15*inch
+            line = word
+    if line:
+        p.drawString(0.5*inch, y, line)
+    
+    # Thank you
+    y -= 0.4*inch
+    p.setFont("Helvetica-Bold", 12)
+    p.drawCentredString(width/2, y, "Thank you!")
+    
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+    
+    return StreamingResponse(buffer, media_type="application/pdf", headers={
+        "Content-Disposition": f"attachment; filename=SOA_{account_number}_{now.strftime('%Y%m%d')}.pdf"
+    })
+
+@api_router.get("/soa-data/{account_number}")
+async def get_soa_data(
+    account_number: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get SOA data for frontend rendering"""
+    subscriber = await db.subscribers.find_one({"account_number": account_number.upper()}, {"_id": 0})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    company = await db.company_settings.find_one({}, {"_id": 0})
+    
+    unpaid_invoices = await db.invoices.find({
+        "subscriber_id": account_number.upper(),
+        "paid": False
+    }).sort("due_date", 1).to_list(100)
+    
+    recent_payments = await db.payments.find({
+        "subscriber_id": account_number.upper()
+    }).sort("payment_date", -1).limit(10).to_list(10)
+    
+    # Serialize dates
+    for inv in unpaid_invoices:
+        for key in ['due_date', 'created_at', 'billing_start', 'billing_end']:
+            if inv.get(key) and isinstance(inv[key], datetime):
+                inv[key] = inv[key].isoformat()
+    
+    for pmt in recent_payments:
+        for key in ['payment_date', 'created_at']:
+            if pmt.get(key) and isinstance(pmt[key], datetime):
+                pmt[key] = pmt[key].isoformat()
+    
+    total_due = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid_invoices)
+    total_payments = sum(p.get('total_amount', p.get('amount', 0)) for p in recent_payments)
+    
+    return {
+        "subscriber": subscriber,
+        "company": company,
+        "unpaid_invoices": unpaid_invoices,
+        "recent_payments": recent_payments,
+        "total_due": total_due,
+        "total_payments": total_payments,
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
 # ========== JOB ORDERS ==========
 def generate_job_order_id():
     """Generate a unique job order ID"""
