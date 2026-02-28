@@ -1149,6 +1149,10 @@ export default function SubscriberManagement() {
                                   <DollarSign className="mr-2 h-4 w-4" />
                                   Add Charge
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handlePrintSOA(sub)}>
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  Print SOA
+                                </DropdownMenuItem>
                                 {sub.pppoe_username && sub.pppoe_password && sub.pppoe_profile && !sub.is_active === false && (
                                   <DropdownMenuItem onClick={() => handleActivateSingle(sub.account_number)}>
                                     <RefreshCw className="mr-2 h-4 w-4" />
