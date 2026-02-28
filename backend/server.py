@@ -6748,6 +6748,14 @@ async def get_cashier_receivables(
         if unpaid_invoices:
             total_due = sum(safe_float(inv.get('amount')) - safe_float(inv.get('paid_amount')) for inv in unpaid_invoices)
             
+            # Safely parse all due dates to datetime objects before finding the minimum
+            parsed_due_dates = [safe_parse_date(inv.get('due_date')) for inv in unpaid_invoices]
+            valid_due_dates = [d for d in parsed_due_dates if d is not None]
+            oldest_due_date = min(valid_due_dates) if valid_due_dates else None
+            
+            # Convert to ISO string for JSON serialization
+            oldest_due_date_str = oldest_due_date.isoformat() if oldest_due_date else None
+            
             receivables.append({
                 "subscriber_id": account_number,
                 "subscriber_name": f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip(),
@@ -6755,7 +6763,7 @@ async def get_cashier_receivables(
                 "is_active": sub.get('is_active', False),
                 "total_due": total_due,
                 "invoice_count": len(unpaid_invoices),
-                "oldest_due_date": min([inv.get('due_date') for inv in unpaid_invoices if inv.get('due_date')], default=None)
+                "oldest_due_date": oldest_due_date_str
             })
     
     # Sort by total_due descending
