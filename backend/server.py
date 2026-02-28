@@ -3317,6 +3317,144 @@ async def use_wallet_for_payment(data: dict, current_user: dict = Depends(get_cu
         "remaining_wallet_balance": new_balance
     }
 
+
+@api_router.post("/admin/apply-wallet-credits/{account_number}")
+async def admin_apply_wallet_credits(
+    account_number: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Admin endpoint to manually apply wallet credits to unpaid invoices.
+    This is useful for fixing existing subscribers who have wallet balance
+    but unpaid invoices that weren't auto-paid.
+    """
+    if current_user['role'] not in ['admin', 'cashier']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    subscriber = await db.subscribers.find_one({"account_number": account_number.upper()})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    wallet_balance = subscriber.get('wallet_balance', 0)
+    if wallet_balance <= 0:
+        return {"message": "No wallet balance to apply", "invoices_paid": 0, "amount_applied": 0}
+    
+    # Get unpaid invoices sorted by due_date (oldest first)
+    unpaid_invoices = await db.invoices.find({
+        "subscriber_id": account_number.upper(),
+        "paid": False
+    }).sort("due_date", 1).to_list(100)
+    
+    if not unpaid_invoices:
+        return {"message": "No unpaid invoices found", "invoices_paid": 0, "amount_applied": 0}
+    
+    total_applied = 0
+    invoices_fully_paid = 0
+    invoices_partially_paid = 0
+    now = datetime.now(timezone.utc)
+    
+    remaining_wallet = wallet_balance
+    
+    for invoice in unpaid_invoices:
+        if remaining_wallet <= 0:
+            break
+        
+        invoice_amount = invoice.get('amount', 0)
+        already_paid = invoice.get('paid_amount', 0)
+        remaining_balance = invoice_amount - already_paid
+        
+        if remaining_balance <= 0:
+            continue
+        
+        amount_to_apply = min(remaining_wallet, remaining_balance)
+        new_paid_amount = already_paid + amount_to_apply
+        
+        if new_paid_amount >= invoice_amount:
+            # Fully paid
+            await db.invoices.update_one(
+                {"invoice_number": invoice['invoice_number']},
+                {"$set": {"paid": True, "paid_amount": invoice_amount, "paid_at": now}}
+            )
+            invoices_fully_paid += 1
+        else:
+            # Partially paid
+            await db.invoices.update_one(
+                {"invoice_number": invoice['invoice_number']},
+                {"$set": {"paid_amount": new_paid_amount}}
+            )
+            invoices_partially_paid += 1
+        
+        total_applied += amount_to_apply
+        remaining_wallet -= amount_to_apply
+        
+        # Log the transaction
+        await db.wallet_transactions.insert_one({
+            "subscriber_id": account_number.upper(),
+            "type": "debit",
+            "amount": amount_to_apply,
+            "description": f"Manual wallet apply for {invoice['invoice_number']}",
+            "created_at": now
+        })
+    
+    # Update subscriber's wallet balance
+    await db.subscribers.update_one(
+        {"account_number": account_number.upper()},
+        {"$set": {"wallet_balance": remaining_wallet}}
+    )
+    
+    return {
+        "message": f"Successfully applied wallet credits",
+        "amount_applied": total_applied,
+        "invoices_fully_paid": invoices_fully_paid,
+        "invoices_partially_paid": invoices_partially_paid,
+        "remaining_wallet": remaining_wallet,
+        "original_wallet": wallet_balance
+    }
+
+@api_router.post("/admin/apply-all-wallet-credits")
+async def admin_apply_all_wallet_credits(current_user: dict = Depends(get_current_user)):
+    """
+    Admin endpoint to apply wallet credits for ALL subscribers with both:
+    - Positive wallet balance
+    - Unpaid invoices
+    """
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Find subscribers with wallet balance
+    subscribers_with_wallet = await db.subscribers.find({
+        "wallet_balance": {"$gt": 0}
+    }).to_list(10000)
+    
+    total_subscribers_processed = 0
+    total_amount_applied = 0
+    total_invoices_paid = 0
+    
+    for sub in subscribers_with_wallet:
+        account_number = sub['account_number']
+        
+        # Check if they have unpaid invoices
+        unpaid_count = await db.invoices.count_documents({
+            "subscriber_id": account_number,
+            "paid": False
+        })
+        
+        if unpaid_count > 0:
+            # Apply wallet credits
+            result = await admin_apply_wallet_credits(account_number, current_user)
+            if result.get('amount_applied', 0) > 0:
+                total_subscribers_processed += 1
+                total_amount_applied += result['amount_applied']
+                total_invoices_paid += result['invoices_fully_paid']
+    
+    return {
+        "message": "Bulk wallet application complete",
+        "subscribers_processed": total_subscribers_processed,
+        "total_amount_applied": total_amount_applied,
+        "total_invoices_paid": total_invoices_paid
+    }
+
+
 @api_router.get("/payments/subscriber/{account_number}")
 async def get_subscriber_payments(
     account_number: str,
