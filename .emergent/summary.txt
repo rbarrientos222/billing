@@ -6,56 +6,69 @@ Key features requested include:
 -   **Cashier Module:** Login, dashboard, fast search, payment processing, and receipt printing.
 -   **Technician Module:** Login, dashboard, and job order fulfillment.
 -   **Subscriber Portal:** A new portal for subscribers to log in, view their bills and payment history, see job order status, get support, and pay online.
--   **Online Payments:** Integrate PayMongo for subscribers to pay their bills.
+-   **Online Payments:** Integrate PayMongo for subscribers to pay their bills, including a configurable service fee.
 -   **Wallet System:** Display advance payments (wallet credits) to the subscriber.
+-   **Reporting:** Generate reports for receivables, collections, and collections by collector.
+-   **Data Management:** Implement CSV import/export for subscribers, payments, invoices, and expenses.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A comprehensive full-stack billing application with a FastAPI backend, React frontend, and MongoDB. The system includes role-based access for Admins, Cashiers, and Technicians. A fully functional, mobile-responsive **Subscriber Portal** has been built, allowing subscribers to log in, view their dashboard (stats, active status, wallet credit), browse bills, payment history, and job orders. The portal is integrated with **PayMongo**, enabling online payments. A secure admin page exists for managing PayMongo API credentials.
+A comprehensive full-stack billing application with a FastAPI backend, React frontend, and MongoDB. The system includes role-based access for Admins, Cashiers, and Technicians. A fully functional, mobile-responsive **Subscriber Portal** allows subscribers to log in, view their dashboard, and pay bills. The admin panel features filterable dashboards, extensive reports, a **Subscriber Login Management** system, and a **Data Import/Export** section. The Cashier dashboard now includes a mobile-friendly **Receivables** tab. PDF Statement of Account (SOA) generation is also implemented.
 
 **Last working item**:
--   **Last item agent was working:** Fixing a critical bug where payments successfully processed by PayMongo were not being recorded in the application. The user completed a payment on PayMongo, and it was reflected in their PayMongo account, but the corresponding invoices in the billing app remained Unpaid.
--   **Reasoning:** The backend verification logic () was incorrectly checking the top-level  of the PayMongo checkout session, which remained active. The fix involved updating the logic to inspect the nested  array within the checkout session response, which correctly contains the paid status of the actual payment attempt. The agent then manually re-processed the stuck payments to update the database.
--   **Status:** USER VERIFICATION PENDING
--   **Agent Testing Done:** Y
--   **Which testing method agent to use?** both (Frontend and Backend testing agents to simulate a full user payment journey and verify invoice status changes).
+-   **Last item agent was working:** Debugging a Failed to load receivables error in the Cashier module, which persists even after previous fixes.
+-   **Reasoning:** The user confirmed the error is still present on their live server. The deployment agent logs revealed the root cause: a  in the  endpoint in . This occurs because the  function, used to find the oldest due date, is attempting to compare a list containing both  objects and date strings, which is not a valid operation. The agent has identified the exact line of the error but has not yet implemented the fix.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** backend testing agent. The agent must create a robust date-parsing helper function to convert all date strings to datetime objects before comparison and apply it to the failing logic.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** (P0) PayMongo successful payment is not updating invoice status.
+-   **Issue 1:** (P0) Failed to load receivables error in Cashier module due to mixed date types.
 -   **Issue 2:** (P1) Babel Plugin Failure for .
+-   **Issue 3:** (P2) User verification needed for the CSV export download mechanism.
 
 **Issues Detail:**
--   **Issue 1:**
-    -   **Description:** Payments completed on PayMongo's checkout page are not marking the corresponding invoices as Paid in the app's database, even though the money is received by PayMongo.
-    -   **Attempted fixes:** The agent identified that the backend was checking the wrong status field in the PayMongo API response. The logic in  at the  endpoint was modified to look for a  inside the nested  array of the checkout session object, instead of the parent object's status. The agent successfully used this fixed logic to manually process the user's previously stuck payments.
+-   **Issue 1:** Failed to load receivables error in Cashier module.
+    -   **Description:** The cashier receivables page fails to load. Deployment logs confirm a . This is caused by the  field in the  collection containing a mix of string and datetime object types. The  function in the  endpoint cannot compare these mixed types.
+    -   **Attempted fixes:** The agent previously implemented a  helper for numeric fields, but this did not address the date type issue. The agent has now identified the exact line of code causing the .
     -   **Next debug checklist:**
-        1.  Ask the user to perform a new end-to-end test payment for a small amount.
-        2.  If it fails again, immediately inspect the backend logs during the  call.
-        3.  Manually call the PayMongo API with the new  to analyze the full JSON response and confirm if its structure matches the implemented logic.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a critical blocker for the online payment feature. Fixing it enables automated, reliable payment processing for subscribers.
-    -   **Status:** USER VERIFICATION PENDING
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** both
+        1.  Create a robust  helper function (similar to the existing ) that can handle both strings and  objects, returning a consistent  object or .
+        2.  Locate the  function call in the  function in .
+        3.  Modify the list comprehension inside the  call to use the new  helper, ensuring all values are  objects before the comparison occurs.
+        4.  Restart the backend and test the  endpoint to confirm the error is resolved.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a blocker bug preventing cashiers from viewing receivables, which is a core function of their role.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** Y (The user has reported this symptom multiple times; the root cause is now more precisely identified).
+    -   **Should Test frontend/backend/both after fix?** Backend
     -   **Blocked on other issue:** None
 
--   **Issue 2:**
-    -   **Description:** The development server's  causes a Maximum call stack size exceeded error on complex components.
+-   **Issue 2:** Babel Plugin Failure for .
+    -   **Description:** A babel plugin for visual edits causes a Maximum call stack size exceeded error.
     -   **Attempted fixes:** The plugin was disabled in  as a temporary workaround.
-    -   **Why fix this issue and what will be achieved with the fix?** This is technical debt. Fixing it restores full development tool functionality.
+    -   **Why fix this issue and what will be achieved with the fix?** Resolves technical debt.
     -   **Status:** BLOCKED (Workaround in place)
     -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on other issue:** None
+
+-   **Issue 3:** User verification needed for the CSV export download mechanism.
+    -   **Description:** The user previously reported that exported CSV files were not downloading.
+    -   **Attempted fixes:** The download logic was refactored, but user confirmation is pending.
+    -   **Why fix this issue and what will be achieved with the fix?** Ensures the data export feature is fully usable.
+    -   **Status:** USER VERIFICATION PENDING
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Frontend
+    -   **Blocked on other issue:** None
 
 **In progress Task List**:
 -   None.
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
--   **Admin - Refactor Backend (P0):** Propose refactoring the monolithic  file into a modular structure (e.g., , , ) to improve maintainability.
+-   **Admin - Refactor Backend (P0):** Propose refactoring the monolithic  file into a modular structure (e.g., , , ). This is a critical priority to improve maintainability and reduce bugs.
 -   **Subscriber Portal - Chat Support (P1):** Implement a real-time chat feature.
--   **Admin - PDF Generation (P1):** Implement PDF generation for Statements of Account (SOA).
 
 **Future Tasks:**
 -   **Subscriber Portal - Knowledge Base:** Add a section for FAQs and help articles.
@@ -63,20 +76,17 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
 -   **Admin - Wallet Management:** Create a UI for admins to manually add/deduct subscriber wallet credits.
 
 **Completed work in this session**
--   **Subscriber Portal (Full Implementation):**
-    -   Created dedicated login () and dashboard () pages.
-    -   Built a mobile-responsive dashboard with stats (Payables, Status, Wallet Credit), and tabs for Bills, Payments, Job Orders, and Account Info.
-    -   Fixed a bug in displaying ordinal numbers for billing dates (e.g., 1st instead of 1th).
--   **Subscriber Status Management (Bug Fixes):**
-    -   Fixed bugs where deactivating/reactivating a subscriber did not correctly update their status in the portal.
-    -   Added a hide/show toggle for the notification panel on the subscriber dashboard.
--   **Wallet Credit Display:**
-    -   Implemented backend and frontend changes to display a subscriber's advance payments (wallet credit) on their dashboard and account page.
--   **PayMongo Integration (Full Implementation & Bug Fixes):**
-    -   Created a secure admin settings page to manage PayMongo API keys, including encryption and a connection test feature.
-    -   Implemented the Pay Now button flow, which creates a PayMongo checkout session and redirects the user for payment.
-    -   Fixed an issue where the Pay Now button was not appearing because the integration was disabled by default in the settings.
-    -   **Resolved the critical payment reflection bug** by correcting the backend verification logic.
+-   **Bug Fix:** Resolved the Failed to load expenses error by handling mixed string/datetime formats.
+-   **Feature:** Implemented a filterable Admin Dashboard (daily, weekly, monthly, etc.) with a new Billing Overview section.
+-   **UI/UX:** Made the Subscriber Management and Cashier modules significantly more mobile-friendly by combining columns and making components responsive.
+-   **Bug Fix:** Fixed the Subscriber Portal login issue caused by incorrect field validation.
+-   **Feature:** Created a Subscriber Portal Settings page for admins to manage user login credentials.
+-   **Deployment Fixes:** Resolved multiple deployment-blocking errors, including CORS issues, password hash errors, and Mikrotik connection timeouts.
+-   **Bug Fix & Refactor:** Fixed multiple issues with dashboard receivables calculations, removed redundant UI elements, and made the billing overview responsive to date filters.
+-   **Feature:** Implemented automatic wallet credit application after invoice generation and added a manual admin endpoint.
+-   **Feature:** Centralized Company Settings and implemented PDF Statement of Account (SOA) generation.
+-   **Bug Fix:** Changed the default invoice  to be 5 days after the billing date.
+-   **Refactor:** Implemented a global  helper function to prevent crashes from invalid numeric data in the database.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1:** Address data for municipalities and barangays is incomplete sample data.
@@ -88,82 +98,82 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, Pydantic, pymongo, JWT,  for Fernet encryption.
+-   **Backend:** FastAPI, Pydantic, pymongo, JWT, ,  (new for PDF).
 -   **Frontend:** React, React Router, Axios, TailwindCSS, Shadcn/UI.
--   **Integrations:**  (Mikrotik), Web Bluetooth API, PayMongo API (via ).
+-   **Data Handling:** The project now relies on defensive coding patterns like  and date-parsing helpers to handle inconsistent data types originating from CSV imports and manual entries.
 
 **key DB schema**
--   **subscribers:** Added  (string),  (float). The  field is now reliably updated.
--   **settings:** Added encrypted , , and boolean toggles , .
--   **online_payments:** (New) Tracks PayMongo checkout sessions with fields like , , , , and .
+-   No major schema changes. However, the application logic has been made more robust to handle inconsistencies in existing data, such as  being either a string or a datetime object, and  being a string, float, or .
 
 **changes in tech stack**
--    was added to backend dependencies for PayMongo API communication.
+-    has been added to  for PDF generation.
 
 **All files of reference**
--   : Heavily modified for Subscriber Portal, Wallet, and full PayMongo integration (settings, checkout, verification). Includes fixes for subscriber activation/deactivation and PayMongo payment status logic.
--   : Added routes for the subscriber portal.
--   : New file for subscriber login.
--   : Main subscriber dashboard, heavily modified.
--   : New directory containing dashboard components.
--   : New file for the PayMongo settings UI.
--   : Updated to add PayMongo to the settings menu.
--   : Updated to reflect completion of Subscriber Portal and PayMongo integration.
+-   : The location of almost all business logic and the file containing the current bug.
+-   : The frontend component that is failing due to the backend error.
+-    & : Recently modified for dashboard filters.
+-   : Recently modified for UI/UX improvements.
+-   : New component for managing subscriber logins.
 
 **Areas that need refactoring**:
--   **CRITICAL:** The  file is now over 6000 lines. It is imperative to propose a refactoring task to the user to modularize the backend into a proper , , and  structure. This has become a significant maintainability risk.
+-   **CRITICAL:** The  file is dangerously large and has become the source of several recurring bugs due to its complexity. It urgently needs to be broken down into a modern FastAPI structure with separate files for routes, models, services, and utilities. This is the highest priority technical debt.
 
 **key api endpoints**
--   : Authenticates a subscriber.
--   : Fetches data for the subscriber dashboard, including wallet and status.
--   : Saves encrypted PayMongo API keys.
--   : Creates a payment session with PayMongo.
--   : (Modified) Verifies payment status with PayMongo. This was the endpoint containing the critical fix.
--   , : (Modified) Updated to correctly set the subscriber  field.
+-   : New endpoint for the cashier receivables list. **This is the endpoint that is currently failing.**
+-   : Modified to accept a  query parameter.
+-   : Modified to accept a  query parameter.
+-   : Modified to handle password hash errors.
+-   , : New endpoints for managing subscriber logins.
+-   : New endpoint to manually apply wallet credit.
+-   : New endpoint for PDF SOA generation.
 
 **Critical Info for New Agent**
--   The immediate priority is confirming with the user that the PayMongo payment reflection fix works for a new transaction. Do not start new tasks until this is verified.
--   The user last reported a successful payment on PayMongo's side that did not update in the app. The agent implemented a fix by changing how the payment status is checked in the PayMongo API response.
--   Once the payment issue is resolved, the most important next step is to propose the refactoring of the monolithic  file. This is a critical piece of technical debt that will hinder future development.
+-   Your immediate priority is to fix the  in the  endpoint. The deployment logs point to the exact cause: a  function is trying to compare a mix of  objects and  objects.
+-   You must create a robust date-parsing utility function (similar to the  and  helpers already in the file) and apply it within the  logic in  to ensure all dates are converted to  objects before any comparison is performed.
+-   The user is working with live data that has inconsistencies. Your fixes must be defensive and handle potential  values, empty strings, and mixed types for both numbers and dates.
+-   Once the current blocker is resolved, the most important task is to propose and execute the refactoring of the monolithic  file. This is a critical step to ensure the project's long-term stability.
 
 **documents and test reports created in this job**
--   
--   
+-    (Updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
--   **10.  (User confirms the bug, provides image proof) - PENDING VERIFICATION**
--   9.  (User reports bug)
--   8.  (Fixed - PayMongo was disabled in settings)
--   7.  (User prompt to continue)
--   6.  (User requests PayMongo integration)
--   5.  (Investigated - no bug found)
--   4.  (Investigated - no bug found)
--   3.  (Fixed)
--   2.  (Fixed)
--   1.  (Implemented)
+-   10.  - **CURRENT BLOCKER.**
+-   9.  - User reported that date filters were not working for receivables. (Fixed)
+-   8.  - User reported a data discrepancy between Reports and Dashboard receivables. (Fixed)
+-   7.  - User pointed out UI/UX issues with the receivables display. (Fixed)
+-   6.  - User requested a way to manage subscriber login details. (Implemented)
+-   5.  - User requested Company Settings centralization, SOA printing, and a cashier receivables list. (Implemented)
+-   4.  - User requested a PDF layout change. (Completed)
+-   3.  - User requested a change in business logic for due dates. (Completed)
+-   2.  - User's first report of the current recurring bug. (Partially addressed, but underlying issue persists)
+-   1.  - User reported a bug with wallet credits not being applied automatically. (Fixed)
 
 **Project Health Check:**
--   **Broken:** Online payment processing is pending user verification after a critical bug fix.
--   **Mocked:** Address data (provinces, municipalities, barangays) is sample data.
+-   **Broken:** The Cashier -> Receivables module is non-functional due to a backend .
+-   **Mocked:** Address data (provinces, municipalities, barangays) is still sample data.
 -   **Technical Debt:**
-    -   The  babel plugin is disabled.
-    -    is a critically large monolithic file (>6000 lines).
+    -   CRITICAL: The  monolith is the top priority for refactoring.
+    -   The  babel plugin remains disabled.
 
 **3rd Party Integrations**
--   **Mikrotik RouterOS API:** Using  for PPPoE management.
--   **PayMongo:** Using  to interact with the REST API for online payments.
+-   **Mikrotik RouterOS API:** Using .
+-   **PayMongo:** Using  for REST API interaction.
+-   **Pandas:** Used in the backend for CSV import/export.
+-   **Recharts:** Used in the frontend for report visualizations.
+-   **ReportLab:** New integration for PDF generation.
 
 **Testing status**
--   **Testing agent used after significant changes:** YES
+-   **Testing agent used after significant changes:** NO
 -   **Troubleshoot agent used after agent stuck in loop:** NO
--   **Test files created:** 
--   **Known regressions:** None.
+-   **Test files created:** None.
+-   **Known regressions:** The Cashier Receivables module is broken due to a data type issue.
 
 **Credentials to test flow:**
 -   **Admin:**  / 
 -   **Cashier:**  / 
 -   **Technician:**  / 
--   **Subscriber:** Use an existing account from the DB (e.g.,  with pw , or others with default pw ).
+-   **Subscriber:**  /  (or use the Subscriber Portal Settings page to manage other accounts).
 
 **What agent forgot to execute**
--   The agent did not yet propose the critical refactoring of  to the user. This should be the next action item after the current PayMongo bug is confirmed to be resolved.</analysis>
+-   The agent has not yet proposed the critical refactoring of , despite the file's increasing size and complexity being the root cause of several recent bugs. This must be the next major action item after fixing the current blocker.
+-   No regression testing was performed after the recent series of fixes, which could have caught the current  with dates proactively.</analysis>

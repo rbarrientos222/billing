@@ -6370,7 +6370,7 @@ async def create_subscriber_checkout(
         reference_id = f"PAY{uuid.uuid4().hex[:12].upper()}"
         
         # Get frontend URL for redirects
-        frontend_url = os.environ.get('FRONTEND_URL', 'https://isp-admin-panel.preview.emergentagent.com')
+        frontend_url = os.environ.get('FRONTEND_URL', 'https://invoice-management-7.preview.emergentagent.com')
         
         # Build line items - invoice amount + service fee (if any)
         line_items = [{
