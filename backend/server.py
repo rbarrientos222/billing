@@ -6790,7 +6790,16 @@ async def get_receivables_report(current_user: dict = Depends(get_current_user))
         if due_date.tzinfo is None:
             due_date = due_date.replace(tzinfo=timezone.utc)
         
-        remaining = (inv.get('amount', 0) - inv.get('paid_amount', 0))
+        # Safe number conversion for amount calculations
+        def safe_float(val, default=0):
+            if val is None or val == '':
+                return default
+            try:
+                return float(val)
+            except (ValueError, TypeError):
+                return default
+        
+        remaining = safe_float(inv.get('amount')) - safe_float(inv.get('paid_amount'))
         total_receivable += remaining
         
         days_overdue = (today - due_date).days
