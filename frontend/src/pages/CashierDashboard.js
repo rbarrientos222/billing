@@ -51,6 +51,16 @@ export default function CashierDashboard({ user, onLogout }) {
   const [availableDiscounts, setAvailableDiscounts] = useState([]);
   const [selectedDiscounts, setSelectedDiscounts] = useState([]);
   const [totalDiscountAmount, setTotalDiscountAmount] = useState(0);
+  
+  // Receivables tab state
+  const [activeTab, setActiveTab] = useState('payment');
+  const [receivables, setReceivables] = useState([]);
+  const [receivablesLoading, setReceivablesLoading] = useState(false);
+  const [receivablesFilter, setReceivablesFilter] = useState('active'); // 'active', 'inactive', 'all'
+  const [receivablesSearch, setReceivablesSearch] = useState('');
+  const [receivablesPage, setReceivablesPage] = useState(1);
+  const [receivablesPageSize, setReceivablesPageSize] = useState(20);
+  const [receivablesTotal, setReceivablesTotal] = useState(0);
 
   // Fetch today's payment stats and receipt settings on load
   useEffect(() => {
