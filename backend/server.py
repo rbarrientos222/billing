@@ -214,6 +214,7 @@ async def auto_generate_billing():
                 "subscriber_name": f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip(),
                 "plan_name": plan['name'],
                 "amount": plan['price'],
+                "paid_amount": 0,
                 "description": period_info['description'],
                 "billing_day": billing_day,
                 "billing_start": period_info['start_date'],
@@ -226,6 +227,43 @@ async def auto_generate_billing():
             await db.invoices.insert_one(invoice)
             invoices_generated += 1
             logger.info(f"Generated invoice {invoice['invoice_number']} for {account_number}")
+            
+            # AUTO-APPLY WALLET CREDIT if subscriber has balance
+            wallet_balance = sub.get('wallet_balance', 0)
+            if wallet_balance > 0:
+                amount_to_apply = min(wallet_balance, plan['price'])
+                new_wallet_balance = wallet_balance - amount_to_apply
+                
+                # Update invoice as paid (fully or partially)
+                if amount_to_apply >= plan['price']:
+                    # Fully paid from wallet
+                    await db.invoices.update_one(
+                        {"invoice_number": invoice['invoice_number']},
+                        {"$set": {"paid": True, "paid_amount": plan['price'], "paid_at": today}}
+                    )
+                    logger.info(f"Invoice {invoice['invoice_number']} fully paid from wallet (₱{amount_to_apply})")
+                else:
+                    # Partially paid from wallet
+                    await db.invoices.update_one(
+                        {"invoice_number": invoice['invoice_number']},
+                        {"$set": {"paid_amount": amount_to_apply}}
+                    )
+                    logger.info(f"Invoice {invoice['invoice_number']} partially paid from wallet (₱{amount_to_apply})")
+                
+                # Deduct from subscriber wallet
+                await db.subscribers.update_one(
+                    {"account_number": account_number},
+                    {"$set": {"wallet_balance": new_wallet_balance}}
+                )
+                
+                # Log wallet transaction
+                await db.wallet_transactions.insert_one({
+                    "subscriber_id": account_number,
+                    "type": "debit",
+                    "amount": amount_to_apply,
+                    "description": f"Auto-payment for {invoice['invoice_number']}",
+                    "created_at": today
+                })
     
     logger.info(f"Automatic billing completed. Generated {invoices_generated} invoices.")
     
