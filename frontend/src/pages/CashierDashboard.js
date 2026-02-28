@@ -7,8 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { LogOut, Search, Receipt, DollarSign, Wallet, CreditCard, Check, AlertCircle, History, Calendar, ChevronDown, ChevronUp, Plus, Filter, X, Printer, Bluetooth, Percent } from 'lucide-react';
+import { LogOut, Search, Receipt, DollarSign, Wallet, CreditCard, Check, AlertCircle, History, Calendar, ChevronDown, ChevronUp, Plus, Filter, X, Printer, Bluetooth, Percent, FileText, Users, Loader2 } from 'lucide-react';
+import { TablePagination } from '@/components/ui/table-pagination';
 
 export default function CashierDashboard({ user, onLogout }) {
   const [searchTerm, setSearchTerm] = useState('');
