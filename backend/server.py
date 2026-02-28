@@ -3696,11 +3696,6 @@ async def generate_soa(
     p.setFont("Helvetica-Bold", 16)
     p.drawCentredString(width/2, y, "STATEMENT OF ACCOUNT")
     
-    # Barcode placeholder (account number as text)
-    y -= 0.4*inch
-    p.setFont("Helvetica", 8)
-    p.drawCentredString(width/2, y, f"*{account_number.upper()}*")
-    
     # Customer Details Box
     y -= 0.5*inch
     p.setStrokeColor(colors.black)
