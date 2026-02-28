@@ -67,6 +67,39 @@ export default function CashierDashboard({ user, onLogout }) {
     fetchTodayStats();
     fetchReceiptSettings();
   }, []);
+  
+  // Fetch receivables when tab or filters change
+  useEffect(() => {
+    if (activeTab === 'receivables') {
+      fetchReceivables();
+    }
+  }, [activeTab, receivablesFilter, receivablesPage, receivablesPageSize]);
+
+  const fetchReceivables = async () => {
+    setReceivablesLoading(true);
+    try {
+      const response = await axios.get('/reports/receivables', {
+        params: {
+          status: receivablesFilter,
+          search: receivablesSearch,
+          page: receivablesPage,
+          limit: receivablesPageSize
+        }
+      });
+      setReceivables(response.data.receivables || []);
+      setReceivablesTotal(response.data.total_count || response.data.receivables?.length || 0);
+    } catch (error) {
+      console.error('Failed to fetch receivables:', error);
+      toast.error('Failed to load receivables');
+    } finally {
+      setReceivablesLoading(false);
+    }
+  };
+
+  const handleReceivablesSearch = () => {
+    setReceivablesPage(1);
+    fetchReceivables();
+  };
 
   const fetchTodayStats = async () => {
     try {
