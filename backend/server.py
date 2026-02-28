@@ -5946,7 +5946,7 @@ async def get_billing_overview(
     if date_filter:
         receivables_query["created_at"] = date_filter
     unpaid = await db.invoices.find(receivables_query).to_list(10000)
-    total_receivables = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid)
+    total_receivables = sum(safe_float(inv.get('amount')) - safe_float(inv.get('paid_amount')) for inv in unpaid)
     
     # Collection rate for period (if invoices were generated)
     collection_rate = 0
