@@ -569,11 +569,21 @@ class ExpenseCategory(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class CompanySettings(BaseModel):
-    business_name: str
-    address: str
-    email: str
-    mobile: str
+    business_name: str = ""
+    address: str = ""
+    email: str = ""
+    mobile: str = ""
     logo_url: Optional[str] = None
+    # Extended fields
+    company_logo: Optional[str] = None  # Base64 encoded image
+    company_name: str = ""
+    company_branch: Optional[str] = None
+    company_address: str = ""
+    company_mobile: str = ""
+    company_email: Optional[str] = None
+    company_tin: Optional[str] = None
+    receipt_footer: str = "Thank you for your payment!"
+    soa_footer: str = "If you have questions or concerns about this statement please contact on the details provided above."
 
 class ReceiptSettings(BaseModel):
     company_logo: Optional[str] = None  # Base64 encoded image
