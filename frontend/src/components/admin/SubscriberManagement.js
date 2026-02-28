@@ -1204,10 +1204,24 @@ export default function SubscriberManagement() {
       <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Subscriber Records - {selectedSubscriberHistory?.first_name} {selectedSubscriberHistory?.last_name}</DialogTitle>
-            <DialogDescription>
-              Account: {selectedSubscriberHistory?.account_number}
-            </DialogDescription>
+            <div className="flex items-start justify-between">
+              <div>
+                <DialogTitle>Subscriber Records - {selectedSubscriberHistory?.first_name} {selectedSubscriberHistory?.last_name}</DialogTitle>
+                <DialogDescription>
+                  Account: {selectedSubscriberHistory?.account_number}
+                </DialogDescription>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePrintSOA(selectedSubscriberHistory)}
+                className="ml-4 shrink-0"
+              >
+                <FileText className="h-4 w-4 mr-1.5" />
+                <span className="hidden sm:inline">Print SOA</span>
+                <span className="sm:hidden">SOA</span>
+              </Button>
+            </div>
           </DialogHeader>
 
           {/* Subscriber Details Card */}
