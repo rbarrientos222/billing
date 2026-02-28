@@ -680,6 +680,32 @@ def safe_float(val, default=0.0):
     except (ValueError, TypeError):
         return default
 
+def safe_parse_date(date_val):
+    """
+    Safely parse a date value that could be a datetime object, string, or None.
+    Returns a timezone-aware datetime object or None.
+    """
+    if date_val is None:
+        return None
+    if isinstance(date_val, datetime):
+        return date_val.replace(tzinfo=timezone.utc) if date_val.tzinfo is None else date_val
+    if isinstance(date_val, str):
+        if not date_val.strip():
+            return None
+        try:
+            parsed = datetime.fromisoformat(date_val.replace('Z', '+00:00'))
+            return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed
+        except:
+            # Try other common formats
+            for fmt in ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%d/%m/%Y", "%m/%d/%Y"]:
+                try:
+                    parsed = datetime.strptime(date_val, fmt)
+                    return parsed.replace(tzinfo=timezone.utc)
+                except:
+                    continue
+            return None
+    return None
+
 def get_billing_period_description(billing_day: int, reference_date: datetime = None) -> dict:
     """
     Generate billing period description based on billing day (1-31).
