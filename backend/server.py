@@ -1189,7 +1189,7 @@ async def get_subscriber_dashboard(current_subscriber: dict = Depends(get_curren
         "paid": False
     }, {"_id": 0}).to_list(100)
     
-    total_payables = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid_invoices)
+    total_payables = sum(safe_float(inv.get('amount')) - safe_float(inv.get('paid_amount')) for inv in unpaid_invoices)
     
     # Get wallet balance
     wallet_balance = current_subscriber.get('wallet_balance', 0)
