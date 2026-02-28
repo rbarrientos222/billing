@@ -2,6 +2,13 @@
 
 ## Last Updated: February 28, 2026
 
+### Latest Bug Fix (Feb 28, 2026)
+- **FIXED:** Cashier Receivables `TypeError: '<' not supported between 'datetime' and 'str'`
+  - Root cause: Mixed date types (datetime objects and strings) in invoice `due_date` field
+  - Solution: Added `safe_parse_date()` helper function to normalize all dates before comparison
+  - File modified: `/app/backend/server.py`
+  - Endpoint fixed: `GET /api/cashier/receivables`
+
 ## Original Problem Statement
 Build a billing system with the following features:
 
