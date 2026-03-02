@@ -144,13 +144,6 @@ export default function SubscriberLogin({ onLogin }) {
                   )}
                 </Button>
               </form>
-              
-              <div className="mt-6 pt-6 border-t border-border">
-                <Link to="/login" className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <ArrowLeft className="w-4 h-4" />
-                  Staff Login
-                </Link>
-              </div>
             </CardContent>
           </Card>
         </div>
