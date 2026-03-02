@@ -1314,7 +1314,7 @@ export default function SubscriberManagement() {
             {/* Invoices Tab */}
             <TabsContent value="invoices" className="mt-4">
               {/* Mobile View - Cards */}
-              <div className="space-y-2 sm:hidden">
+              <div className="space-y-3 sm:hidden">
                 {invoiceHistory.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground border rounded-lg">
                     <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -1322,26 +1322,24 @@ export default function SubscriberManagement() {
                   </div>
                 ) : (
                   invoiceHistory.map((invoice) => (
-                    <div key={invoice.invoice_number} className="p-3 border rounded-lg bg-card">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-mono text-xs text-muted-foreground">{invoice.invoice_number}</p>
-                          <p className="text-sm font-medium mt-0.5 truncate" title={invoice.description || invoice.plan_name}>
-                            {invoice.description || `${invoice.plan_name || 'Monthly'} Bill`}
-                          </p>
-                          {invoice.type && (
-                            <Badge variant="outline" className="text-xs mt-1">
-                              {invoice.type}
-                            </Badge>
-                          )}
-                        </div>
+                    <div key={invoice.invoice_number} className="p-3 border rounded-lg bg-card shadow-sm">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <p className="font-mono text-xs text-muted-foreground">{invoice.invoice_number}</p>
                         <Badge variant={invoice.paid ? "default" : "destructive"} className={invoice.paid ? "bg-green-600 shrink-0" : "shrink-0"}>
                           {invoice.paid ? 'Paid' : 'Unpaid'}
                         </Badge>
                       </div>
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t text-sm">
-                        <span className="text-muted-foreground">Due: {new Date(invoice.due_date).toLocaleDateString()}</span>
-                        <span className="font-bold">₱{invoice.amount?.toLocaleString()}</span>
+                      <p className="text-sm font-medium line-clamp-2" title={invoice.description || invoice.plan_name}>
+                        {invoice.description || `${invoice.plan_name || 'Monthly'} Bill`}
+                      </p>
+                      {invoice.type && (
+                        <Badge variant="outline" className="text-xs mt-1.5">
+                          {invoice.type}
+                        </Badge>
+                      )}
+                      <div className="flex items-center justify-between mt-3 pt-2 border-t">
+                        <span className="text-xs text-muted-foreground">Due: {new Date(invoice.due_date).toLocaleDateString()}</span>
+                        <span className="font-bold text-base">₱{invoice.amount?.toLocaleString()}</span>
                       </div>
                     </div>
                   ))
