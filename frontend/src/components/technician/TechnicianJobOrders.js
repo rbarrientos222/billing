@@ -379,22 +379,24 @@ export default function TechnicianJobOrders({ user }) {
                         </div>
                         
                         <div className="mt-2 space-y-1">
+                          <div className="text-xs text-muted-foreground font-mono">
+                            {jo.subscriber_id}
+                          </div>
                           <div className="flex items-center gap-2 text-sm">
-                            <User className="h-4 w-4 text-muted-foreground" />
+                            <User className="h-4 w-4 text-muted-foreground shrink-0" />
                             <span className="font-medium">{jo.subscriber_name}</span>
-                            <span className="text-muted-foreground">({jo.subscriber_id})</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
+                            <MapPin className="h-4 w-4 shrink-0" />
                             <span className="truncate">{jo.subscriber_address}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm">
-                            <Wrench className="h-4 w-4 text-muted-foreground" />
+                            <Wrench className="h-4 w-4 text-muted-foreground shrink-0" />
                             <span>{jo.type}</span>
                           </div>
                           {jo.scheduled_date && (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Calendar className="h-4 w-4" />
+                              <Calendar className="h-4 w-4 shrink-0" />
                               <span>{new Date(jo.scheduled_date).toLocaleDateString()}</span>
                               {jo.scheduled_time_slot && <span>@ {jo.scheduled_time_slot}</span>}
                             </div>
