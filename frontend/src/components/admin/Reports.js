@@ -163,22 +163,24 @@ export default function Reports() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="receivables" className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            Receivables
+        <TabsList className="w-full h-auto flex flex-wrap gap-1 p-1">
+          <TabsTrigger value="receivables" className="flex-1 min-w-[80px] flex items-center justify-center gap-1 px-2 py-2 text-xs sm:text-sm">
+            <AlertCircle className="w-4 h-4 hidden sm:block" />
+            <span>Receivables</span>
           </TabsTrigger>
-          <TabsTrigger value="collections" className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4" />
-            Collections
+          <TabsTrigger value="collections" className="flex-1 min-w-[80px] flex items-center justify-center gap-1 px-2 py-2 text-xs sm:text-sm">
+            <DollarSign className="w-4 h-4 hidden sm:block" />
+            <span>Collections</span>
           </TabsTrigger>
-          <TabsTrigger value="collectors" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            By Collector
+          <TabsTrigger value="collectors" className="flex-1 min-w-[80px] flex items-center justify-center gap-1 px-2 py-2 text-xs sm:text-sm">
+            <Users className="w-4 h-4 hidden sm:block" />
+            <span className="hidden sm:inline">By Collector</span>
+            <span className="sm:hidden">Collector</span>
           </TabsTrigger>
-          <TabsTrigger value="import" className="flex items-center gap-2">
-            <Database className="w-4 h-4" />
-            Data Import
+          <TabsTrigger value="import" className="flex-1 min-w-[80px] flex items-center justify-center gap-1 px-2 py-2 text-xs sm:text-sm">
+            <Database className="w-4 h-4 hidden sm:block" />
+            <span className="hidden sm:inline">Data Import</span>
+            <span className="sm:hidden">Import</span>
           </TabsTrigger>
         </TabsList>
 
