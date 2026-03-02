@@ -3678,8 +3678,12 @@ async def generate_soa(
         if created_at:
             if isinstance(created_at, str):
                 created_at = safe_parse_date(created_at)
-            if created_at and created_at.month < now.month or (created_at.month == 12 and now.month == 1):
-                previous_invoices.append(inv)
+            if created_at:
+                # Check if invoice is from previous month
+                if created_at.month < now.month or (created_at.year < now.year):
+                    previous_invoices.append(inv)
+                else:
+                    current_invoices.append(inv)
             else:
                 current_invoices.append(inv)
         else:
