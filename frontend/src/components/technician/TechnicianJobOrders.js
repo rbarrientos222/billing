@@ -666,7 +666,7 @@ export default function TechnicianJobOrders({ user }) {
                     max={selectedItemData?.quantity || 999}
                     value={quantity}
                     onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                    className="mt-1 text-center text-lg font-medium h-12"
+                    className="mt-1 text-center text-lg font-medium h-12 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     placeholder="Enter quantity"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
