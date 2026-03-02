@@ -484,42 +484,48 @@ export default function Reports() {
         <TabsContent value="collectors" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <Filter className="w-5 h-5" />
                 Filter by Date Range
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-4 items-end">
-                <div className="space-y-2">
-                  <Label>Start Date</Label>
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-4 items-end">
+                <div className="space-y-1 sm:space-y-2">
+                  <Label className="text-xs sm:text-sm">Start Date</Label>
                   <Input
                     type="date"
                     value={collectorStartDate}
                     onChange={(e) => setCollectorStartDate(e.target.value)}
+                    className="h-9"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>End Date</Label>
+                <div className="space-y-1 sm:space-y-2">
+                  <Label className="text-xs sm:text-sm">End Date</Label>
                   <Input
                     type="date"
                     value={collectorEndDate}
                     onChange={(e) => setCollectorEndDate(e.target.value)}
+                    className="h-9"
                   />
                 </div>
-                <Button onClick={fetchCollectorData} disabled={loading}>
-                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                  Generate Report
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setCollectorStartDate('');
-                    setCollectorEndDate('');
-                  }}
-                >
-                  Clear
-                </Button>
+                <div className="col-span-2 flex flex-wrap gap-2">
+                  <Button onClick={fetchCollectorData} disabled={loading} size="sm" className="flex-1 sm:flex-none">
+                    {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1 sm:mr-2" />}
+                    <span className="hidden sm:inline">Generate Report</span>
+                    <span className="sm:hidden">Generate</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setCollectorStartDate('');
+                      setCollectorEndDate('');
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
