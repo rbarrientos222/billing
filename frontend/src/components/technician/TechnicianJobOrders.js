@@ -527,14 +527,31 @@ export default function TechnicianJobOrders({ user }) {
               
               {(selectedJobOrder.materials_used || []).length > 0 && (
                 <div>
-                  <Label className="text-muted-foreground">Materials Used</Label>
-                  <div className="mt-2 rounded-md border">
+                  <Label className="text-muted-foreground">Materials Used ({selectedJobOrder.materials_used.length})</Label>
+                  
+                  {/* Mobile View - Cards */}
+                  <div className="mt-2 space-y-2 sm:hidden">
+                    {selectedJobOrder.materials_used.map((mat, idx) => (
+                      <div key={idx} className="p-3 border rounded-lg bg-muted/30">
+                        <p className="font-medium text-sm">{mat.name}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                          <span className="font-semibold text-foreground">{mat.quantity} {mat.unit}</span>
+                          {(mat.mac_address || mat.serial_number) && (
+                            <span className="font-mono truncate">• {mat.mac_address || mat.serial_number}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Desktop View - Table */}
+                  <div className="mt-2 rounded-md border hidden sm:block">
                     <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Item</TableHead>
-                          <TableHead>Qty</TableHead>
-                          <TableHead>Unit</TableHead>
+                          <TableHead className="w-16 text-center">Qty</TableHead>
+                          <TableHead className="w-20">Unit</TableHead>
                           <TableHead>MAC/Serial</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -542,7 +559,7 @@ export default function TechnicianJobOrders({ user }) {
                         {selectedJobOrder.materials_used.map((mat, idx) => (
                           <TableRow key={idx}>
                             <TableCell className="font-medium">{mat.name}</TableCell>
-                            <TableCell>{mat.quantity}</TableCell>
+                            <TableCell className="text-center">{mat.quantity}</TableCell>
                             <TableCell>{mat.unit}</TableCell>
                             <TableCell className="font-mono text-xs">
                               {mat.mac_address || mat.serial_number || '-'}
