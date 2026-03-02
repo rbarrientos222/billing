@@ -260,18 +260,47 @@ export default function Reports() {
               {expandedBucket && receivables.aging[expandedBucket].invoices.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
+                    <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                       <div className={`w-3 h-3 rounded-full ${getAgingColor(expandedBucket)}`}></div>
                       {getAgingLabel(expandedBucket)} - Details
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="rounded-md border overflow-x-auto">
+                    {/* Mobile View - Cards */}
+                    <div className="space-y-2 sm:hidden max-h-96 overflow-y-auto">
+                      {receivables.aging[expandedBucket].invoices.slice(0, 20).map((inv, idx) => (
+                        <div key={idx} className="p-3 border rounded-lg bg-card">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-mono text-xs text-muted-foreground">{inv.invoice_number}</p>
+                              <p className="font-medium text-sm mt-0.5 truncate">{inv.subscriber_name || inv.subscriber_id}</p>
+                              <p className="text-xs text-muted-foreground">{inv.subscriber_id}</p>
+                            </div>
+                            <span className="font-bold text-sm shrink-0">{formatCurrency(inv.amount)}</span>
+                          </div>
+                          <div className="flex items-center justify-between pt-2 border-t">
+                            <span className="text-xs text-muted-foreground">Due: {formatDate(inv.due_date)}</span>
+                            {inv.days_overdue > 0 ? (
+                              <Badge variant="destructive" className="text-xs">{inv.days_overdue} days</Badge>
+                            ) : (
+                              <Badge variant="secondary" className="text-xs">Not due</Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {receivables.aging[expandedBucket].invoices.length > 20 && (
+                        <p className="text-center text-sm text-muted-foreground py-2">
+                          Showing 20 of {receivables.aging[expandedBucket].invoices.length} invoices
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Desktop View - Table */}
+                    <div className="rounded-md border overflow-x-auto hidden sm:block">
                       <table className="w-full text-sm">
                         <thead className="bg-muted">
                           <tr>
-                            <th className="px-4 py-2 text-left">Invoice #</th>
-                            <th className="px-4 py-2 text-left">Subscriber</th>
+                            <th className="px-4 py-2 text-left">Invoice / Subscriber</th>
                             <th className="px-4 py-2 text-left">Due Date</th>
                             <th className="px-4 py-2 text-left">Days Overdue</th>
                             <th className="px-4 py-2 text-right">Amount</th>
@@ -280,8 +309,8 @@ export default function Reports() {
                         <tbody>
                           {receivables.aging[expandedBucket].invoices.slice(0, 20).map((inv, idx) => (
                             <tr key={idx} className="border-t">
-                              <td className="px-4 py-2 font-mono text-xs">{inv.invoice_number}</td>
                               <td className="px-4 py-2">
+                                <p className="font-mono text-xs text-muted-foreground">{inv.invoice_number}</p>
                                 <p className="font-medium">{inv.subscriber_name || inv.subscriber_id}</p>
                                 <p className="text-xs text-muted-foreground">{inv.subscriber_id}</p>
                               </td>
