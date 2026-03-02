@@ -1301,60 +1301,108 @@ export default function CashierDashboard({ user, onLogout }) {
                         )}
                       </div>
                       
-                      {/* Payment History Table */}
+                      {/* Payment History - Mobile Cards & Desktop Table */}
                       {loadingHistory ? (
                         <div className="text-center py-4 text-muted-foreground">
                           Loading payment history...
                         </div>
                       ) : paymentHistory.length > 0 ? (
-                        <div className="rounded-md border max-h-72 overflow-y-auto" data-testid="payment-history-table">
-                          <table className="w-full text-sm">
-                            <thead className="bg-muted sticky top-0">
-                              <tr>
-                                <th className="text-left p-2">OR Number</th>
-                                <th className="text-left p-2">Description</th>
-                                <th className="text-left p-2">Amount</th>
-                                <th className="text-left p-2">Mode</th>
-                                <th className="text-left p-2">Date</th>
-                                <th className="text-center p-2">Print</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {paymentHistory.map((payment) => (
-                                <tr key={payment.or_number} className="border-t hover:bg-muted/50">
-                                  <td className="p-2 font-mono text-xs">{payment.or_number}</td>
-                                  <td className="p-2 text-xs max-w-[200px] truncate" title={payment.description || 'Payment'}>
-                                    {payment.description || payment.invoice_id || 'Payment'}
-                                    {payment.is_advance_payment && (
-                                      <Badge variant="outline" className="ml-1 text-xs border-blue-500 text-blue-600">Advance</Badge>
-                                    )}
-                                  </td>
-                                  <td className="p-2 font-bold text-green-600">₱{(payment.total_amount || payment.amount || 0).toLocaleString()}</td>
-                                  <td className="p-2 capitalize">{payment.mode}</td>
-                                  <td className="p-2 text-xs">{new Date(payment.payment_date).toLocaleDateString()}</td>
-                                  <td className="p-2 text-center">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-7 w-7 p-0"
-                                      onClick={() => {
-                                        if (bluetoothDevice && printCharacteristicRef.current) {
-                                          printReceiptBluetooth(payment.or_number);
-                                        } else {
-                                          printReceiptBrowser(payment.or_number);
-                                        }
-                                      }}
-                                      disabled={printing}
-                                      data-testid={`print-receipt-${payment.or_number}`}
-                                    >
-                                      <Printer className="h-4 w-4" />
-                                    </Button>
-                                  </td>
+                        <>
+                          {/* Mobile View - Cards */}
+                          <div className="space-y-2 sm:hidden" data-testid="payment-history-mobile">
+                            {paymentHistory.map((payment) => (
+                              <div key={payment.or_number} className="p-3 border rounded-lg bg-card shadow-sm">
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <div>
+                                    <p className="font-mono text-xs text-muted-foreground">{payment.or_number}</p>
+                                    <p className="text-sm font-medium mt-0.5 line-clamp-1">
+                                      {payment.description || payment.invoice_id || 'Payment'}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 p-0 shrink-0"
+                                    onClick={() => {
+                                      if (bluetoothDevice && printCharacteristicRef.current) {
+                                        printReceiptBluetooth(payment.or_number);
+                                      } else {
+                                        printReceiptBrowser(payment.or_number);
+                                      }
+                                    }}
+                                    disabled={printing}
+                                  >
+                                    <Printer className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 text-xs">
+                                  <Badge variant="outline" className="capitalize">{payment.mode}</Badge>
+                                  {payment.is_advance_payment && (
+                                    <Badge variant="outline" className="border-blue-500 text-blue-600">Advance</Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center justify-between mt-2 pt-2 border-t">
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(payment.payment_date).toLocaleDateString()}
+                                  </span>
+                                  <span className="font-bold text-green-600">
+                                    ₱{(payment.total_amount || payment.amount || 0).toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {/* Desktop View - Table */}
+                          <div className="rounded-md border max-h-72 overflow-y-auto hidden sm:block" data-testid="payment-history-table">
+                            <table className="w-full text-sm">
+                              <thead className="bg-muted sticky top-0">
+                                <tr>
+                                  <th className="text-left p-2">OR Number</th>
+                                  <th className="text-left p-2">Description</th>
+                                  <th className="text-left p-2">Amount</th>
+                                  <th className="text-left p-2">Mode</th>
+                                  <th className="text-left p-2">Date</th>
+                                  <th className="text-center p-2">Print</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                              </thead>
+                              <tbody>
+                                {paymentHistory.map((payment) => (
+                                  <tr key={payment.or_number} className="border-t hover:bg-muted/50">
+                                    <td className="p-2 font-mono text-xs">{payment.or_number}</td>
+                                    <td className="p-2 text-xs max-w-[200px] truncate" title={payment.description || 'Payment'}>
+                                      {payment.description || payment.invoice_id || 'Payment'}
+                                      {payment.is_advance_payment && (
+                                        <Badge variant="outline" className="ml-1 text-xs border-blue-500 text-blue-600">Advance</Badge>
+                                      )}
+                                    </td>
+                                    <td className="p-2 font-bold text-green-600">₱{(payment.total_amount || payment.amount || 0).toLocaleString()}</td>
+                                    <td className="p-2 capitalize">{payment.mode}</td>
+                                    <td className="p-2 text-xs">{new Date(payment.payment_date).toLocaleDateString()}</td>
+                                    <td className="p-2 text-center">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 w-7 p-0"
+                                        onClick={() => {
+                                          if (bluetoothDevice && printCharacteristicRef.current) {
+                                            printReceiptBluetooth(payment.or_number);
+                                          } else {
+                                            printReceiptBrowser(payment.or_number);
+                                          }
+                                        }}
+                                        disabled={printing}
+                                        data-testid={`print-receipt-${payment.or_number}`}
+                                      >
+                                        <Printer className="h-4 w-4" />
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </>
                       ) : (
                         <div className="text-center py-4 text-muted-foreground border rounded-lg">
                           {(dateFrom || dateTo) ? 'No payments found for the selected date range' : 'No payment history found'}
