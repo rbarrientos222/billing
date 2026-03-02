@@ -3807,20 +3807,17 @@ async def generate_soa(
     y -= 0.25*inch
     p.line(0.5*inch, y + 0.1*inch, width - 0.5*inch, y + 0.1*inch)
     
-    # Previous balance info
-    previous_balance = sum(inv.get('amount', 0) for inv in unpaid_invoices if inv.get('is_prorated', False) or (inv.get('created_at') and inv['created_at'].month < now.month))
-    
+    # Previous balance - use pre-calculated value
     p.drawString(0.6*inch, y, "Amount Due as of Last Statement")
     p.drawRightString(width - 0.6*inch, y, f"₱{previous_balance:,.2f}")
     
     y -= 0.25*inch
     p.drawString(0.6*inch, y, "Payments Received - Thank You!")
-    p.drawRightString(width - 0.6*inch, y, f"(₱{total_payments:,.2f})")
+    p.drawRightString(width - 0.6*inch, y, f"(₱{payment_received:,.2f})")
     
     y -= 0.25*inch
-    remaining = max(0, previous_balance - total_payments)
     p.drawString(0.6*inch, y, "Remaining Balance")
-    p.drawRightString(width - 0.6*inch, y, f"₱{remaining:,.2f}")
+    p.drawRightString(width - 0.6*inch, y, f"₱{remaining_balance:,.2f}")
     
     # Current Bill Charges
     y -= 0.4*inch
@@ -3833,10 +3830,14 @@ async def generate_soa(
     y -= 0.5*inch
     p.setFont("Helvetica", 9)
     
-    # List unpaid invoices
-    for inv in unpaid_invoices[:5]:
-        desc = inv.get('description', inv.get('plan_name', 'Monthly Service'))[:40]
-        amount = inv.get('amount', 0) - inv.get('paid_amount', 0)
+    # List current invoices only (not all unpaid)
+    for inv in current_invoices[:5]:
+        desc = inv.get('description', inv.get('plan_name', 'Monthly Service'))
+        # Truncate description to fit within available width (leaving space for amount)
+        max_desc_width = width - 2.5*inch
+        while p.stringWidth(desc, "Helvetica", 9) > max_desc_width and len(desc) > 20:
+            desc = desc[:-4] + "..."
+        amount = safe_float(inv.get('amount')) - safe_float(inv.get('paid_amount'))
         p.drawString(0.6*inch, y, desc)
         p.drawRightString(width - 0.6*inch, y, f"₱{amount:,.2f}")
         y -= 0.25*inch
