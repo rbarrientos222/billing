@@ -588,19 +588,19 @@ export default function TechnicianJobOrders({ user }) {
 
       {/* Material Entry Dialog */}
       <Dialog open={materialDialogOpen} onOpenChange={setMaterialDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Materials Used</DialogTitle>
-            <DialogDescription>Record materials used for job order {selectedJobOrder?.job_order_id}</DialogDescription>
+            <DialogDescription>Job Order: {selectedJobOrder?.job_order_id}</DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
             {/* Add Material Form */}
-            <div className="p-4 border rounded-lg space-y-4">
+            <div className="p-3 sm:p-4 border rounded-lg space-y-4">
               <div>
                 <Label>Select Item</Label>
                 <Select value={selectedItem} onValueChange={handleItemSelect}>
-                  <SelectTrigger>
+                  <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Choose an inventory item" />
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
@@ -622,7 +622,7 @@ export default function TechnicianJobOrders({ user }) {
                 <div>
                   <Label>Select Unit (MAC/Serial)</Label>
                   <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                    <SelectTrigger>
+                    <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Choose a unit" />
                     </SelectTrigger>
                     <SelectContent>
@@ -643,10 +643,14 @@ export default function TechnicianJobOrders({ user }) {
                   <Label>Quantity</Label>
                   <Input
                     type="number"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     min="1"
                     max={selectedItemData?.quantity || 999}
                     value={quantity}
                     onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    className="mt-1 text-center text-lg font-medium h-12"
+                    placeholder="Enter quantity"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Available: {selectedItemData?.quantity} {selectedItemData?.unit}
@@ -654,32 +658,54 @@ export default function TechnicianJobOrders({ user }) {
                 </div>
               )}
               
-              <Button type="button" onClick={addMaterialToList} disabled={!selectedItem}>
+              <Button type="button" onClick={addMaterialToList} disabled={!selectedItem} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Add to List
               </Button>
             </div>
             
-            {/* Materials List */}
+            {/* Materials List - Mobile Friendly Cards */}
             {materialsToAdd.length > 0 && (
               <div>
-                <Label>Materials to Add</Label>
-                <div className="mt-2 rounded-md border">
+                <Label className="text-sm font-medium">Materials to Add ({materialsToAdd.length})</Label>
+                
+                {/* Mobile View - Cards */}
+                <div className="mt-2 space-y-2 sm:hidden">
+                  {materialsToAdd.map((mat, idx) => (
+                    <div key={idx} className="p-3 border rounded-lg bg-muted/30 flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{mat.name}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                          <span className="font-semibold text-foreground">{mat.quantity} {mat.unit}</span>
+                          {(mat.mac_address || mat.serial_number) && (
+                            <span className="font-mono truncate">• {mat.mac_address || mat.serial_number}</span>
+                          )}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => removeMaterialFromList(idx)} className="shrink-0">
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Desktop View - Table */}
+                <div className="mt-2 rounded-md border hidden sm:block">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Item</TableHead>
-                        <TableHead>Qty</TableHead>
-                        <TableHead>Unit</TableHead>
+                        <TableHead className="w-16 text-center">Qty</TableHead>
+                        <TableHead className="w-20">Unit</TableHead>
                         <TableHead>MAC/Serial</TableHead>
-                        <TableHead></TableHead>
+                        <TableHead className="w-12"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {materialsToAdd.map((mat, idx) => (
                         <TableRow key={idx}>
                           <TableCell className="font-medium">{mat.name}</TableCell>
-                          <TableCell>{mat.quantity}</TableCell>
+                          <TableCell className="text-center">{mat.quantity}</TableCell>
                           <TableCell>{mat.unit}</TableCell>
                           <TableCell className="font-mono text-xs">
                             {mat.mac_address || mat.serial_number || '-'}
@@ -698,9 +724,11 @@ export default function TechnicianJobOrders({ user }) {
             )}
           </div>
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setMaterialDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmitMaterials} disabled={submitting || materialsToAdd.length === 0}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setMaterialDialogOpen(false)} className="w-full sm:w-auto">
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitMaterials} disabled={submitting || materialsToAdd.length === 0} className="w-full sm:w-auto">
               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Save Materials ({materialsToAdd.length})
             </Button>
