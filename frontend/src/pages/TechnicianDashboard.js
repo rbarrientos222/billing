@@ -196,20 +196,17 @@ export default function TechnicianDashboard({ user, onLogout }) {
                     key={jo.job_order_id} 
                     className={`p-4 rounded-lg border ${jo.sla_breached ? 'bg-red-50 border-red-200' : 'bg-muted/50'}`}
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm font-medium">{jo.job_order_id}</span>
-                          <Badge variant={jo.status === 'Open' ? 'secondary' : 'default'} className={jo.status === 'In Progress' ? 'bg-amber-500' : ''}>
-                            {jo.status}
-                          </Badge>
-                          {jo.sla_breached && <Badge variant="destructive">SLA Breach</Badge>}
-                        </div>
-                        <p className="mt-1 font-medium">{jo.subscriber_name}</p>
-                        <p className="text-sm text-muted-foreground">{jo.type} - {jo.description?.substring(0, 50)}...</p>
-                        <p className="text-xs text-muted-foreground mt-1">{jo.subscriber_address}</p>
-                      </div>
-                      <div className="text-right">
+                    {/* Mobile-friendly layout */}
+                    <div className="space-y-2">
+                      {/* Job ID on its own row */}
+                      <div className="font-mono text-sm font-medium">{jo.job_order_id}</div>
+                      
+                      {/* Badges row - wrap on mobile */}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge variant={jo.status === 'Open' ? 'secondary' : 'default'} className={jo.status === 'In Progress' ? 'bg-amber-500' : ''}>
+                          {jo.status}
+                        </Badge>
+                        {jo.sla_breached && <Badge variant="destructive">SLA Breach</Badge>}
                         <Badge 
                           className={
                             jo.priority === 'Critical' ? 'bg-red-600' :
@@ -220,11 +217,17 @@ export default function TechnicianDashboard({ user, onLogout }) {
                           {jo.priority}
                         </Badge>
                         {jo.scheduled_date && (
-                          <p className="text-xs text-muted-foreground mt-2">
+                          <span className="text-xs text-muted-foreground">
                             {new Date(jo.scheduled_date).toLocaleDateString()}
-                            {jo.scheduled_time_slot && ` @ ${jo.scheduled_time_slot}`}
-                          </p>
+                          </span>
                         )}
+                      </div>
+                      
+                      {/* Subscriber info */}
+                      <div>
+                        <p className="font-medium">{jo.subscriber_name}</p>
+                        <p className="text-sm text-muted-foreground">{jo.type} - {jo.description?.substring(0, 50)}...</p>
+                        <p className="text-xs text-muted-foreground mt-1">{jo.subscriber_address}</p>
                       </div>
                     </div>
                   </div>
