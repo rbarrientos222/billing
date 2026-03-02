@@ -203,15 +203,15 @@ export default function Reports() {
               {/* Total Receivable Card */}
               <Card className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                 <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="text-center sm:text-left">
                       <p className="text-sm opacity-90">Total Receivables</p>
-                      <p className="text-4xl font-bold mt-2">{formatCurrency(receivables.total_receivable)}</p>
+                      <p className="text-3xl sm:text-4xl font-bold mt-2">{formatCurrency(receivables.total_receivable)}</p>
                       <p className="text-xs opacity-75 mt-2">
                         As of {formatDate(receivables.generated_at)}
                       </p>
                     </div>
-                    <div className="w-48 h-48">
+                    <div className="w-32 h-32 sm:w-48 sm:h-48">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -220,8 +220,8 @@ export default function Reports() {
                             nameKey="name"
                             cx="50%"
                             cy="50%"
-                            innerRadius={40}
-                            outerRadius={70}
+                            innerRadius={25}
+                            outerRadius={50}
                           >
                             {getReceivablesPieData().map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
