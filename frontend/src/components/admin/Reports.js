@@ -409,7 +409,34 @@ export default function Reports() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md border overflow-x-auto max-h-96 overflow-y-auto">
+                  {/* Mobile View - Cards */}
+                  <div className="space-y-2 sm:hidden max-h-96 overflow-y-auto">
+                    {collections.payments?.map((p, idx) => (
+                      <div key={idx} className="p-3 border rounded-lg bg-card">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <p className="font-mono text-xs text-muted-foreground">{p.or_number}</p>
+                            <p className="font-medium text-sm mt-0.5">{p.subscriber_name}</p>
+                            <p className="text-xs text-muted-foreground">{p.subscriber_id}</p>
+                          </div>
+                          <span className="font-bold text-green-600">{formatCurrency(p.total_amount || p.amount)}</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs pt-2 border-t">
+                          <Badge variant="outline" className="capitalize">
+                            {p.payment_mode?.replace('_', ' ')}
+                          </Badge>
+                          <span className="text-muted-foreground">{formatDate(p.payment_date)}</span>
+                          <span className="text-muted-foreground">by {p.received_by}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {(!collections.payments || collections.payments.length === 0) && (
+                      <p className="text-center text-muted-foreground py-8">No payments found</p>
+                    )}
+                  </div>
+                  
+                  {/* Desktop View - Table */}
+                  <div className="rounded-md border overflow-x-auto max-h-96 overflow-y-auto hidden sm:block">
                     <table className="w-full text-sm">
                       <thead className="bg-muted sticky top-0">
                         <tr>
