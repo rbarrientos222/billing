@@ -3665,16 +3665,44 @@ async def generate_soa(
         "paid": False
     }).sort("due_date", 1).to_list(100)
     
-    # Get recent payments
-    recent_payments = await db.payments.find({
-        "subscriber_id": account_number.upper()
-    }).sort("payment_date", -1).limit(5).to_list(5)
+    now = datetime.now()
     
-    # Calculate totals
-    total_previous = sum(inv.get('paid_amount', 0) for inv in unpaid_invoices)
-    total_payments = sum(p.get('total_amount', p.get('amount', 0)) for p in recent_payments)
-    total_current = sum(safe_float(inv.get('amount')) - safe_float(inv.get('paid_amount')) for inv in unpaid_invoices)
-    total_due = total_current
+    # Separate previous and current invoices
+    # Previous = invoices from before current month
+    # Current = invoices from current month
+    previous_invoices = []
+    current_invoices = []
+    
+    for inv in unpaid_invoices:
+        created_at = inv.get('created_at') or inv.get('billing_date')
+        if created_at:
+            if isinstance(created_at, str):
+                created_at = safe_parse_date(created_at)
+            if created_at and created_at.month < now.month or (created_at.month == 12 and now.month == 1):
+                previous_invoices.append(inv)
+            else:
+                current_invoices.append(inv)
+        else:
+            current_invoices.append(inv)
+    
+    # Calculate previous balance (sum of all previous unpaid invoices)
+    previous_balance = sum(safe_float(inv.get('amount')) - safe_float(inv.get('paid_amount')) for inv in previous_invoices)
+    
+    # Get the most recent payment (only one, for "Payment Received" line)
+    most_recent_payment = await db.payments.find_one(
+        {"subscriber_id": account_number.upper()},
+        sort=[("payment_date", -1)]
+    )
+    payment_received = safe_float(most_recent_payment.get('total_amount', most_recent_payment.get('amount', 0))) if most_recent_payment else 0
+    
+    # Calculate remaining balance after most recent payment
+    remaining_balance = max(0, previous_balance - payment_received)
+    
+    # Calculate current charges
+    current_charges = sum(safe_float(inv.get('amount')) - safe_float(inv.get('paid_amount')) for inv in current_invoices)
+    
+    # Total amount due
+    total_due = remaining_balance + current_charges
     
     # Get plan info
     plan = None
