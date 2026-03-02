@@ -1206,7 +1206,7 @@ export default function SubscriberManagement() {
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div>
-                <DialogTitle>Subscriber Records - {selectedSubscriberHistory?.first_name} {selectedSubscriberHistory?.last_name}</DialogTitle>
+                <DialogTitle>{selectedSubscriberHistory?.first_name} {selectedSubscriberHistory?.last_name}</DialogTitle>
                 <DialogDescription>
                   Account: {selectedSubscriberHistory?.account_number}
                 </DialogDescription>
