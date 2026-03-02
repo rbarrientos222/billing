@@ -317,48 +317,54 @@ export default function Reports() {
         <TabsContent value="collections" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <Filter className="w-5 h-5" />
                 Filter Collections
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-4 items-end">
-                <div className="space-y-2">
-                  <Label>Start Date</Label>
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-4 items-end">
+                <div className="space-y-1 sm:space-y-2">
+                  <Label className="text-xs sm:text-sm">Start Date</Label>
                   <Input
                     type="date"
                     value={collectionStartDate}
                     onChange={(e) => setCollectionStartDate(e.target.value)}
+                    className="h-9"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>End Date</Label>
+                <div className="space-y-1 sm:space-y-2">
+                  <Label className="text-xs sm:text-sm">End Date</Label>
                   <Input
                     type="date"
                     value={collectionEndDate}
                     onChange={(e) => setCollectionEndDate(e.target.value)}
+                    className="h-9"
                   />
                 </div>
-                <Button onClick={fetchCollections} disabled={loading}>
-                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                  Generate Report
-                </Button>
-                <ExportButton 
-                  endpoint="/export/payments" 
-                  filename={`payments_${new Date().toISOString().split('T')[0]}.csv`}
-                  filters={{ start_date: collectionStartDate, end_date: collectionEndDate }}
-                  label="Export CSV"
-                />
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setCollectionStartDate('');
-                    setCollectionEndDate('');
-                  }}
-                >
-                  Clear
-                </Button>
+                <div className="col-span-2 flex flex-wrap gap-2 sm:gap-4">
+                  <Button onClick={fetchCollections} disabled={loading} size="sm" className="flex-1 sm:flex-none">
+                    {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1 sm:mr-2" />}
+                    <span className="hidden sm:inline">Generate Report</span>
+                    <span className="sm:hidden">Generate</span>
+                  </Button>
+                  <ExportButton 
+                    endpoint="/export/payments" 
+                    filename={`payments_${new Date().toISOString().split('T')[0]}.csv`}
+                    filters={{ start_date: collectionStartDate, end_date: collectionEndDate }}
+                    label="Export"
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setCollectionStartDate('');
+                      setCollectionEndDate('');
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
