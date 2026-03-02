@@ -560,15 +560,15 @@ export default function Reports() {
               {/* Bar Chart */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Collections by Collector</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">Collections by Collector</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-80">
+                  <div className="h-64 sm:h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={collectorData.collectors} layout="vertical" margin={{ left: 80, right: 20 }}>
+                      <BarChart data={collectorData.collectors} layout="vertical" margin={{ left: 60, right: 10 }}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis type="number" tickFormatter={(value) => `₱${(value/1000).toFixed(0)}k`} />
-                        <YAxis type="category" dataKey="name" width={80} />
+                        <YAxis type="category" dataKey="name" width={55} tick={{ fontSize: 11 }} />
                         <Tooltip 
                           formatter={(value) => formatCurrency(value)}
                           labelFormatter={(label) => `Collector: ${label}`}
@@ -587,10 +587,39 @@ export default function Reports() {
               {/* Collector Table */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Collector Performance</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">Collector Performance</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md border">
+                  {/* Mobile View - Cards */}
+                  <div className="space-y-2 sm:hidden">
+                    {collectorData.collectors?.map((c, idx) => (
+                      <div key={idx} className="p-3 border rounded-lg bg-card">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={idx === 0 ? "default" : "outline"} className={idx === 0 ? "bg-yellow-500" : ""}>
+                              #{idx + 1}
+                            </Badge>
+                            <span className="font-medium">{c.name}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {collectorData.total_amount > 0 
+                              ? ((c.amount / collectorData.total_amount) * 100).toFixed(1) 
+                              : 0}%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <span className="text-xs text-muted-foreground">{c.count} payments</span>
+                          <span className="font-bold text-green-600">{formatCurrency(c.amount)}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {(!collectorData.collectors || collectorData.collectors.length === 0) && (
+                      <p className="text-center text-muted-foreground py-8">No collector data found</p>
+                    )}
+                  </div>
+                  
+                  {/* Desktop View - Table */}
+                  <div className="rounded-md border hidden sm:block">
                     <table className="w-full text-sm">
                       <thead className="bg-muted">
                         <tr>
