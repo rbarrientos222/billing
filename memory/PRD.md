@@ -9,6 +9,13 @@
   - File modified: `/app/frontend/src/components/admin/ExpenseManagement.js`
   - Result: Expenses page now loads and functions correctly on mobile devices
 
+- **ADDED:** Pagination for Expenses module
+  - Shows 20 items per page by default (configurable: 10, 20, 50, 100)
+  - Display format: "Show [X] per page | 1-20 of 324"
+  - Navigation: First, Previous, Next, Last page buttons
+  - Auto-resets to page 1 when filters change
+  - Works on both mobile and desktop views
+
 ### Previous Bug Fix (Feb 28, 2026)
 - **FIXED:** Cashier Receivables `TypeError: '<' not supported between 'datetime' and 'str'`
   - Root cause: Mixed date types (datetime objects and strings) in invoice `due_date` field

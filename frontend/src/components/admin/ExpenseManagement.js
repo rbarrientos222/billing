@@ -14,7 +14,8 @@ import { toast } from 'sonner';
 import { 
   DollarSign, Plus, Search, Filter, X, Edit2, Trash2, 
   Calendar, RefreshCw, Tag, TrendingUp, Receipt, FolderPlus,
-  BarChart3, PieChart, TrendingDown, ArrowUpRight, ArrowDownRight
+  BarChart3, PieChart, TrendingDown, ArrowUpRight, ArrowDownRight,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
 import { 
   AreaChart, Area, BarChart, Bar, PieChart as RechartsPie, Pie, Cell,
@@ -59,6 +60,10 @@ export default function ExpenseManagement() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDesc, setNewCategoryDesc] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   useEffect(() => {
     fetchData();
@@ -254,6 +259,17 @@ export default function ExpenseManagement() {
       exp.expense_id?.toLowerCase().includes(term)
     );
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedExpenses = filteredExpenses.slice(startIndex, endIndex);
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCategory, filterRecurring, dateFrom, dateTo]);
 
   return (
     <div className="space-y-6">
@@ -477,7 +493,7 @@ export default function ExpenseManagement() {
             <>
               {/* Mobile View - Cards */}
               <div className="space-y-2 sm:hidden">
-                {filteredExpenses.map((expense) => (
+                {paginatedExpenses.map((expense) => (
                   <div key={expense.expense_id} className="p-3 border rounded-lg bg-card">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="min-w-0 flex-1">
@@ -537,7 +553,7 @@ export default function ExpenseManagement() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredExpenses.map((expense) => (
+                    {paginatedExpenses.map((expense) => (
                       <tr key={expense.expense_id} className="border-t hover:bg-muted/50">
                         <td className="p-3 whitespace-nowrap">
                           {expense.expense_date ? new Date(expense.expense_date).toLocaleDateString() : '-'}
@@ -597,6 +613,78 @@ export default function ExpenseManagement() {
                 </table>
               </div>
             </>
+          )}
+          
+          {/* Pagination Controls */}
+          {filteredExpenses.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t mt-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Show</span>
+                <Select value={itemsPerPage.toString()} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                  <SelectTrigger className="w-[70px] h-8" data-testid="items-per-page">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="hidden sm:inline">per page</span>
+                <span className="text-muted-foreground">
+                  | {startIndex + 1}-{Math.min(endIndex, filteredExpenses.length)} of {filteredExpenses.length}
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="h-8 w-8 p-0"
+                  data-testid="first-page-btn"
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="h-8 w-8 p-0"
+                  data-testid="prev-page-btn"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <span className="px-3 text-sm font-medium">
+                  {currentPage} / {totalPages}
+                </span>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="h-8 w-8 p-0"
+                  data-testid="next-page-btn"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="h-8 w-8 p-0"
+                  data-testid="last-page-btn"
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
