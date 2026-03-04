@@ -596,96 +596,150 @@ export default function JobOrderManagement() {
 
       {/* Job Orders Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Job Orders</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg sm:text-xl">Job Orders</CardTitle>
           <CardDescription>{filteredJobOrders.length} total</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {loading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Job Order ID</TableHead>
-                    <TableHead>Subscriber</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Assigned</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedJobOrders.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        No job orders found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginatedJobOrders.map((jo) => (
-                      <TableRow key={jo.job_order_id} className={jo.sla_breached ? 'bg-red-50' : ''}>
-                        <TableCell>
-                          <div className="font-mono text-xs">{jo.job_order_id}</div>
-                          {jo.sla_breached && (
-                            <Badge variant="destructive" className="text-xs mt-1">SLA Breach</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{jo.subscriber_name || jo.subscriber_id}</div>
-                          <div className="text-xs text-muted-foreground truncate max-w-[200px]">{jo.subscriber_address}</div>
-                        </TableCell>
-                        <TableCell>{jo.type}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[jo.priority]}`} />
-                            {jo.priority}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={STATUS_COLORS[jo.status]}>{jo.status}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {(jo.assigned_technicians || []).length === 0 ? (
-                              <span className="text-muted-foreground text-xs">Unassigned</span>
-                            ) : (
-                              jo.assigned_technicians.slice(0, 2).map(t => (
-                                <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
-                              ))
-                            )}
-                            {(jo.assigned_technicians || []).length > 2 && (
-                              <Badge variant="outline" className="text-xs">+{jo.assigned_technicians.length - 2}</Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-xs">
+            <>
+              {/* Mobile View - Cards */}
+              <div className="space-y-2 sm:hidden">
+                {paginatedJobOrders.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    No job orders found
+                  </div>
+                ) : (
+                  paginatedJobOrders.map((jo) => (
+                    <div key={jo.job_order_id} className={`p-3 border rounded-lg ${jo.sla_breached ? 'bg-red-50 border-red-200' : 'bg-card'}`}>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-mono text-xs text-muted-foreground">{jo.job_order_id}</p>
+                          <p className="font-medium text-sm truncate">{jo.subscriber_name || jo.subscriber_id}</p>
+                          <p className="text-xs text-muted-foreground truncate">{jo.type}</p>
+                        </div>
+                        <Badge className={STATUS_COLORS[jo.status] + " shrink-0 text-xs"}>{jo.status}</Badge>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                        <div className="flex items-center gap-1">
+                          <div className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[jo.priority]}`} />
+                          <span className="text-xs">{jo.priority}</span>
+                        </div>
+                        {jo.sla_breached && <Badge variant="destructive" className="text-[10px] px-1 py-0">SLA</Badge>}
+                        {(jo.assigned_technicians || []).length > 0 && (
+                          <Badge variant="outline" className="text-[10px] px-1 py-0">
+                            {jo.assigned_technicians[0]}{jo.assigned_technicians.length > 1 ? ` +${jo.assigned_technicians.length - 1}` : ''}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <span className="text-xs text-muted-foreground">
                           {new Date(jo.created_at).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => openViewDialog(jo)}>
-                              <Eye className="h-4 w-4 text-blue-600" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(jo)}>
-                              <Edit className="h-4 w-4 text-amber-600" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDelete(jo.job_order_id)}>
-                              <Trash2 className="h-4 w-4 text-red-600" />
-                            </Button>
-                          </div>
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openViewDialog(jo)}>
+                            <Eye className="h-4 w-4 text-blue-600" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEditDialog(jo)}>
+                            <Edit className="h-4 w-4 text-amber-600" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleDelete(jo.job_order_id)}>
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop View - Table */}
+              <div className="rounded-md border hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Job Order ID</TableHead>
+                      <TableHead>Subscriber</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Assigned</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedJobOrders.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          No job orders found
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      paginatedJobOrders.map((jo) => (
+                        <TableRow key={jo.job_order_id} className={jo.sla_breached ? 'bg-red-50' : ''}>
+                          <TableCell>
+                            <div className="font-mono text-xs">{jo.job_order_id}</div>
+                            {jo.sla_breached && (
+                              <Badge variant="destructive" className="text-xs mt-1">SLA Breach</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">{jo.subscriber_name || jo.subscriber_id}</div>
+                            <div className="text-xs text-muted-foreground truncate max-w-[200px]">{jo.subscriber_address}</div>
+                          </TableCell>
+                          <TableCell>{jo.type}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[jo.priority]}`} />
+                              {jo.priority}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={STATUS_COLORS[jo.status]}>{jo.status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {(jo.assigned_technicians || []).length === 0 ? (
+                                <span className="text-muted-foreground text-xs">Unassigned</span>
+                              ) : (
+                                jo.assigned_technicians.slice(0, 2).map(t => (
+                                  <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
+                                ))
+                              )}
+                              {(jo.assigned_technicians || []).length > 2 && (
+                                <Badge variant="outline" className="text-xs">+{jo.assigned_technicians.length - 2}</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {new Date(jo.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => openViewDialog(jo)}>
+                                <Eye className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => openEditDialog(jo)}>
+                                <Edit className="h-4 w-4 text-amber-600" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDelete(jo.job_order_id)}>
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
               
               <TablePagination
                 currentPage={currentPage}
@@ -695,7 +749,7 @@ export default function JobOrderManagement() {
                 onPageChange={setCurrentPage}
                 onPageSizeChange={(size) => { setPageSize(size); setCurrentPage(1); }}
               />
-            </div>
+            </>
           )}
         </CardContent>
       </Card>

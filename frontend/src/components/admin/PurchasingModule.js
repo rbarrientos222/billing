@@ -172,16 +172,59 @@ function PurchasesList({ purchases, loading, onView, onPay }) {
     return <div className="text-center py-12 text-muted-foreground"><ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>No purchases</p></div>;
   }
   
-  const rows = [];
-  for (let i = 0; i < purchases.length; i++) {
-    rows.push(<PurchaseRow key={purchases[i].purchase_id} purchase={purchases[i]} onView={onView} onPay={onPay} />);
-  }
-  
   return (
-    <Table>
-      <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Supplier</TableHead><TableHead>PO#</TableHead><TableHead>Date</TableHead><TableHead>Items</TableHead><TableHead>Total</TableHead><TableHead>Paid</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-      <TableBody>{rows}</TableBody>
-    </Table>
+    <>
+      {/* Mobile View - Cards */}
+      <div className="space-y-2 sm:hidden">
+        {purchases.map((p) => (
+          <div key={p.purchase_id} className="p-3 border rounded-lg bg-card">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="min-w-0 flex-1">
+                <p className="font-mono text-xs text-muted-foreground">{p.purchase_id}</p>
+                <p className="font-medium text-sm truncate">{p.supplier_name || 'Unknown'}</p>
+                {p.po_number && <p className="text-xs text-muted-foreground">PO: {p.po_number}</p>}
+              </div>
+              <StatusBadge status={p.payment_status} />
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
+              <span className="text-muted-foreground">{p.items?.length || 0} items</span>
+              <span className="text-muted-foreground">•</span>
+              <span className="text-muted-foreground">{new Date(p.purchase_date).toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t">
+              <div className="text-xs">
+                <span className="text-muted-foreground">Paid: </span>
+                <span className="text-green-600 font-medium">₱{(p.amount_paid || 0).toLocaleString()}</span>
+                <span className="text-muted-foreground"> / </span>
+                <span className="font-bold">₱{(p.total_amount || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onView(p)}>
+                  <Eye className="h-4 w-4 text-blue-600" />
+                </Button>
+                {p.payment_status !== 'paid' && (
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => onPay(p)}>
+                    <CreditCard className="h-3 w-3 mr-1" />Pay
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Desktop View - Table */}
+      <div className="hidden sm:block">
+        <Table>
+          <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Supplier</TableHead><TableHead>PO#</TableHead><TableHead>Date</TableHead><TableHead>Items</TableHead><TableHead>Total</TableHead><TableHead>Paid</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {purchases.map((p) => (
+              <PurchaseRow key={p.purchase_id} purchase={p} onView={onView} onPay={onPay} />
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }
 
@@ -389,14 +432,14 @@ export default function PurchasingModule() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="space-y-4">
         <div>
-          <h2 className="text-3xl font-heading font-bold">Purchasing</h2>
-          <p className="text-muted-foreground mt-1">Manage purchases and suppliers</p>
+          <h2 className="text-2xl sm:text-3xl font-heading font-bold">Purchasing</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Manage purchases and suppliers</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Dialog open={supplierDialogOpen} onOpenChange={setSupplierDialogOpen}>
-            <DialogTrigger asChild><Button variant="outline"><Building2 className="h-4 w-4 mr-2" />Add Supplier</Button></DialogTrigger>
+            <DialogTrigger asChild><Button variant="outline" size="sm" className="sm:size-default"><Building2 className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Add Supplier</span><span className="sm:hidden">Supplier</span></Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Add Supplier</DialogTitle><DialogDescription>Enter supplier details</DialogDescription></DialogHeader>
               <form onSubmit={handleCreateSupplier} className="space-y-4">
@@ -413,7 +456,7 @@ export default function PurchasingModule() {
           </Dialog>
           
           <Dialog open={purchaseDialogOpen} onOpenChange={setPurchaseDialogOpen}>
-            <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />New Purchase</Button></DialogTrigger>
+            <DialogTrigger asChild><Button size="sm" className="sm:size-default"><Plus className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">New Purchase</span><span className="sm:hidden">New</span></Button></DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Create Purchase</DialogTitle><DialogDescription>Record a new purchase</DialogDescription></DialogHeader>
               <form onSubmit={handleCreatePurchase} className="space-y-6">
@@ -440,7 +483,7 @@ export default function PurchasingModule() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Total Spent</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">₱{totalSpent.toLocaleString()}</div><p className="text-xs text-muted-foreground">All time</p></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm">This Month</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">₱{monthlyTotal.toLocaleString()}</div><p className="text-xs text-muted-foreground">{monthlyCount} purchases</p></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Unpaid</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">₱{unpaidAmount.toLocaleString()}</div><p className="text-xs text-muted-foreground">Pending</p></CardContent></Card>
@@ -448,19 +491,19 @@ export default function PurchasingModule() {
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div><CardTitle>Purchases</CardTitle><CardDescription>{purchases.length} total</CardDescription></div>
-            <div className="flex gap-3">
-              <div className="relative"><Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" /><Input className="pl-9 w-[200px]" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
+        <CardHeader className="pb-3">
+          <div className="space-y-3">
+            <div><CardTitle className="text-lg sm:text-xl">Purchases</CardTitle><CardDescription>{purchases.length} total</CardDescription></div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1"><Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" /><Input className="pl-9" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-[130px]"><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="unpaid">Unpaid</SelectItem><SelectItem value="partial">Partial</SelectItem><SelectItem value="paid">Paid</SelectItem></SelectContent>
               </Select>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           <PurchasesList purchases={paginatedPurchases} loading={loading} onView={handleViewPurchase} onPay={handlePayClick} />
           {!loading && filtered.length > 0 && (
             <TablePagination

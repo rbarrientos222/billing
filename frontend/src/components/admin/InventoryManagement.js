@@ -626,157 +626,224 @@ export default function InventoryManagement() {
 
       {/* Inventory Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Inventory Items</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg sm:text-xl">Inventory Items</CardTitle>
           <CardDescription>{filteredItems.length} items</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead>Unit Cost</TableHead>
-                    <TableHead>Total Value</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedItems.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        No items found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginatedItems.map((item) => {
-                      const Icon = getCategoryIcon(item.category);
-                      return (
-                        <TableRow key={item.item_code} className={item.low_stock ? 'bg-red-50 dark:bg-red-950/20' : ''}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{item.name}</p>
-                              <p className="text-xs text-muted-foreground font-mono">{item.item_code}</p>
-                              <div className="flex gap-1 mt-1">
-                                {item.is_serialized && (
-                                  <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
-                                    <HardDrive className="h-3 w-3 mr-1" />
-                                    MAC/Serial
-                                  </Badge>
-                                )}
-                                {item.is_bulk && (
-                                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                                    <Cable className="h-3 w-3 mr-1" />
-                                    Bulk/Length
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
+            <>
+              {/* Mobile View - Cards */}
+              <div className="space-y-2 sm:hidden">
+                {paginatedItems.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">No items found</div>
+                ) : (
+                  paginatedItems.map((item) => {
+                    const Icon = getCategoryIcon(item.category);
+                    return (
+                      <div key={item.item_code} className={`p-3 border rounded-lg ${item.low_stock ? 'bg-red-50 border-red-200' : 'bg-card'}`}>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <Icon className="h-4 w-4 text-muted-foreground" />
-                              <span>{item.category}</span>
+                              <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <p className="font-medium text-sm truncate">{item.name}</p>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            {item.is_serialized ? (
+                            <p className="text-xs text-muted-foreground font-mono">{item.item_code}</p>
+                          </div>
+                          {item.low_stock ? (
+                            <Badge variant="destructive" className="shrink-0 text-xs">Low</Badge>
+                          ) : (
+                            <Badge className="bg-green-600 shrink-0 text-xs">In Stock</Badge>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          <Badge variant="outline" className="text-[10px] px-1 py-0">{item.category}</Badge>
+                          {item.is_serialized && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 text-purple-700 border-purple-200">MAC/Serial</Badge>
+                          )}
+                          {item.is_bulk && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 bg-blue-50 text-blue-700 border-blue-200">Bulk</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <div>
+                            <p className={`font-bold text-sm ${item.low_stock ? 'text-red-600' : ''}`}>
+                              {item.is_serialized ? `${item.available_units ?? 0}/${item.total_units ?? item.quantity}` : item.quantity?.toLocaleString()} {item.unit}
+                            </p>
+                            <p className="text-xs text-muted-foreground">₱{item.cost_per_unit?.toLocaleString()}/unit</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {item.is_serialized && (
+                              <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-purple-600 border-purple-300" onClick={() => handleViewUnits(item)}>
+                                <List className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {!item.is_serialized && (
+                              <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => handleAdjust(item)}>
+                                <TrendingDown className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleEdit(item)}>
+                              <Edit className="h-3.5 w-3.5 text-amber-600" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleDelete(item)}>
+                              <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Desktop View - Table */}
+              <div className="rounded-md border overflow-x-auto hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Stock</TableHead>
+                      <TableHead>Unit Cost</TableHead>
+                      <TableHead>Total Value</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedItems.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          No items found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      paginatedItems.map((item) => {
+                        const Icon = getCategoryIcon(item.category);
+                        return (
+                          <TableRow key={item.item_code} className={item.low_stock ? 'bg-red-50 dark:bg-red-950/20' : ''}>
+                            <TableCell>
                               <div>
-                                <span className={`font-bold ${item.available_units === 0 ? 'text-red-600' : ''}`}>
-                                  {item.available_units ?? 0} / {item.total_units ?? item.quantity} {item.unit}
-                                </span>
-                                <p className="text-xs text-muted-foreground">
-                                  Available / Total
-                                </p>
+                                <p className="font-medium">{item.name}</p>
+                                <p className="text-xs text-muted-foreground font-mono">{item.item_code}</p>
+                                <div className="flex gap-1 mt-1">
+                                  {item.is_serialized && (
+                                    <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                                      <HardDrive className="h-3 w-3 mr-1" />
+                                      MAC/Serial
+                                    </Badge>
+                                  )}
+                                  {item.is_bulk && (
+                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                      <Cable className="h-3 w-3 mr-1" />
+                                      Bulk/Length
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                            ) : (
-                              <span className={`font-bold ${item.low_stock ? 'text-red-600' : ''}`}>
-                                {item.quantity?.toLocaleString()} {item.unit}
-                              </span>
-                            )}
-                            {!item.is_serialized && item.restock_level > 0 && (
-                              <p className="text-xs text-muted-foreground">
-                                Min: {item.restock_level}
-                              </p>
-                            )}
-                          </TableCell>
-                          <TableCell>₱{item.cost_per_unit?.toLocaleString()}</TableCell>
-                          <TableCell className="font-medium">
-                            ₱{item.total_value?.toLocaleString()}
-                          </TableCell>
-                          <TableCell>
-                            {item.low_stock ? (
-                              <Badge variant="destructive">
-                                <AlertTriangle className="h-3 w-3 mr-1" />
-                                Low Stock
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-green-600">In Stock</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              {item.is_serialized && (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  onClick={() => handleViewUnits(item)}
-                                  title="Manage Units (MAC/Serial)"
-                                  className="text-purple-600 border-purple-300"
-                                >
-                                  <List className="h-4 w-4" />
-                                </Button>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Icon className="h-4 w-4 text-muted-foreground" />
+                                <span>{item.category}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {item.is_serialized ? (
+                                <div>
+                                  <span className={`font-bold ${item.available_units === 0 ? 'text-red-600' : ''}`}>
+                                    {item.available_units ?? 0} / {item.total_units ?? item.quantity} {item.unit}
+                                  </span>
+                                  <p className="text-xs text-muted-foreground">
+                                    Available / Total
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className={`font-bold ${item.low_stock ? 'text-red-600' : ''}`}>
+                                  {item.quantity?.toLocaleString()} {item.unit}
+                                </span>
                               )}
-                              {!item.is_serialized && (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  onClick={() => handleAdjust(item)}
-                                  title="Adjust Stock"
-                                >
-                                  <TrendingDown className="h-4 w-4" />
-                                </Button>
+                              {!item.is_serialized && item.restock_level > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  Min: {item.restock_level}
+                                </p>
                               )}
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => handleViewHistory(item)}
-                                title="View History"
-                              >
-                                <History className="h-4 w-4 text-blue-600" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => handleEdit(item)}
-                                title="Edit"
-                              >
-                                <Edit className="h-4 w-4 text-amber-600" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => handleDelete(item)}
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
+                            </TableCell>
+                            <TableCell>₱{item.cost_per_unit?.toLocaleString()}</TableCell>
+                            <TableCell className="font-medium">
+                              ₱{item.total_value?.toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              {item.low_stock ? (
+                                <Badge variant="destructive">
+                                  <AlertTriangle className="h-3 w-3 mr-1" />
+                                  Low Stock
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-green-600">In Stock</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                {item.is_serialized && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => handleViewUnits(item)}
+                                    title="Manage Units (MAC/Serial)"
+                                    className="text-purple-600 border-purple-300"
+                                  >
+                                    <List className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {!item.is_serialized && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => handleAdjust(item)}
+                                    title="Adjust Stock"
+                                  >
+                                    <TrendingDown className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => handleViewHistory(item)}
+                                  title="View History"
+                                >
+                                  <History className="h-4 w-4 text-blue-600" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => handleEdit(item)}
+                                  title="Edit"
+                                >
+                                  <Edit className="h-4 w-4 text-amber-600" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => handleDelete(item)}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
               
               {/* Pagination */}
               <TablePagination
@@ -787,7 +854,7 @@ export default function InventoryManagement() {
                 onPageChange={handlePageChange}
                 onPageSizeChange={handlePageSizeChange}
               />
-            </div>
+            </>
           )}
         </CardContent>
       </Card>
