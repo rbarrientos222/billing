@@ -14,37 +14,49 @@ Key features requested include:
 **User's preferred language**: English
 
 **what currently exists?**
-A comprehensive full-stack billing application with a FastAPI backend, React frontend, and MongoDB. The system includes role-based access for Admins, Cashiers, and Technicians. A fully functional, mobile-responsive **Subscriber Portal** allows subscribers to log in, view their dashboard, and pay bills. The admin panel features filterable dashboards, extensive reports, a **Subscriber Login Management** system, and a **Data Import/Export** section. The Cashier dashboard now includes a mobile-friendly **Receivables** tab. PDF Statement of Account (SOA) generation is also implemented.
+A comprehensive full-stack billing application with a FastAPI backend, React frontend, and MongoDB. The application has undergone a significant mobile-responsiveness overhaul, with card-based layouts implemented across nearly all modules, including Subscriber Management, Job Orders, Inventory, Purchasing, Expenses, and various sections of the Admin and Cashier dashboards. Key bugs related to Cashier receivables and PDF Statement of Account (SOA) generation have been fixed. The Made with Emergent branding has also been removed.
 
 **Last working item**:
--   **Last item agent was working:** Debugging a Failed to load receivables error in the Cashier module, which persists even after previous fixes.
--   **Reasoning:** The user confirmed the error is still present on their live server. The deployment agent logs revealed the root cause: a  in the  endpoint in . This occurs because the  function, used to find the oldest due date, is attempting to compare a list containing both  objects and date strings, which is not a valid operation. The agent has identified the exact line of the error but has not yet implemented the fix.
+-   **Last item agent was working:** Making the Expenses module mobile-friendly. The user had initially requested fixes for Inventory and then corrected it to Expenses.
+-   **Reasoning:** This was the final task in a large batch of user requests to improve the mobile UI/UX across the entire application. The agent implemented a responsive header, 2-column stats cards, and a mobile-friendly card-based layout for the expenses list.
 -   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** backend testing agent. The agent must create a robust date-parsing helper function to convert all date strings to datetime objects before comparison and apply it to the failing logic.
+-   **Which testing method agent to use?** screenshot tool. The agent needs to take a screenshot of the Expenses page on a mobile viewport to visually confirm that the new layout is correct and no elements are misplaced or broken.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** (P0) Failed to load receivables error in Cashier module due to mixed date types.
--   **Issue 2:** (P1) Babel Plugin Failure for .
--   **Issue 3:** (P2) User verification needed for the CSV export download mechanism.
+-   **Issue 1:** (P0) Verify the mobile UI fixes for the Expenses module.
+-   **Issue 2:** (P1) SOA download crashes browser or creates an unreadable file.
+-   **Issue 3:** (P2) Babel Plugin Failure for .
+-   **Issue 4:** (P3) User verification needed for the CSV export download mechanism.
 
 **Issues Detail:**
--   **Issue 1:** Failed to load receivables error in Cashier module.
-    -   **Description:** The cashier receivables page fails to load. Deployment logs confirm a . This is caused by the  field in the  collection containing a mix of string and datetime object types. The  function in the  endpoint cannot compare these mixed types.
-    -   **Attempted fixes:** The agent previously implemented a  helper for numeric fields, but this did not address the date type issue. The agent has now identified the exact line of code causing the .
+-   **Issue 1:** Verify the mobile UI fixes for the Expenses module.
+    -   **Attempted fixes:** The agent has applied a series of  commands to  to introduce responsive classes (e.g., ), create a mobile-first card layout for the expense list, and reorganize the header/filter sections.
     -   **Next debug checklist:**
-        1.  Create a robust  helper function (similar to the existing ) that can handle both strings and  objects, returning a consistent  object or .
-        2.  Locate the  function call in the  function in .
-        3.  Modify the list comprehension inside the  call to use the new  helper, ensuring all values are  objects before the comparison occurs.
-        4.  Restart the backend and test the  endpoint to confirm the error is resolved.
-    -   **Why fix this issue and what will be achieved with the fix?** This is a blocker bug preventing cashiers from viewing receivables, which is a core function of their role.
+        1.  Use the  with a mobile viewport size.
+        2.  Navigate to the Expenses page within the admin dashboard.
+        3.  Verify that the header, stats cards, filters, and expense list render correctly in a card-based format without overlapping or broken elements.
+    -   **Why fix this issue and what will be achieved with the fix?** This is the last pending item from a large user request to make the entire application mobile-friendly. Completing this will finalize the UI overhaul.
     -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** Y (The user has reported this symptom multiple times; the root cause is now more precisely identified).
-    -   **Should Test frontend/backend/both after fix?** Backend
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Frontend
     -   **Blocked on other issue:** None
 
--   **Issue 2:** Babel Plugin Failure for .
+-   **Issue 2:** SOA download crashes browser or creates an unreadable file.
+    -   **Description:** The user reports that attempting to download a Statement of Account (SOA) either crashes the browser or results in a corrupted/unreadable PDF file.
+    -   **Attempted fixes:** The agent identified and fixed a backend  in the PDF generation logic in  caused by improper handling of  values from date parsing. The agent confirmed the PDF generates correctly on the backend and suggested browser-side workarounds to the user (e.g., Save Link As, trying a different browser).
+    -   **Next debug checklist:**
+        1.  Ask the user to confirm if the browser-side workarounds solved their problem.
+        2.  If the issue persists, investigate the frontend download mechanism. The current approach might be timing out.
+        3.  Consider refactoring the download to use a Blob URL created on the client-side to improve reliability.
+    -   **Why fix this issue and what will be achieved with the fix?** Downloading SOAs is a critical business function that is currently unusable for the user.
+    -   **Status:** USER VERIFICATION PENDING
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Both
+    -   **Blocked on other issue:** None
+
+-   **Issue 3:** Babel Plugin Failure for .
     -   **Description:** A babel plugin for visual edits causes a Maximum call stack size exceeded error.
     -   **Attempted fixes:** The plugin was disabled in  as a temporary workaround.
     -   **Why fix this issue and what will be achieved with the fix?** Resolves technical debt.
@@ -53,7 +65,7 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
     -   **Should Test frontend/backend/both after fix?** Frontend
     -   **Blocked on other issue:** None
 
--   **Issue 3:** User verification needed for the CSV export download mechanism.
+-   **Issue 4:** User verification needed for the CSV export download mechanism.
     -   **Description:** The user previously reported that exported CSV files were not downloading.
     -   **Attempted fixes:** The download logic was refactored, but user confirmation is pending.
     -   **Why fix this issue and what will be achieved with the fix?** Ensures the data export feature is fully usable.
@@ -67,26 +79,33 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
--   **Admin - Refactor Backend (P0):** Propose refactoring the monolithic  file into a modular structure (e.g., , , ). This is a critical priority to improve maintainability and reduce bugs.
 -   **Subscriber Portal - Chat Support (P1):** Implement a real-time chat feature.
 
 **Future Tasks:**
+-   **Admin - Refactor Backend (DEFERRED):** Propose refactoring the monolithic . The user has reviewed the pros/cons and decided to postpone this task.
 -   **Subscriber Portal - Knowledge Base:** Add a section for FAQs and help articles.
 -   **Billing Automations:** Implement automatic emailing of SOAs and SMS notifications.
 -   **Admin - Wallet Management:** Create a UI for admins to manually add/deduct subscriber wallet credits.
 
 **Completed work in this session**
--   **Bug Fix:** Resolved the Failed to load expenses error by handling mixed string/datetime formats.
--   **Feature:** Implemented a filterable Admin Dashboard (daily, weekly, monthly, etc.) with a new Billing Overview section.
--   **UI/UX:** Made the Subscriber Management and Cashier modules significantly more mobile-friendly by combining columns and making components responsive.
--   **Bug Fix:** Fixed the Subscriber Portal login issue caused by incorrect field validation.
--   **Feature:** Created a Subscriber Portal Settings page for admins to manage user login credentials.
--   **Deployment Fixes:** Resolved multiple deployment-blocking errors, including CORS issues, password hash errors, and Mikrotik connection timeouts.
--   **Bug Fix & Refactor:** Fixed multiple issues with dashboard receivables calculations, removed redundant UI elements, and made the billing overview responsive to date filters.
--   **Feature:** Implemented automatic wallet credit application after invoice generation and added a manual admin endpoint.
--   **Feature:** Centralized Company Settings and implemented PDF Statement of Account (SOA) generation.
--   **Bug Fix:** Changed the default invoice  to be 5 days after the billing date.
--   **Refactor:** Implemented a global  helper function to prevent crashes from invalid numeric data in the database.
+-   **Bug Fix (P0):** Resolved Failed to load receivables error in the Cashier module by implementing a  helper in  to handle mixed date types.
+-   **Mobile UI/UX Overhaul:** Made the following modules and pages fully mobile-responsive using card-based layouts and adaptive headers:
+    -   Technician Dashboard ()
+    -   Subscriber Management ()
+    -   Cashier Dashboard (Invoices & Payment History in )
+    -   Admin Reports (Tabs, Graphs, Tables in )
+    -   Job Orders ()
+    -   Purchasing (, )
+    -   Inventory ()
+-   **Feature Enhancement:** Updated the Cashier Payment History to show only the 3 latest transactions by default, with a Show More/Less button.
+-   **Bug Fix (SOA Generation):**
+    -   Corrected logic in  to show the single most recent payment instead of a total sum.
+    -   Fixed text truncation for long item descriptions in the generated PDF.
+    -   Resolved a backend crash caused by a date comparison logic error.
+-   **Bug Fix (Job Order):** Set the default Scheduled Date to the current date in the edit job order form () to prevent crashes on save.
+-   **Feature Removal:** Removed Made with Emergent branding, analytics, and tracking scripts from .
+-   **Feature Removal:** Removed the Staff Login link from the subscriber login page ().
+-   **Troubleshooting:** Provided the user with guidance on resolving a custom domain . Restarted services to fix a temporary preview environment outage.
 
 **Earlier issues found/mentioned but not fixed**
 -   **Issue 1:** Address data for municipalities and barangays is incomplete sample data.
@@ -98,75 +117,73 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, Pydantic, pymongo, JWT, ,  (new for PDF).
+-   **Backend:** FastAPI, Pydantic, pymongo, JWT,  (for PDF).
 -   **Frontend:** React, React Router, Axios, TailwindCSS, Shadcn/UI.
--   **Data Handling:** The project now relies on defensive coding patterns like  and date-parsing helpers to handle inconsistent data types originating from CSV imports and manual entries.
+-   **Responsive Design:** Heavy use of TailwindCSS responsive prefixes (, , ) to create different layouts for mobile and desktop, converting tables into card-based lists on smaller screens.
+-   **Defensive Programming:** Implementation of helper functions () to handle inconsistent data types from the database gracefully.
 
 **key DB schema**
--   No major schema changes. However, the application logic has been made more robust to handle inconsistencies in existing data, such as  being either a string or a datetime object, and  being a string, float, or .
+-   No schema changes were made. Logic was adapted to handle existing data inconsistencies.
 
 **changes in tech stack**
--    has been added to  for PDF generation.
+-   None.
 
 **All files of reference**
--   : The location of almost all business logic and the file containing the current bug.
--   : The frontend component that is failing due to the backend error.
--    & : Recently modified for dashboard filters.
--   : Recently modified for UI/UX improvements.
--   : New component for managing subscriber logins.
+-   : The file currently being worked on.
+-   : Contains critical fixes for SOA generation and cashier receivables.
+-   : Modified to remove branding.
+-   All files in  have been recently modified for mobile-responsiveness.
+-   : A child component updated for mobile UI.
 
 **Areas that need refactoring**:
--   **CRITICAL:** The  file is dangerously large and has become the source of several recurring bugs due to its complexity. It urgently needs to be broken down into a modern FastAPI structure with separate files for routes, models, services, and utilities. This is the highest priority technical debt.
+-   **CRITICAL (DEFERRED):** The  file remains a monolithic technical debt. The user has acknowledged this but has chosen to prioritize frontend features and fixes for now. Do not propose refactoring unless it becomes a blocker.
 
 **key api endpoints**
--   : New endpoint for the cashier receivables list. **This is the endpoint that is currently failing.**
--   : Modified to accept a  query parameter.
--   : Modified to accept a  query parameter.
--   : Modified to handle password hash errors.
--   , : New endpoints for managing subscriber logins.
--   : New endpoint to manually apply wallet credit.
--   : New endpoint for PDF SOA generation.
+-   : Fixed a  related to date comparison.
+-   : Logic was heavily modified to fix content and a backend crash.
 
 **Critical Info for New Agent**
--   Your immediate priority is to fix the  in the  endpoint. The deployment logs point to the exact cause: a  function is trying to compare a mix of  objects and  objects.
--   You must create a robust date-parsing utility function (similar to the  and  helpers already in the file) and apply it within the  logic in  to ensure all dates are converted to  objects before any comparison is performed.
--   The user is working with live data that has inconsistencies. Your fixes must be defensive and handle potential  values, empty strings, and mixed types for both numbers and dates.
--   Once the current blocker is resolved, the most important task is to propose and execute the refactoring of the monolithic  file. This is a critical step to ensure the project's long-term stability.
+-   Your immediate priority is to verify the mobile UI fixes for the **Expenses** module by taking a screenshot. This was the last task the previous agent was working on.
+-   Be prepared to address the **SOA download issue**. The user reported browser crashes even after a backend fix. You may need to ask the user for an update and potentially implement a more robust client-side download mechanism (e.g., using a Blob).
+-   The user has explicitly decided to **defer the  refactoring**. Focus on the pending issues and any new user requests. Do not bring up refactoring again.
+-   The application has just undergone a major mobile UI overhaul. Be mindful of the new card-based layouts when making any future frontend changes.
 
 **documents and test reports created in this job**
 -    (Updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
--   10.  - **CURRENT BLOCKER.**
--   9.  - User reported that date filters were not working for receivables. (Fixed)
--   8.  - User reported a data discrepancy between Reports and Dashboard receivables. (Fixed)
--   7.  - User pointed out UI/UX issues with the receivables display. (Fixed)
--   6.  - User requested a way to manage subscriber login details. (Implemented)
--   5.  - User requested Company Settings centralization, SOA printing, and a cashier receivables list. (Implemented)
--   4.  - User requested a PDF layout change. (Completed)
--   3.  - User requested a change in business logic for due dates. (Completed)
--   2.  - User's first report of the current recurring bug. (Partially addressed, but underlying issue persists)
--   1.  - User reported a bug with wallet credits not being applied automatically. (Fixed)
+1.  : User corrects the module needing mobile UI fixes. **(Last working item)**
+2.  : User requested mobile UI fix for Inventory. (Completed)
+3.  : User requested mobile UI fixes for 3 modules. (Completed)
+4.  : User requested mobile UI fix. (Completed)
+5.  : User requested a feature enhancement. (Completed)
+6.  : User reported 3 separate issues/requests for Job Orders and Cashier UI. (Completed)
+7.  : User reported the preview environment was down. (Resolved)
+8.  : User reported a critical bug with PDF downloads. **(Pending user verification)**
+9.  : User reported content issues in the SOA PDF. (Completed)
+10. : User requested a UI change. (Completed)
 
 **Project Health Check:**
--   **Broken:** The Cashier -> Receivables module is non-functional due to a backend .
--   **Mocked:** Address data (provinces, municipalities, barangays) is still sample data.
+-   **Broken:**
+    -   The SOA download functionality is potentially still broken for the user, causing browser crashes or corrupted files.
+-   **Mocked:**
+    -   Address data (provinces, municipalities, barangays) remains sample data.
 -   **Technical Debt:**
-    -   CRITICAL: The  monolith is the top priority for refactoring.
-    -   The  babel plugin remains disabled.
+    -   CRITICAL (DEFERRED): The  monolith.
+    -   A babel plugin for  remains disabled as a workaround.
 
 **3rd Party Integrations**
 -   **Mikrotik RouterOS API:** Using .
 -   **PayMongo:** Using  for REST API interaction.
 -   **Pandas:** Used in the backend for CSV import/export.
 -   **Recharts:** Used in the frontend for report visualizations.
--   **ReportLab:** New integration for PDF generation.
+-   **ReportLab:** Used for PDF generation.
 
 **Testing status**
 -   **Testing agent used after significant changes:** NO
 -   **Troubleshoot agent used after agent stuck in loop:** NO
--   **Test files created:** None.
--   **Known regressions:** The Cashier Receivables module is broken due to a data type issue.
+-   **Test files created:** None
+-   **Known regressions:** The user-reported issue with SOA downloads persists after an initial backend fix.
 
 **Credentials to test flow:**
 -   **Admin:**  / 
@@ -175,5 +192,4 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
 -   **Subscriber:**  /  (or use the Subscriber Portal Settings page to manage other accounts).
 
 **What agent forgot to execute**
--   The agent has not yet proposed the critical refactoring of , despite the file's increasing size and complexity being the root cause of several recent bugs. This must be the next major action item after fixing the current blocker.
--   No regression testing was performed after the recent series of fixes, which could have caught the current  with dates proactively.</analysis>
+-   The agent was about to execute the verification step (taking a screenshot) for the Expenses module mobile UI fixes before the session ended. This is the immediate next action to take.</analysis>

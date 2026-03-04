@@ -257,9 +257,12 @@ export default function ExpenseManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-3xl font-heading font-bold">Expense Management</h2>
-        <div className="flex gap-2">
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-heading font-bold">Expense Management</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Track and manage expenses</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
           <ExportButton 
             endpoint="/export/expenses" 
             filename={`expenses_${new Date().toISOString().split('T')[0]}.csv`}
@@ -272,28 +275,29 @@ export default function ExpenseManagement() {
             onSuccess={fetchExpenses}
             label="Import"
           />
-          <Button variant="outline" onClick={() => setShowManageCategories(true)} data-testid="manage-categories-btn">
-            <Tag className="h-4 w-4 mr-2" />
-            Categories
+          <Button variant="outline" size="sm" onClick={() => setShowManageCategories(true)} data-testid="manage-categories-btn" className="sm:size-default">
+            <Tag className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Categories</span>
           </Button>
-          <Button onClick={() => { resetForm(); setShowAddExpense(true); }} data-testid="add-expense-btn">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Expense
+          <Button size="sm" onClick={() => { resetForm(); setShowAddExpense(true); }} data-testid="add-expense-btn" className="sm:size-default">
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Add Expense</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-red-100 dark:bg-red-900 rounded-lg">
-                <DollarSign className="h-6 w-6 text-red-600 dark:text-red-400" />
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-red-100 dark:bg-red-900 rounded-lg">
+                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Expenses</p>
-                <p className="text-2xl font-bold text-red-600" data-testid="total-expenses">
+                <p className="text-xs sm:text-sm text-muted-foreground">Total</p>
+                <p className="text-lg sm:text-2xl font-bold text-red-600" data-testid="total-expenses">
                   ₱{(stats.total_expenses || 0).toLocaleString()}
                 </p>
               </div>
@@ -302,14 +306,14 @@ export default function ExpenseManagement() {
         </Card>
         
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-orange-100 dark:bg-orange-900 rounded-lg">
-                <Calendar className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">This Month</p>
-                <p className="text-2xl font-bold" data-testid="monthly-expenses">
+                <p className="text-xs sm:text-sm text-muted-foreground">This Month</p>
+                <p className="text-lg sm:text-2xl font-bold" data-testid="monthly-expenses">
                   ₱{(stats.monthly_expenses || 0).toLocaleString()}
                 </p>
               </div>
@@ -318,17 +322,17 @@ export default function ExpenseManagement() {
         </Card>
         
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <RefreshCw className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Recurring</p>
-                <p className="text-2xl font-bold" data-testid="recurring-count">
+                <p className="text-xs sm:text-sm text-muted-foreground">Recurring</p>
+                <p className="text-lg sm:text-2xl font-bold" data-testid="recurring-count">
                   {stats.recurring_count || 0}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
                   ₱{(stats.recurring_total || 0).toLocaleString()}/cycle
                 </p>
               </div>
@@ -337,14 +341,14 @@ export default function ExpenseManagement() {
         </Card>
         
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                <Tag className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                <Tag className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Categories</p>
-                <p className="text-2xl font-bold" data-testid="categories-count">
+                <p className="text-xs sm:text-sm text-muted-foreground">Categories</p>
+                <p className="text-lg sm:text-2xl font-bold" data-testid="categories-count">
                   {stats.categories_count || 0}
                 </p>
               </div>
@@ -355,23 +359,24 @@ export default function ExpenseManagement() {
 
       {/* Tabs for Expenses and Reports */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="expenses" data-testid="expenses-tab">
-            <Receipt className="h-4 w-4 mr-2" />
-            Expenses
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="expenses" data-testid="expenses-tab" className="flex-1 sm:flex-none">
+            <Receipt className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Expenses</span>
           </TabsTrigger>
-          <TabsTrigger value="reports" data-testid="reports-tab">
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Reports & Analytics
+          <TabsTrigger value="reports" data-testid="reports-tab" className="flex-1 sm:flex-none">
+            <BarChart3 className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Reports & Analytics</span>
+            <span className="sm:hidden">Reports</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="expenses" className="space-y-4">
           {/* Filters */}
           <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-3 items-end">
-            <div className="flex-1 min-w-[200px]">
+        <CardContent className="pt-4 sm:pt-6">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3 items-end">
+            <div className="col-span-2 sm:flex-1 sm:min-w-[200px]">
               <Label className="text-xs text-muted-foreground">Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -379,85 +384,89 @@ export default function ExpenseManagement() {
                   placeholder="Search expenses..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                  data-testid="search-expenses-input"
+                  className="pl-10"
+                  data-testid="search-expenses"
                 />
               </div>
             </div>
             
-            <div className="min-w-[150px]">
+            <div>
               <Label className="text-xs text-muted-foreground">Category</Label>
               <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger data-testid="filter-category-select">
-                  <SelectValue placeholder="All Categories" />
+                <SelectTrigger data-testid="filter-category" className="w-full">
+                  <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   {categories.map(cat => (
-                    <SelectItem key={cat.category_id} value={cat.name}>{cat.name}</SelectItem>
+                    <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             
-            <div className="min-w-[120px]">
-              <Label className="text-xs text-muted-foreground">Recurring</Label>
+            <div>
+              <Label className="text-xs text-muted-foreground">Type</Label>
               <Select value={filterRecurring} onValueChange={setFilterRecurring}>
-                <SelectTrigger data-testid="filter-recurring-select">
+                <SelectTrigger data-testid="filter-recurring" className="w-full">
                   <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="yes">Recurring Only</SelectItem>
-                  <SelectItem value="no">Non-Recurring</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="recurring">Recurring</SelectItem>
+                  <SelectItem value="onetime">One-time</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
-            <div className="min-w-[140px]">
-              <Label className="text-xs text-muted-foreground">From Date</Label>
+            <div>
+              <Label className="text-xs text-muted-foreground">From</Label>
               <Input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
                 data-testid="filter-date-from"
+                className="h-9"
               />
             </div>
             
-            <div className="min-w-[140px]">
-              <Label className="text-xs text-muted-foreground">To Date</Label>
+            <div>
+              <Label className="text-xs text-muted-foreground">To</Label>
               <Input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
                 data-testid="filter-date-to"
+                className="h-9"
               />
             </div>
             
-            <Button onClick={handleApplyFilters} data-testid="apply-filters-btn">
-              <Filter className="h-4 w-4 mr-1" />
-              Apply
-            </Button>
-            
-            {(filterCategory && filterCategory !== 'all') || (filterRecurring && filterRecurring !== 'all') || dateFrom || dateTo ? (
-              <Button variant="ghost" onClick={handleClearFilters} data-testid="clear-filters-btn">
-                <X className="h-4 w-4 mr-1" />
-                Clear
+            <div className="col-span-2 sm:col-span-1 flex gap-2">
+              <Button onClick={handleApplyFilters} size="sm" className="flex-1 sm:flex-none" data-testid="apply-filter-btn">
+                <Filter className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Filter</span>
               </Button>
-            ) : null}
+            
+              {(filterCategory && filterCategory !== 'all') || (filterRecurring && filterRecurring !== 'all') || dateFrom || dateTo ? (
+                <Button variant="ghost" size="sm" onClick={handleClearFilters} data-testid="clear-filters-btn">
+                  <X className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Clear</span>
+                </Button>
+              ) : null}
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Expenses Table */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <Receipt className="h-5 w-5" />
             Expenses ({filteredExpenses.length})
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">Loading expenses...</div>
           ) : filteredExpenses.length === 0 ? (
@@ -465,79 +474,129 @@ export default function ExpenseManagement() {
               No expenses found. Click "Add Expense" to create one.
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm" data-testid="expenses-table">
-                <thead className="bg-muted">
-                  <tr>
-                    <th className="text-left p-3">Date</th>
-                    <th className="text-left p-3">Category</th>
-                    <th className="text-left p-3">Description</th>
-                    <th className="text-left p-3">Reference</th>
-                    <th className="text-right p-3">Amount</th>
-                    <th className="text-center p-3">Type</th>
-                    <th className="text-center p-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredExpenses.map((expense) => (
-                    <tr key={expense.expense_id} className="border-t hover:bg-muted/50">
-                      <td className="p-3 whitespace-nowrap">
-                        {expense.expense_date ? new Date(expense.expense_date).toLocaleDateString() : '-'}
-                      </td>
-                      <td className="p-3">
-                        <Badge variant="outline">{expense.category}</Badge>
-                      </td>
-                      <td className="p-3 max-w-[250px] truncate" title={expense.description}>
-                        {expense.description}
-                      </td>
-                      <td className="p-3 font-mono text-xs">
-                        {expense.reference_number || '-'}
-                      </td>
-                      <td className="p-3 text-right font-bold text-red-600">
-                        ₱{expense.amount?.toLocaleString()}
-                      </td>
-                      <td className="p-3 text-center">
-                        {expense.is_recurring ? (
-                          <Badge className="bg-blue-600">
-                            <RefreshCw className="h-3 w-3 mr-1" />
-                            {expense.recurring_type || 'Recurring'}
-                          </Badge>
-                        ) : expense.reference_type === 'purchase' ? (
-                          <Badge variant="secondary">Purchase</Badge>
-                        ) : (
-                          <Badge variant="outline">One-time</Badge>
+            <>
+              {/* Mobile View - Cards */}
+              <div className="space-y-2 sm:hidden">
+                {filteredExpenses.map((expense) => (
+                  <div key={expense.expense_id} className="p-3 border rounded-lg bg-card">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-muted-foreground">
+                          {expense.expense_date ? new Date(expense.expense_date).toLocaleDateString() : '-'}
+                        </p>
+                        <p className="font-medium text-sm line-clamp-2">{expense.description}</p>
+                        {expense.reference_number && (
+                          <p className="text-xs text-muted-foreground font-mono">Ref: {expense.reference_number}</p>
                         )}
-                      </td>
-                      <td className="p-3 text-center">
-                        {expense.reference_type !== 'purchase' ? (
-                          <div className="flex justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditDialog(expense)}
-                              data-testid={`edit-expense-${expense.expense_id}`}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteExpense(expense)}
-                              className="text-red-600 hover:text-red-700"
-                              data-testid={`delete-expense-${expense.expense_id}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Auto-created</span>
-                        )}
-                      </td>
+                      </div>
+                      <span className="font-bold text-red-600 shrink-0">₱{expense.amount?.toLocaleString()}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">{expense.category}</Badge>
+                      {expense.is_recurring ? (
+                        <Badge className="bg-blue-600 text-[10px] px-1.5 py-0">
+                          <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
+                          {expense.recurring_type || 'Recurring'}
+                        </Badge>
+                      ) : expense.reference_type === 'purchase' ? (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Purchase</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">One-time</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-end pt-2 border-t">
+                      {expense.reference_type !== 'purchase' ? (
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEditDialog(expense)}>
+                            <Edit2 className="h-4 w-4 text-amber-600" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleDeleteExpense(expense)}>
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Auto-created</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Desktop View - Table */}
+              <div className="rounded-md border overflow-x-auto hidden sm:block">
+                <table className="w-full text-sm" data-testid="expenses-table">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="text-left p-3">Date</th>
+                      <th className="text-left p-3">Category</th>
+                      <th className="text-left p-3">Description</th>
+                      <th className="text-left p-3">Reference</th>
+                      <th className="text-right p-3">Amount</th>
+                      <th className="text-center p-3">Type</th>
+                      <th className="text-center p-3">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredExpenses.map((expense) => (
+                      <tr key={expense.expense_id} className="border-t hover:bg-muted/50">
+                        <td className="p-3 whitespace-nowrap">
+                          {expense.expense_date ? new Date(expense.expense_date).toLocaleDateString() : '-'}
+                        </td>
+                        <td className="p-3">
+                          <Badge variant="outline">{expense.category}</Badge>
+                        </td>
+                        <td className="p-3 max-w-[250px] truncate" title={expense.description}>
+                          {expense.description}
+                        </td>
+                        <td className="p-3 font-mono text-xs">
+                          {expense.reference_number || '-'}
+                        </td>
+                        <td className="p-3 text-right font-bold text-red-600">
+                          ₱{expense.amount?.toLocaleString()}
+                        </td>
+                        <td className="p-3 text-center">
+                          {expense.is_recurring ? (
+                            <Badge className="bg-blue-600">
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              {expense.recurring_type || 'Recurring'}
+                            </Badge>
+                          ) : expense.reference_type === 'purchase' ? (
+                            <Badge variant="secondary">Purchase</Badge>
+                          ) : (
+                            <Badge variant="outline">One-time</Badge>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          {expense.reference_type !== 'purchase' ? (
+                            <div className="flex justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditDialog(expense)}
+                                data-testid={`edit-expense-${expense.expense_id}`}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteExpense(expense)}
+                                className="text-red-600 hover:text-red-700"
+                                data-testid={`delete-expense-${expense.expense_id}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Auto-created</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

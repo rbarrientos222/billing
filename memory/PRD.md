@@ -1,8 +1,15 @@
 # Billing System - Product Requirements Document
 
-## Last Updated: February 28, 2026
+## Last Updated: March 4, 2026
 
-### Latest Bug Fix (Feb 28, 2026)
+### Latest Bug Fix (March 4, 2026)
+- **FIXED:** Expenses module crash on mobile - `handleFilter is not defined`
+  - Root cause: Function called `handleFilter` but defined as `handleApplyFilters`
+  - Solution: Changed `onClick={handleFilter}` to `onClick={handleApplyFilters}` on line 445
+  - File modified: `/app/frontend/src/components/admin/ExpenseManagement.js`
+  - Result: Expenses page now loads and functions correctly on mobile devices
+
+### Previous Bug Fix (Feb 28, 2026)
 - **FIXED:** Cashier Receivables `TypeError: '<' not supported between 'datetime' and 'str'`
   - Root cause: Mixed date types (datetime objects and strings) in invoice `due_date` field
   - Solution: Added `safe_parse_date()` helper function to normalize all dates before comparison
