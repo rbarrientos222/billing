@@ -16,6 +16,12 @@
   - Auto-resets to page 1 when filters change
   - Works on both mobile and desktop views
 
+- **FIXED:** Subscriber Management "View Records" button error - `openHistoryDialog is not defined`
+  - Root cause: Function called `openHistoryDialog` but defined as `handleViewHistory`
+  - Solution: Replaced all occurrences of `openHistoryDialog` with `handleViewHistory`
+  - File modified: `/app/frontend/src/components/admin/SubscriberManagement.js`
+  - Result: "View Records" button now opens subscriber history dialog correctly
+
 ### Previous Bug Fix (Feb 28, 2026)
 - **FIXED:** Cashier Receivables `TypeError: '<' not supported between 'datetime' and 'str'`
   - Root cause: Mixed date types (datetime objects and strings) in invoice `due_date` field

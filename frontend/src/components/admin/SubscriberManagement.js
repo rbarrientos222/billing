@@ -1063,7 +1063,7 @@ export default function SubscriberManagement() {
                                 variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0"
-                                onClick={() => openHistoryDialog(sub)}
+                                onClick={() => handleViewHistory(sub)}
                               >
                                 <User className="h-4 w-4" />
                               </Button>
@@ -1074,7 +1074,7 @@ export default function SubscriberManagement() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => openHistoryDialog(sub)}>
+                                  <DropdownMenuItem onClick={() => handleViewHistory(sub)}>
                                     <User className="mr-2 h-4 w-4" />
                                     View Records
                                   </DropdownMenuItem>
