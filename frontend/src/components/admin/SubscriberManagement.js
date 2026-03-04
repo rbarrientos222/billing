@@ -594,12 +594,14 @@ export default function SubscriberManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header Section - Mobile Responsive */}
+      <div className="space-y-4">
         <div>
-          <h2 className="text-3xl font-heading font-bold" data-testid="subscriber-management-title">Subscriber Management</h2>
-          <p className="text-muted-foreground mt-1">Manage subscriber accounts</p>
+          <h2 className="text-2xl sm:text-3xl font-heading font-bold" data-testid="subscriber-management-title">Subscriber Management</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Manage subscriber accounts</p>
         </div>
-        <div className="flex items-center gap-2">
+        {/* Action Buttons - Stack on mobile */}
+        <div className="flex flex-wrap items-center gap-2">
           <ExportButton 
             endpoint="/export/subscribers" 
             filename={`subscribers_${new Date().toISOString().split('T')[0]}.csv`}
@@ -613,9 +615,10 @@ export default function SubscriberManagement() {
           />
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button data-testid="add-subscriber-button">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Subscriber
+              <Button data-testid="add-subscriber-button" size="sm" className="sm:size-default">
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Subscriber</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1018,7 +1021,100 @@ export default function SubscriberManagement() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
+            <>
+              {/* Mobile View - Cards */}
+              <div className="space-y-2 sm:hidden">
+                {paginatedSubscribers.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    No subscribers found
+                  </div>
+                ) : (
+                  paginatedSubscribers.map((sub) => (
+                    <div key={sub.account_number} className="p-3 border rounded-lg bg-card">
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedSubscribers.includes(sub.account_number)}
+                          onChange={() => handleSelectSubscriber(sub.account_number)}
+                          className="w-4 h-4 mt-1 text-primary bg-white border-gray-300 rounded focus:ring-primary shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="font-mono text-xs text-muted-foreground">{sub.account_number}</p>
+                              <p className="font-medium text-sm truncate">{sub.first_name} {sub.last_name}</p>
+                              <p className="text-xs text-muted-foreground">{sub.plan_id || sub.plan_name || '-'}</p>
+                            </div>
+                            <Badge variant={sub.is_active ? "default" : "secondary"} className={sub.is_active ? "bg-green-600 shrink-0" : "shrink-0"}>
+                              {sub.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t">
+                            <div className="flex items-center gap-2">
+                              {sub.pppoe_activated && (
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-green-50 text-green-700 border-green-200">PPPoE</Badge>
+                              )}
+                              {(sub.wallet_balance || 0) > 0 && (
+                                <span className="text-xs text-green-600">₱{(sub.wallet_balance || 0).toLocaleString()}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => openHistoryDialog(sub)}
+                              >
+                                <User className="h-4 w-4" />
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openHistoryDialog(sub)}>
+                                    <User className="mr-2 h-4 w-4" />
+                                    View Records
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openChangePlanDialog(sub)}>
+                                    <RefreshCw className="mr-2 h-4 w-4" />
+                                    Change Plan
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openChargeDialog(sub)}>
+                                    <DollarSign className="mr-2 h-4 w-4" />
+                                    Add Charge
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {sub.is_active ? (
+                                    <DropdownMenuItem onClick={() => openDeactivateDialog(sub)} className="text-amber-600">
+                                      <PowerOff className="mr-2 h-4 w-4" />
+                                      Deactivate
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem onClick={() => openReactivateDialog(sub)} className="text-green-600">
+                                      <Power className="mr-2 h-4 w-4" />
+                                      Reactivate
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem onClick={() => openDeleteDialog(sub)} className="text-red-600">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              {/* Desktop View - Table */}
+              <div className="rounded-md border overflow-x-auto hidden sm:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1185,6 +1281,7 @@ export default function SubscriberManagement() {
                   )}
                 </TableBody>
               </Table>
+              </div>
               
               {/* Pagination */}
               <TablePagination
@@ -1195,7 +1292,7 @@ export default function SubscriberManagement() {
                 onPageChange={handlePageChange}
                 onPageSizeChange={handlePageSizeChange}
               />
-            </div>
+            </>
           )}
         </CardContent>
       </Card>
