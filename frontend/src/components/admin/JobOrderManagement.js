@@ -239,13 +239,15 @@ export default function JobOrderManagement() {
 
   const openEditDialog = (jo) => {
     setSelectedJobOrder(jo);
+    // Default to current date if no scheduled_date exists
+    const today = new Date().toISOString().split('T')[0];
     setFormData({
       type: jo.type,
       description: jo.description,
       status: jo.status,
       priority: jo.priority,
       assigned_technicians: jo.assigned_technicians || [],
-      scheduled_date: jo.scheduled_date ? jo.scheduled_date.split('T')[0] : '',
+      scheduled_date: jo.scheduled_date ? jo.scheduled_date.split('T')[0] : today,
       scheduled_time_slot: jo.scheduled_time_slot || '',
       notes: jo.notes || ''
     });

@@ -1094,32 +1094,32 @@ export default function CashierDashboard({ user, onLogout }) {
                       <div className="space-y-2">
                         {invoices.filter(inv => !inv.paid).map((invoice) => (
                           <div key={invoice.invoice_number} className="border rounded-lg p-3 hover:bg-muted/50 transition-colors">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <p className="font-mono text-sm text-muted-foreground">{invoice.invoice_number}</p>
-                                  {getInvoiceStatus(invoice)}
-                                </div>
-                                <p className="text-sm" title={invoice.description}>
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-mono text-xs text-muted-foreground">{invoice.invoice_number}</p>
+                                <p className="text-sm font-medium mt-0.5 line-clamp-2" title={invoice.description}>
                                   {invoice.description || `${invoice.plan_name || 'Monthly'} Bill`}
                                 </p>
-                                {invoice.type && (
-                                  <Badge variant="outline" className="text-xs mt-1">
-                                    {invoice.type}
-                                  </Badge>
-                                )}
                               </div>
-                              <div className="text-right">
-                                <p className="text-lg font-bold text-primary">₱{(invoice.remaining_balance || invoice.amount)?.toLocaleString()}</p>
-                                {invoice.paid_amount > 0 && (
-                                  <p className="text-xs text-muted-foreground">
-                                    Total: ₱{invoice.amount?.toLocaleString()} | Paid: ₱{invoice.paid_amount?.toLocaleString()}
-                                  </p>
-                                )}
-                                <span className="text-xs text-muted-foreground">
-                                  Due: {new Date(invoice.due_date).toLocaleDateString()}
+                              {getInvoiceStatus(invoice)}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-xs mb-2">
+                              {invoice.type && (
+                                <Badge variant="outline">{invoice.type}</Badge>
+                              )}
+                              {invoice.paid_amount > 0 && (
+                                <span className="text-muted-foreground">
+                                  Paid: ₱{invoice.paid_amount?.toLocaleString()}
                                 </span>
-                              </div>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between pt-2 border-t">
+                              <span className="text-xs text-muted-foreground">
+                                Due: {new Date(invoice.due_date).toLocaleDateString()}
+                              </span>
+                              <span className="text-lg font-bold text-primary">
+                                ₱{(invoice.remaining_balance || invoice.amount)?.toLocaleString()}
+                              </span>
                             </div>
                           </div>
                         ))}
@@ -1313,9 +1313,9 @@ export default function CashierDashboard({ user, onLogout }) {
                             {paymentHistory.map((payment) => (
                               <div key={payment.or_number} className="p-3 border rounded-lg bg-card shadow-sm">
                                 <div className="flex items-start justify-between gap-2 mb-2">
-                                  <div>
+                                  <div className="flex-1 min-w-0">
                                     <p className="font-mono text-xs text-muted-foreground">{payment.or_number}</p>
-                                    <p className="text-sm font-medium mt-0.5 line-clamp-1">
+                                    <p className="text-sm font-medium mt-0.5 line-clamp-2">
                                       {payment.description || payment.invoice_id || 'Payment'}
                                     </p>
                                   </div>
