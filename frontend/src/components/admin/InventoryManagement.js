@@ -358,17 +358,18 @@ export default function InventoryManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header - Mobile Responsive */}
+      <div className="space-y-4">
         <div>
-          <h2 className="text-3xl font-heading font-bold">Inventory Management</h2>
-          <p className="text-muted-foreground mt-1">Manage stock, equipment, and materials</p>
+          <h2 className="text-2xl sm:text-3xl font-heading font-bold">Inventory Management</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Manage stock, equipment, and materials</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Item
+            <Button size="sm" className="sm:size-default">
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Add Item</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -529,48 +530,48 @@ export default function InventoryManagement() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 sm:pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Items</p>
-                <p className="text-3xl font-bold">{stats.total_items || 0}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Total Items</p>
+                <p className="text-2xl sm:text-3xl font-bold">{stats.total_items || 0}</p>
               </div>
-              <Package className="h-8 w-8 text-blue-600" />
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 sm:pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Value</p>
-                <p className="text-3xl font-bold">₱{(stats.total_value || 0).toLocaleString()}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Total Value</p>
+                <p className="text-xl sm:text-3xl font-bold">₱{(stats.total_value || 0).toLocaleString()}</p>
               </div>
-              <DollarSign className="h-8 w-8 text-green-600" />
+              <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
         <Card className={lowStockItems.length > 0 ? 'border-red-300 bg-red-50 dark:bg-red-950/20' : ''}>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 sm:pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Low Stock Items</p>
-                <p className="text-3xl font-bold text-red-600">{stats.low_stock_count || 0}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Low Stock</p>
+                <p className="text-2xl sm:text-3xl font-bold text-red-600">{stats.low_stock_count || 0}</p>
               </div>
-              <AlertTriangle className={`h-8 w-8 ${lowStockItems.length > 0 ? 'text-red-600 animate-pulse' : 'text-gray-400'}`} />
+              <AlertTriangle className={`h-6 w-6 sm:h-8 sm:w-8 ${lowStockItems.length > 0 ? 'text-red-600 animate-pulse' : 'text-gray-400'}`} />
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 sm:pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Categories</p>
-                <p className="text-3xl font-bold">{Object.keys(stats.categories || {}).length}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Categories</p>
+                <p className="text-2xl sm:text-3xl font-bold">{Object.keys(stats.categories || {}).length}</p>
               </div>
-              <Box className="h-8 w-8 text-purple-600" />
+              <Box className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
             </div>
           </CardContent>
         </Card>
