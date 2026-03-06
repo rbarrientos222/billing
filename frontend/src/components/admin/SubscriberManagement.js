@@ -29,6 +29,11 @@ export default function SubscriberManagement() {
   const [selectedSubscriberHistory, setSelectedSubscriberHistory] = useState(null);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [invoiceHistory, setInvoiceHistory] = useState([]);
+  
+  // Pagination states for history dialog
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [paymentPage, setPaymentPage] = useState(1);
+  const historyPageSize = 10;
   const [assignedEquipment, setAssignedEquipment] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubscribers, setSelectedSubscribers] = useState([]);
@@ -443,9 +448,29 @@ export default function SubscriberManagement() {
         axios.get(`/invoices/subscriber/${subscriber.account_number}`),
         axios.get(`/subscribers/${subscriber.account_number}/equipment`)
       ]);
-      setPaymentHistory(paymentsRes.data);
-      setInvoiceHistory(invoicesRes.data);
+      
+      // Sort invoices by date (latest first)
+      const sortedInvoices = [...invoicesRes.data].sort((a, b) => {
+        const dateA = new Date(a.created_at || a.due_date);
+        const dateB = new Date(b.created_at || b.due_date);
+        return dateB - dateA;
+      });
+      
+      // Sort payments by date (latest first)
+      const sortedPayments = [...paymentsRes.data].sort((a, b) => {
+        const dateA = new Date(a.payment_date || a.created_at);
+        const dateB = new Date(b.payment_date || b.created_at);
+        return dateB - dateA;
+      });
+      
+      setPaymentHistory(sortedPayments);
+      setInvoiceHistory(sortedInvoices);
       setAssignedEquipment(equipmentRes.data || []);
+      
+      // Reset pagination
+      setInvoicePage(1);
+      setPaymentPage(1);
+      
       setHistoryDialogOpen(true);
     } catch (error) {
       toast.error('Failed to fetch payment history');
@@ -1505,160 +1530,238 @@ export default function SubscriberManagement() {
 
             {/* Invoices Tab */}
             <TabsContent value="invoices" className="mt-4">
-              {/* Mobile View - Cards */}
-              <div className="space-y-3 sm:hidden">
-                {invoiceHistory.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground border rounded-lg">
-                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    No invoices found
-                  </div>
-                ) : (
-                  invoiceHistory.map((invoice) => (
-                    <div key={invoice.invoice_number} className="p-3 border rounded-lg bg-card shadow-sm">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <p className="font-mono text-xs text-muted-foreground">{invoice.invoice_number}</p>
-                        <Badge variant={invoice.paid ? "default" : "destructive"} className={invoice.paid ? "bg-green-600 shrink-0" : "shrink-0"}>
-                          {invoice.paid ? 'Paid' : 'Unpaid'}
-                        </Badge>
-                      </div>
-                      <p className="text-sm font-medium line-clamp-2" title={invoice.description || invoice.plan_name}>
-                        {invoice.description || `${invoice.plan_name || 'Monthly'} Bill`}
-                      </p>
-                      {invoice.type && (
-                        <Badge variant="outline" className="text-xs mt-1.5">
-                          {invoice.type}
-                        </Badge>
-                      )}
-                      <div className="flex items-center justify-between mt-3 pt-2 border-t">
-                        <span className="text-xs text-muted-foreground">Due: {new Date(invoice.due_date).toLocaleDateString()}</span>
-                        <span className="font-bold text-base">₱{invoice.amount?.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-              
-              {/* Desktop View - Table */}
-              <div className="rounded-md border hidden sm:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Invoice #</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {invoiceHistory.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+              {(() => {
+                const totalInvoicePages = Math.ceil(invoiceHistory.length / historyPageSize);
+                const paginatedInvoices = invoiceHistory.slice(
+                  (invoicePage - 1) * historyPageSize,
+                  invoicePage * historyPageSize
+                );
+                
+                return (
+                  <>
+                    {/* Mobile View - Cards */}
+                    <div className="space-y-3 sm:hidden">
+                      {paginatedInvoices.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground border rounded-lg">
                           <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                           No invoices found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      invoiceHistory.map((invoice) => (
-                        <TableRow key={invoice.invoice_number}>
-                          <TableCell className="font-mono text-xs">{invoice.invoice_number}</TableCell>
-                          <TableCell className="max-w-[250px]">
-                            <p className="text-sm truncate" title={invoice.description || invoice.plan_name}>
+                        </div>
+                      ) : (
+                        paginatedInvoices.map((invoice) => (
+                          <div key={invoice.invoice_number} className="p-3 border rounded-lg bg-card shadow-sm">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <p className="font-mono text-xs text-muted-foreground">{invoice.invoice_number}</p>
+                              <Badge variant={invoice.paid ? "default" : "destructive"} className={invoice.paid ? "bg-green-600 shrink-0" : "shrink-0"}>
+                                {invoice.paid ? 'Paid' : 'Unpaid'}
+                              </Badge>
+                            </div>
+                            <p className="text-sm font-medium line-clamp-2" title={invoice.description || invoice.plan_name}>
                               {invoice.description || `${invoice.plan_name || 'Monthly'} Bill`}
                             </p>
                             {invoice.type && (
-                              <Badge variant="outline" className="text-xs mt-1">
+                              <Badge variant="outline" className="text-xs mt-1.5">
                                 {invoice.type}
                               </Badge>
                             )}
-                          </TableCell>
-                          <TableCell className="font-bold">₱{invoice.amount?.toLocaleString()}</TableCell>
-                          <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            <Badge variant={invoice.paid ? "default" : "destructive"} className={invoice.paid ? "bg-green-600" : ""}>
-                              {invoice.paid ? 'Paid' : 'Unpaid'}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                            <div className="flex items-center justify-between mt-3 pt-2 border-t">
+                              <span className="text-xs text-muted-foreground">Due: {new Date(invoice.due_date).toLocaleDateString()}</span>
+                              <span className="font-bold text-base">₱{invoice.amount?.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    
+                    {/* Desktop View - Table */}
+                    <div className="rounded-md border hidden sm:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Invoice #</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Due Date</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginatedInvoices.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                No invoices found
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            paginatedInvoices.map((invoice) => (
+                              <TableRow key={invoice.invoice_number}>
+                                <TableCell className="font-mono text-xs">{invoice.invoice_number}</TableCell>
+                                <TableCell className="max-w-[250px]">
+                                  <p className="text-sm truncate" title={invoice.description || invoice.plan_name}>
+                                    {invoice.description || `${invoice.plan_name || 'Monthly'} Bill`}
+                                  </p>
+                                  {invoice.type && (
+                                    <Badge variant="outline" className="text-xs mt-1">
+                                      {invoice.type}
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell className="font-bold">₱{invoice.amount?.toLocaleString()}</TableCell>
+                                <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
+                                <TableCell>
+                                  <Badge variant={invoice.paid ? "default" : "destructive"} className={invoice.paid ? "bg-green-600" : ""}>
+                                    {invoice.paid ? 'Paid' : 'Unpaid'}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    
+                    {/* Invoice Pagination */}
+                    {invoiceHistory.length > historyPageSize && (
+                      <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                        <span className="text-sm text-muted-foreground">
+                          {(invoicePage - 1) * historyPageSize + 1}-{Math.min(invoicePage * historyPageSize, invoiceHistory.length)} of {invoiceHistory.length}
+                        </span>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInvoicePage(p => Math.max(1, p - 1))}
+                            disabled={invoicePage === 1}
+                          >
+                            Previous
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInvoicePage(p => Math.min(totalInvoicePages, p + 1))}
+                            disabled={invoicePage === totalInvoicePages}
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
                     )}
-                  </TableBody>
-                </Table>
-              </div>
+                  </>
+                );
+              })()}
             </TabsContent>
 
             {/* Payments Tab */}
             <TabsContent value="payments" className="mt-4">
-              <div className="rounded-md border overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="min-w-[140px]">
-                        <span className="hidden sm:inline">OR Number / Mode</span>
-                        <span className="sm:hidden">OR/Mode</span>
-                      </TableHead>
-                      <TableHead className="min-w-[120px]">
-                        <span className="hidden sm:inline">Description / Amount</span>
-                        <span className="sm:hidden">Details</span>
-                      </TableHead>
-                      <TableHead className="hidden md:table-cell">Date</TableHead>
-                      <TableHead className="hidden lg:table-cell">Received By</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paymentHistory.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                          <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          No payments found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paymentHistory.map((payment) => (
-                        <TableRow key={payment.or_number}>
-                          {/* OR Number + Mode (combined) */}
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="font-mono text-xs font-medium">{payment.or_number}</div>
-                              <div className="text-xs text-muted-foreground capitalize flex items-center gap-1">
-                                <CreditCard className="h-3 w-3" />
-                                {payment.mode || 'cash'}
-                              </div>
-                              {/* Show date on mobile */}
-                              <div className="text-xs text-muted-foreground md:hidden">
-                                {new Date(payment.payment_date).toLocaleDateString()}
-                              </div>
-                            </div>
-                          </TableCell>
-                          {/* Description + Amount (combined) */}
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="text-xs text-muted-foreground line-clamp-2">
-                                {payment.description || payment.allocation_details?.map(a => a.invoice_number).join(', ') || 'Payment'}
-                              </div>
-                              <div className="font-bold text-green-600">
-                                ₱{(payment.total_amount || payment.amount || 0).toLocaleString()}
-                              </div>
-                              {/* Show received by on mobile */}
-                              <div className="text-xs text-muted-foreground lg:hidden">
-                                by {payment.received_by || 'System'}
-                              </div>
-                            </div>
-                          </TableCell>
-                          {/* Date - hidden on mobile */}
-                          <TableCell className="hidden md:table-cell text-sm">
-                            {new Date(payment.payment_date).toLocaleString()}
-                          </TableCell>
-                          {/* Received By - hidden on mobile/tablet */}
-                          <TableCell className="hidden lg:table-cell text-sm">
-                            {payment.received_by || 'System'}
-                          </TableCell>
-                        </TableRow>
-                      ))
+              {(() => {
+                const totalPaymentPages = Math.ceil(paymentHistory.length / historyPageSize);
+                const paginatedPayments = paymentHistory.slice(
+                  (paymentPage - 1) * historyPageSize,
+                  paymentPage * historyPageSize
+                );
+                
+                return (
+                  <>
+                    <div className="rounded-md border overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="min-w-[140px]">
+                              <span className="hidden sm:inline">OR Number / Mode</span>
+                              <span className="sm:hidden">OR/Mode</span>
+                            </TableHead>
+                            <TableHead className="min-w-[120px]">
+                              <span className="hidden sm:inline">Description / Amount</span>
+                              <span className="sm:hidden">Details</span>
+                            </TableHead>
+                            <TableHead className="hidden md:table-cell">Date</TableHead>
+                            <TableHead className="hidden lg:table-cell">Received By</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginatedPayments.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                No payments found
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            paginatedPayments.map((payment) => (
+                              <TableRow key={payment.or_number}>
+                                {/* OR Number + Mode (combined) */}
+                                <TableCell>
+                                  <div className="space-y-1">
+                                    <div className="font-mono text-xs font-medium">{payment.or_number}</div>
+                                    <div className="text-xs text-muted-foreground capitalize flex items-center gap-1">
+                                      <CreditCard className="h-3 w-3" />
+                                      {payment.mode || 'cash'}
+                                    </div>
+                                    {/* Show date on mobile */}
+                                    <div className="text-xs text-muted-foreground md:hidden">
+                                      {new Date(payment.payment_date).toLocaleDateString()}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                {/* Description + Amount (combined) */}
+                                <TableCell>
+                                  <div className="space-y-1">
+                                    <div className="text-xs text-muted-foreground line-clamp-2">
+                                      {payment.description || payment.allocation_details?.map(a => a.invoice_number).join(', ') || 'Payment'}
+                                    </div>
+                                    <div className="font-bold text-green-600">
+                                      ₱{(payment.total_amount || payment.amount || 0).toLocaleString()}
+                                    </div>
+                                    {/* Show received by on mobile */}
+                                    <div className="text-xs text-muted-foreground lg:hidden">
+                                      by {payment.received_by || 'System'}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                {/* Date - hidden on mobile */}
+                                <TableCell className="hidden md:table-cell text-sm">
+                                  {new Date(payment.payment_date).toLocaleString()}
+                                </TableCell>
+                                {/* Received By - hidden on mobile/tablet */}
+                                <TableCell className="hidden lg:table-cell text-sm">
+                                  {payment.received_by || 'System'}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    
+                    {/* Payment Pagination */}
+                    {paymentHistory.length > historyPageSize && (
+                      <div className="flex items-center justify-between mt-4 pt-3 border-t">
+                        <span className="text-sm text-muted-foreground">
+                          {(paymentPage - 1) * historyPageSize + 1}-{Math.min(paymentPage * historyPageSize, paymentHistory.length)} of {paymentHistory.length}
+                        </span>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPaymentPage(p => Math.max(1, p - 1))}
+                            disabled={paymentPage === 1}
+                          >
+                            Previous
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPaymentPage(p => Math.min(totalPaymentPages, p + 1))}
+                            disabled={paymentPage === totalPaymentPages}
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
                     )}
-                  </TableBody>
-                </Table>
-              </div>
+                  </>
+                );
+              })()}
             </TabsContent>
 
             {/* Equipment & Materials Tab */}
