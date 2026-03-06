@@ -339,7 +339,7 @@
       "municipalities": [
         {"name": "Ilagan City", "barangays": ["Alibagu", "Alinguigan Second", "Aplaya", "Bagong Bayan", "Baligatan", "Batal", "Batong-Labang", "Binahian", "Buneg", "Cabeseria I"]},
         {"name": "Santiago City", "barangays": ["Abra", "Ambalatungan", "Balintocatoc", "Baluarte", "Bannawag Norte", "Batal", "Buenavista", "Calao East (Niño Jesus)", "Calao West (San Isidro)", "Centro East (Poblacion)"]},
-        {"name": "Cauayan", "barangays": ["Alicaocao", "Alinam", "Amobocan", "Baringin Norte", "Baringin Sur", "Buena Suerte", "Bugallon Proper", "Cabaruan", "Cabugao", "Cassap Fuera", "Faustino", "Minante I", "Minante II", "Naganacan", "Nungnungan I", "Nungnungan II", "Pinoma", "San Antonio", "San Isidro", "Sillawit"]}
+        {"name": "Cauayan City", "barangays": ["Alicaocao", "Alinam", "Amobocan", "Baringin Norte", "Baringin Sur", "Buena Suerte", "Bugallon Proper", "Cabaruan", "Cabugao", "Cassap Fuera", "Faustino", "Minante I", "Minante II", "Naganacan", "Nungnungan I", "Nungnungan II", "Pinoma", "San Antonio", "San Isidro", "Sillawit"]}
       ]
     },
     {
