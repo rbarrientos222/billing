@@ -1991,51 +1991,75 @@ async def activate_subscriber_pppoe(account_number: str, current_user: dict = De
     if not subscriber.get('pppoe_username') or not subscriber.get('pppoe_password') or not subscriber.get('pppoe_profile'):
         raise HTTPException(status_code=400, detail="PPPoE credentials not configured for this subscriber")
     
-    # Get Mikrotik config
-    mikrotik_config = await db.mikrotik_configs.find_one({})
-    if not mikrotik_config:
-        raise HTTPException(status_code=404, detail="Mikrotik not configured")
+    # Get target routers
+    if subscriber.get('mikrotik_ids') and len(subscriber.get('mikrotik_ids')) > 0:
+        routers = await db.mikrotik_routers.find({"router_id": {"$in": subscriber['mikrotik_ids']}, "is_active": True}).to_list(100)
+    else:
+        routers = await db.mikrotik_routers.find({"is_active": True}).to_list(100)
     
-    # Connect to Mikrotik
-    service = MikrotikService(mikrotik_config)
-    if service.connect():
-        # First, check if the PPPoE account already exists
-        account_exists = service.pppoe_account_exists(subscriber['pppoe_username'])
+    # Fallback to legacy config
+    if not routers:
+        legacy_config = await db.mikrotik_configs.find_one({})
+        if legacy_config:
+            routers = [legacy_config]
+        else:
+            raise HTTPException(status_code=404, detail="No Mikrotik routers configured")
+    
+    pppoe_account = PPPoEAccount(
+        username=subscriber['pppoe_username'],
+        password=subscriber['pppoe_password'],
+        profile=subscriber['pppoe_profile'],
+        remote_address='',
+        service="pppoe",
+        disabled=False
+    )
+    
+    results = []
+    any_success = False
+    
+    for router in routers:
+        router_name = router.get('name', router.get('ip_address', 'Unknown'))
+        result = {"router_name": router_name, "router_id": router.get('router_id')}
         
-        if account_exists:
-            # Account already exists in Mikrotik - just update our database status
-            service.disconnect()
-            await db.subscribers.update_one(
-                {"account_number": account_number},
-                {"$set": {"pppoe_activated": True}}
-            )
-            return {
-                "message": f"PPPoE account '{subscriber['pppoe_username']}' already exists in Mikrotik. Status updated to Active.",
-                "success": True,
-                "already_exists": True
-            }
+        try:
+            service = MikrotikService(router)
+            if service.connect():
+                # Check if account already exists
+                if service.pppoe_account_exists(subscriber['pppoe_username']):
+                    result["success"] = True
+                    result["already_exists"] = True
+                    any_success = True
+                else:
+                    # Create account
+                    created = service.create_pppoe_account(pppoe_account)
+                    result["success"] = created
+                    result["already_exists"] = False
+                    if created:
+                        any_success = True
+                service.disconnect()
+            else:
+                result["success"] = False
+                result["error"] = "Failed to connect"
+        except Exception as e:
+            result["success"] = False
+            result["error"] = str(e)
         
-        # Account doesn't exist, create it
-        pppoe_account = PPPoEAccount(
-            username=subscriber['pppoe_username'],
-            password=subscriber['pppoe_password'],
-            profile=subscriber['pppoe_profile'],
-            remote_address='',
-            service="pppoe",
-            disabled=False
+        results.append(result)
+    
+    if any_success:
+        # Update subscriber to mark PPPoE as activated
+        pppoe_status = {r.get('router_id'): {'created': r.get('success', False)} for r in results if r.get('router_id')}
+        await db.subscribers.update_one(
+            {"account_number": account_number},
+            {"$set": {"pppoe_activated": True, "pppoe_status": pppoe_status}}
         )
-        success = service.create_pppoe_account(pppoe_account)
-        service.disconnect()
-        
-        if success:
-            # Update subscriber to mark PPPoE as activated
-            await db.subscribers.update_one(
-                {"account_number": account_number},
-                {"$set": {"pppoe_activated": True}}
-            )
-            return {"message": "PPPoE account created and activated in Mikrotik", "success": True, "already_exists": False}
-        raise HTTPException(status_code=500, detail="Failed to create PPPoE account in Mikrotik")
-    raise HTTPException(status_code=500, detail="Failed to connect to Mikrotik")
+    
+    success_count = sum(1 for r in results if r.get('success'))
+    return {
+        "message": f"PPPoE activated on {success_count}/{len(results)} routers",
+        "success": any_success,
+        "results": results
+    }
 
 @api_router.get("/subscribers/{account_number}/pppoe-status")
 async def check_pppoe_status(account_number: str, current_user: dict = Depends(get_current_user)):
@@ -2045,34 +2069,70 @@ async def check_pppoe_status(account_number: str, current_user: dict = Depends(g
         raise HTTPException(status_code=404, detail="Subscriber not found")
     
     if not subscriber.get('pppoe_username'):
-        return {"exists": False, "configured": False}
+        return {"exists": False, "configured": False, "routers": []}
     
-    # Check in Mikrotik
-    mikrotik_config = await db.mikrotik_configs.find_one({})
-    if not mikrotik_config:
-        return {"exists": False, "configured": True, "error": "Mikrotik not configured"}
+    # Get target routers
+    if subscriber.get('mikrotik_ids') and len(subscriber.get('mikrotik_ids')) > 0:
+        routers = await db.mikrotik_routers.find({"router_id": {"$in": subscriber['mikrotik_ids']}, "is_active": True}).to_list(100)
+    else:
+        routers = await db.mikrotik_routers.find({"is_active": True}).to_list(100)
     
-    service = MikrotikService(mikrotik_config)
-    if service.connect():
-        exists = service.pppoe_account_exists(subscriber['pppoe_username'])
-        service.disconnect()
-        return {"exists": exists, "configured": True}
+    # Fallback to legacy config
+    if not routers:
+        legacy_config = await db.mikrotik_configs.find_one({})
+        if legacy_config:
+            routers = [legacy_config]
+        else:
+            return {"exists": False, "configured": True, "error": "No Mikrotik routers configured", "routers": []}
     
-    return {"exists": False, "configured": True, "error": "Failed to connect to Mikrotik"}
+    results = []
+    any_exists = False
+    
+    for router in routers:
+        router_name = router.get('name', router.get('ip_address', 'Unknown'))
+        result = {"router_name": router_name, "router_id": router.get('router_id')}
+        
+        try:
+            service = MikrotikService(router)
+            if service.connect():
+                exists = service.pppoe_account_exists(subscriber['pppoe_username'])
+                result["exists"] = exists
+                result["connected"] = True
+                if exists:
+                    any_exists = True
+                service.disconnect()
+            else:
+                result["exists"] = False
+                result["connected"] = False
+                result["error"] = "Failed to connect"
+        except Exception as e:
+            result["exists"] = False
+            result["connected"] = False
+            result["error"] = str(e)
+        
+        results.append(result)
+    
+    return {
+        "exists": any_exists,
+        "configured": True,
+        "routers": results
+    }
 
 @api_router.post("/subscribers/bulk-activate-pppoe")
 async def bulk_activate_pppoe(account_numbers: list[str], current_user: dict = Depends(get_current_user)):
     if current_user['role'] not in ['admin', 'user']:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    # Get Mikrotik config
-    mikrotik_config = await db.mikrotik_configs.find_one({})
-    if not mikrotik_config:
-        raise HTTPException(status_code=404, detail="Mikrotik not configured")
+    # Get all active routers
+    routers = await db.mikrotik_routers.find({"is_active": True}).to_list(100)
     
-    service = MikrotikService(mikrotik_config)
-    if not service.connect():
-        raise HTTPException(status_code=500, detail="Failed to connect to Mikrotik")
+    # Fallback to legacy config
+    if not routers:
+        legacy_config = await db.mikrotik_configs.find_one({})
+        if legacy_config:
+            routers = [legacy_config]
+        else:
+            raise HTTPException(status_code=404, detail="No Mikrotik routers configured")
     
     results = {
         "success": [],
@@ -2090,12 +2150,15 @@ async def bulk_activate_pppoe(account_numbers: list[str], current_user: dict = D
             results["skipped"].append({"account_number": account_number, "reason": "PPPoE not configured"})
             continue
         
-        # Check if already exists
-        if service.pppoe_account_exists(subscriber['pppoe_username']):
-            results["skipped"].append({"account_number": account_number, "reason": "Already exists"})
-            continue
+        # Determine target routers for this subscriber
+        if subscriber.get('mikrotik_ids') and len(subscriber.get('mikrotik_ids')) > 0:
+            target_routers = [r for r in routers if r.get('router_id') in subscriber['mikrotik_ids']]
+        else:
+            target_routers = routers
         
-        # Create account
+        if not target_routers:
+            target_routers = routers  # Fallback to all routers
+        
         pppoe_account = PPPoEAccount(
             username=subscriber['pppoe_username'],
             password=subscriber['pppoe_password'],
@@ -2105,20 +2168,42 @@ async def bulk_activate_pppoe(account_numbers: list[str], current_user: dict = D
             disabled=False
         )
         
-        if service.create_pppoe_account(pppoe_account):
+        router_results = []
+        any_success = False
+        
+        for router in target_routers:
+            router_name = router.get('name', router.get('ip_address', 'Unknown'))
+            try:
+                service = MikrotikService(router)
+                if service.connect():
+                    # Check if already exists
+                    if service.pppoe_account_exists(subscriber['pppoe_username']):
+                        router_results.append({"router": router_name, "status": "already_exists"})
+                        any_success = True
+                    elif service.create_pppoe_account(pppoe_account):
+                        router_results.append({"router": router_name, "status": "created"})
+                        any_success = True
+                    else:
+                        router_results.append({"router": router_name, "status": "failed"})
+                    service.disconnect()
+                else:
+                    router_results.append({"router": router_name, "status": "connection_failed"})
+            except Exception as e:
+                router_results.append({"router": router_name, "status": f"error: {str(e)}"})
+        
+        if any_success:
             # Update subscriber to mark PPPoE as activated
+            pppoe_status = {r.get('router_id'): {'created': True} for r in target_routers}
             await db.subscribers.update_one(
                 {"account_number": account_number},
-                {"$set": {"pppoe_activated": True}}
+                {"$set": {"pppoe_activated": True, "pppoe_status": pppoe_status}}
             )
-            results["success"].append(account_number)
+            results["success"].append({"account_number": account_number, "routers": router_results})
         else:
-            results["failed"].append(account_number)
-    
-    service.disconnect()
+            results["failed"].append({"account_number": account_number, "routers": router_results})
     
     return {
-        "message": f"Activated {len(results['success'])} accounts",
+        "message": f"Activated {len(results['success'])} accounts on multiple routers",
         "results": results
     }
 async def sync_mikrotik_accounts(current_user: dict = Depends(get_current_user)):
@@ -2938,29 +3023,52 @@ async def deactivate_subscriber(account_number: str, data: dict, current_user: d
                 }
     
     # Update PPPoE profile on Mikrotik to disconnection profile and disconnect active session
-    mikrotik_config = await db.mikrotik_configs.find_one({})
-    if mikrotik_config and subscriber.get('pppoe_username'):
-        try:
-            service = MikrotikService(mikrotik_config)
-            if service.connect():
-                # Update profile to DEACTIVATED
-                profile_updated = service.update_pppoe_profile(subscriber['pppoe_username'], disconnection_profile)
-                if profile_updated:
-                    response["mikrotik_profile_changed"] = disconnection_profile
-                    
-                    # Disconnect active session so new profile takes effect immediately
-                    session_disconnected = service.disconnect_active_session(subscriber['pppoe_username'])
-                    if session_disconnected:
-                        response["active_session_disconnected"] = True
+    # Get target routers - either from subscriber's mikrotik_ids or all active routers
+    mikrotik_results = []
+    if subscriber.get('pppoe_username'):
+        if subscriber.get('mikrotik_ids') and len(subscriber.get('mikrotik_ids')) > 0:
+            routers = await db.mikrotik_routers.find({"router_id": {"$in": subscriber['mikrotik_ids']}, "is_active": True}).to_list(100)
+        else:
+            routers = await db.mikrotik_routers.find({"is_active": True}).to_list(100)
+        
+        # Fallback to legacy config
+        if not routers:
+            legacy_config = await db.mikrotik_configs.find_one({})
+            if legacy_config:
+                routers = [legacy_config]
+        
+        for router in routers:
+            router_name = router.get('name', router.get('ip_address', 'Unknown'))
+            result = {"router_name": router_name, "router_id": router.get('router_id')}
+            try:
+                service = MikrotikService(router)
+                if service.connect():
+                    # Update profile to DEACTIVATED
+                    profile_updated = service.update_pppoe_profile(subscriber['pppoe_username'], disconnection_profile)
+                    if profile_updated:
+                        result["profile_changed"] = True
+                        result["new_profile"] = disconnection_profile
+                        
+                        # Disconnect active session so new profile takes effect immediately
+                        session_disconnected = service.disconnect_active_session(subscriber['pppoe_username'])
+                        result["session_disconnected"] = session_disconnected
                     else:
-                        response["active_session_disconnected"] = False
-                        response["session_note"] = "No active session found or already disconnected"
+                        result["profile_changed"] = False
+                        result["error"] = "Failed to update PPPoE profile"
+                    service.disconnect()
                 else:
-                    response["mikrotik_error"] = "Failed to update PPPoE profile"
-                service.disconnect()
-        except Exception as e:
-            logger.error(f"Failed to update Mikrotik profile: {e}")
-            response["mikrotik_error"] = str(e)
+                    result["profile_changed"] = False
+                    result["error"] = "Failed to connect"
+            except Exception as e:
+                logger.error(f"Failed to update Mikrotik profile on {router_name}: {e}")
+                result["profile_changed"] = False
+                result["error"] = str(e)
+            mikrotik_results.append(result)
+        
+        if mikrotik_results:
+            success_count = sum(1 for r in mikrotik_results if r.get('profile_changed'))
+            response["mikrotik_results"] = mikrotik_results
+            response["mikrotik_profile_changed"] = f"{success_count}/{len(mikrotik_results)} routers updated"
     
     # Update subscriber status
     await db.subscribers.update_one(
@@ -3063,30 +3171,52 @@ async def reactivate_subscriber(account_number: str, data: dict, current_user: d
                     "days_covered": prorate_calc['days_remaining']
                 }
     
-    # Update PPPoE profile on Mikrotik and disconnect active session
-    mikrotik_config = await db.mikrotik_configs.find_one({})
-    if mikrotik_config and subscriber.get('pppoe_username'):
-        try:
-            service = MikrotikService(mikrotik_config)
-            if service.connect():
-                # Update profile to the new selected profile
-                profile_updated = service.update_pppoe_profile(subscriber['pppoe_username'], new_profile)
-                if profile_updated:
-                    response["mikrotik_profile_changed"] = new_profile
-                    
-                    # Disconnect active session so new profile takes effect immediately
-                    session_disconnected = service.disconnect_active_session(subscriber['pppoe_username'])
-                    if session_disconnected:
-                        response["active_session_disconnected"] = True
+    # Update PPPoE profile on all Mikrotik routers and disconnect active session
+    mikrotik_results = []
+    if subscriber.get('pppoe_username'):
+        if subscriber.get('mikrotik_ids') and len(subscriber.get('mikrotik_ids')) > 0:
+            routers = await db.mikrotik_routers.find({"router_id": {"$in": subscriber['mikrotik_ids']}, "is_active": True}).to_list(100)
+        else:
+            routers = await db.mikrotik_routers.find({"is_active": True}).to_list(100)
+        
+        # Fallback to legacy config
+        if not routers:
+            legacy_config = await db.mikrotik_configs.find_one({})
+            if legacy_config:
+                routers = [legacy_config]
+        
+        for router in routers:
+            router_name = router.get('name', router.get('ip_address', 'Unknown'))
+            result = {"router_name": router_name, "router_id": router.get('router_id')}
+            try:
+                service = MikrotikService(router)
+                if service.connect():
+                    # Update profile to the new selected profile
+                    profile_updated = service.update_pppoe_profile(subscriber['pppoe_username'], new_profile)
+                    if profile_updated:
+                        result["profile_changed"] = True
+                        result["new_profile"] = new_profile
+                        
+                        # Disconnect active session so new profile takes effect immediately
+                        session_disconnected = service.disconnect_active_session(subscriber['pppoe_username'])
+                        result["session_disconnected"] = session_disconnected
                     else:
-                        response["active_session_disconnected"] = False
-                        response["session_note"] = "No active session found - subscriber will use new profile on next connection"
+                        result["profile_changed"] = False
+                        result["error"] = "Failed to update PPPoE profile"
+                    service.disconnect()
                 else:
-                    response["mikrotik_error"] = "Failed to update PPPoE profile"
-                service.disconnect()
-        except Exception as e:
-            logger.error(f"Failed to update Mikrotik profile: {e}")
-            response["mikrotik_error"] = str(e)
+                    result["profile_changed"] = False
+                    result["error"] = "Failed to connect"
+            except Exception as e:
+                logger.error(f"Failed to update Mikrotik profile on {router_name}: {e}")
+                result["profile_changed"] = False
+                result["error"] = str(e)
+            mikrotik_results.append(result)
+        
+        if mikrotik_results:
+            success_count = sum(1 for r in mikrotik_results if r.get('profile_changed'))
+            response["mikrotik_results"] = mikrotik_results
+            response["mikrotik_profile_changed"] = f"{success_count}/{len(mikrotik_results)} routers updated"
     
     # Update subscriber status
     await db.subscribers.update_one(
