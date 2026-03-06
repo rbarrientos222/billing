@@ -246,10 +246,6 @@ export default function SubscriberManagement() {
       toast.error('Please select a Subscription Plan');
       return;
     }
-    if (!selectedUnit?.unit_id) {
-      toast.error('Please select a Modem/Equipment');
-      return;
-    }
     if (!formData.pppoe_username) {
       toast.error('PPPoE Username is required');
       return;
@@ -269,7 +265,7 @@ export default function SubscriberManagement() {
         account_number: '',
         is_active: true,
         installation_date: new Date().toISOString(),
-        assigned_unit_id: selectedUnit?.unit_id
+        assigned_unit_id: selectedUnit?.unit_id || null
       });
       
       let successMessage = `Subscriber created with account number: ${response.data.account_number}`;
@@ -832,7 +828,7 @@ export default function SubscriberManagement() {
               </div>
 
               <div className="relative">
-                <Label>Modem MAC Address / Equipment <span className="text-red-500">*</span></Label>
+                <Label>Modem MAC Address / Equipment <span className="text-muted-foreground text-xs">(Optional)</span></Label>
                 <div className="relative">
                   <Input 
                     value={formData.modem_mac} 
