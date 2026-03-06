@@ -36,6 +36,13 @@
     - ₱300 charge with ₱500 wallet → ₱300 applied, invoice fully paid
     - ₱1000 charge with ₱200 wallet → ₱200 applied, ₱800 remaining balance
 
+- **FIXED:** User password update not working
+  - Root cause: `change_user_password` endpoint was storing to wrong field (`hashed_password` instead of `password`)
+  - Login endpoint checks `password` field, but password update was writing to `hashed_password`
+  - Solution: Changed `{"$set": {"hashed_password": ...}}` to `{"$set": {"password": ...}}`
+  - File modified: `/app/backend/server.py` (PUT /users/{username}/password endpoint)
+  - Tested: Password change and login with new password now works correctly
+
 ### Previous Bug Fix (Feb 28, 2026)
 - **FIXED:** Cashier Receivables `TypeError: '<' not supported between 'datetime' and 'str'`
   - Root cause: Mixed date types (datetime objects and strings) in invoice `due_date` field

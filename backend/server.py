@@ -1528,10 +1528,10 @@ async def change_user_password(username: str, data: dict, current_user: dict = D
     if not new_password or len(new_password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
     
-    hashed_password = pwd_context.hash(new_password)
+    hashed_password = hash_password(new_password)
     await db.users.update_one(
         {"username": username},
-        {"$set": {"hashed_password": hashed_password}}
+        {"$set": {"password": hashed_password}}
     )
     
     return {"message": "Password changed successfully"}
