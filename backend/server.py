@@ -2963,6 +2963,7 @@ async def delete_subscriber(account_number: str, data: dict, current_user: dict 
 async def add_manual_charge(account_number: str, data: dict, current_user: dict = Depends(get_current_user)):
     """
     Add manual charges to a subscriber (e.g., equipment replacement, service fees).
+    Automatically applies wallet credits if available.
     """
     if current_user['role'] not in ['admin', 'billing', 'cashier']:
         raise HTTPException(status_code=403, detail="Access denied")
@@ -2999,11 +3000,51 @@ async def add_manual_charge(account_number: str, data: dict, current_user: dict 
         "charge_date": now,
         "due_date": now + timedelta(days=5),
         "paid": False,
+        "paid_amount": 0,
         "is_manual_charge": True,
         "created_by": current_user['username'],
         "created_at": now
     }
     await db.invoices.insert_one(invoice)
+    
+    # AUTO-APPLY WALLET CREDIT if subscriber has balance
+    wallet_balance = subscriber.get('wallet_balance', 0)
+    wallet_applied = 0
+    new_wallet_balance = wallet_balance
+    
+    if wallet_balance > 0:
+        amount_to_apply = min(wallet_balance, amount)
+        new_wallet_balance = wallet_balance - amount_to_apply
+        wallet_applied = amount_to_apply
+        
+        # Update invoice as paid (fully or partially)
+        if amount_to_apply >= amount:
+            # Fully paid from wallet
+            await db.invoices.update_one(
+                {"invoice_number": invoice['invoice_number']},
+                {"$set": {"paid": True, "paid_amount": amount, "paid_at": now}}
+            )
+        else:
+            # Partially paid from wallet
+            await db.invoices.update_one(
+                {"invoice_number": invoice['invoice_number']},
+                {"$set": {"paid_amount": amount_to_apply}}
+            )
+        
+        # Deduct from subscriber wallet
+        await db.subscribers.update_one(
+            {"account_number": account_number},
+            {"$set": {"wallet_balance": new_wallet_balance}}
+        )
+        
+        # Log wallet transaction
+        await db.wallet_transactions.insert_one({
+            "subscriber_id": account_number,
+            "type": "debit",
+            "amount": amount_to_apply,
+            "description": f"Auto-payment for manual charge {invoice['invoice_number']}",
+            "created_at": now
+        })
     
     # Log the charge
     await db.activity_logs.insert_one({
@@ -3012,6 +3053,7 @@ async def add_manual_charge(account_number: str, data: dict, current_user: dict 
         "description": description,
         "amount": amount,
         "charge_type": charge_type,
+        "wallet_applied": wallet_applied,
         "created_by": current_user['username'],
         "timestamp": now
     })
@@ -3020,7 +3062,10 @@ async def add_manual_charge(account_number: str, data: dict, current_user: dict 
         "message": "Charge added successfully",
         "invoice_number": invoice["invoice_number"],
         "amount": amount,
-        "description": full_description
+        "description": full_description,
+        "wallet_applied": wallet_applied,
+        "remaining_balance": max(0, amount - wallet_applied),
+        "new_wallet_balance": new_wallet_balance
     }
 
 # ========== BILLING & INVOICING ==========

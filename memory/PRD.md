@@ -22,6 +22,20 @@
   - File modified: `/app/frontend/src/components/admin/SubscriberManagement.js`
   - Result: "View Records" button now opens subscriber history dialog correctly
 
+- **ENHANCED:** Manual charges now auto-apply wallet credits
+  - Previously: Manual charges created invoices without checking wallet balance
+  - Now: When adding a manual charge, system automatically:
+    1. Checks subscriber's wallet balance
+    2. Applies available credits to the charge
+    3. Updates invoice as fully paid (if wallet covers amount) or partially paid
+    4. Deducts from subscriber wallet
+    5. Logs wallet transaction
+    6. Returns detailed response with wallet_applied, remaining_balance, new_wallet_balance
+  - File modified: `/app/backend/server.py` (add_manual_charge endpoint)
+  - Tested scenarios:
+    - ₱300 charge with ₱500 wallet → ₱300 applied, invoice fully paid
+    - ₱1000 charge with ₱200 wallet → ₱200 applied, ₱800 remaining balance
+
 ### Previous Bug Fix (Feb 28, 2026)
 - **FIXED:** Cashier Receivables `TypeError: '<' not supported between 'datetime' and 'str'`
   - Root cause: Mixed date types (datetime objects and strings) in invoice `due_date` field
