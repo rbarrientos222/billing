@@ -55,26 +55,32 @@ export default function MikrotikManagement() {
       setRouters(routersData);
       setLoading(false);
       
-      // Then fetch stats in background (non-blocking)
-      for (const router of response.data) {
-        try {
-          const statsRes = await axios.get(`/mikrotik/routers/${router.router_id}/stats`, {
-            timeout: 5000 // 5 second timeout per router
-          });
-          setRouters(prev => prev.map(r => 
-            r.router_id === router.router_id 
-              ? { ...r, stats: { ...statsRes.data, loading: false } }
-              : r
-          ));
-        } catch {
-          setRouters(prev => prev.map(r => 
-            r.router_id === router.router_id 
-              ? { ...r, stats: { connected: false, loading: false } }
-              : r
-          ));
-        }
-      }
+      // Then fetch stats for each router individually and concurrently (non-blocking)
+      response.data.forEach((router) => {
+        // Use setTimeout to ensure truly parallel execution
+        setTimeout(async () => {
+          try {
+            const statsRes = await axios.get(`/mikrotik/routers/${router.router_id}/stats`, {
+              timeout: 15000 // 15 second timeout per router
+            });
+            console.log(`Stats for ${router.name}:`, statsRes.data);
+            setRouters(prev => prev.map(r => 
+              r.router_id === router.router_id 
+                ? { ...r, stats: { ...statsRes.data, loading: false } }
+                : r
+            ));
+          } catch (err) {
+            console.log(`Failed to get stats for ${router.name}:`, err.message);
+            setRouters(prev => prev.map(r => 
+              r.router_id === router.router_id 
+                ? { ...r, stats: { connected: false, loading: false } }
+                : r
+            ));
+          }
+        }, 0);
+      });
     } catch (error) {
+      setLoading(false);
       // Try legacy config if new endpoint fails
       try {
         const legacyRes = await axios.get('/mikrotik/config');
@@ -144,15 +150,40 @@ export default function MikrotikManagement() {
   const handleTestConnection = async (router) => {
     setTesting({ ...testing, [router.router_id]: true });
     try {
-      const response = await axios.post(`/mikrotik/routers/${router.router_id}/test`);
+      const response = await axios.post(`/mikrotik/routers/${router.router_id}/test`, {}, {
+        timeout: 10000
+      });
       if (response.data.success) {
-        toast.success(`${router.name}: Connection successful!`);
-        fetchRouters();
+        toast.success(`${router.name}: Connection successful! (${response.data.active_clients || 0} clients)`);
+        // Update just this router's stats directly instead of refetching all
+        setRouters(prev => prev.map(r => 
+          r.router_id === router.router_id 
+            ? { 
+                ...r, 
+                stats: { 
+                  connected: true, 
+                  loading: false,
+                  ...response.data.stats,
+                  active_clients: response.data.active_clients
+                } 
+              }
+            : r
+        ));
       } else {
         toast.error(`${router.name}: ${response.data.error || 'Connection failed'}`);
+        setRouters(prev => prev.map(r => 
+          r.router_id === router.router_id 
+            ? { ...r, stats: { connected: false, loading: false, error: response.data.error } }
+            : r
+        ));
       }
     } catch (error) {
-      toast.error(`${router.name}: Test failed`);
+      toast.error(`${router.name}: Test failed - ${error.message}`);
+      setRouters(prev => prev.map(r => 
+        r.router_id === router.router_id 
+          ? { ...r, stats: { connected: false, loading: false } }
+          : r
+      ));
     } finally {
       setTesting({ ...testing, [router.router_id]: false });
     }

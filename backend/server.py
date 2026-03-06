@@ -813,13 +813,26 @@ def calculate_prorated_amount(monthly_rate: float, billing_day: int, installatio
     }
 
 # ========== MIKROTIK HELPER ==========
+import signal
+
+class MikrotikTimeoutError(Exception):
+    pass
+
+def mikrotik_timeout_handler(signum, frame):
+    raise MikrotikTimeoutError("Mikrotik connection timed out")
+
 class MikrotikService:
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, timeout: int = 5):
         self.config = config
         self.connection = None
+        self.timeout = timeout
 
     def connect(self) -> bool:
         try:
+            # Set alarm for timeout (Unix only)
+            old_handler = signal.signal(signal.SIGALRM, mikrotik_timeout_handler)
+            signal.alarm(self.timeout)
+            
             password = decrypt_password(self.config['password'])
             self.connection = routeros_api.RouterOsApiPool(
                 self.config['ip_address'],
@@ -829,8 +842,17 @@ class MikrotikService:
                 plaintext_login=True
             )
             self.api = self.connection.get_api()
+            
+            # Cancel the alarm on success
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
             return True
+        except MikrotikTimeoutError:
+            logger.error(f"Mikrotik connection timed out: {self.config.get('ip_address')}")
+            signal.alarm(0)
+            return False
         except Exception as e:
+            signal.alarm(0)
             logger.error(f"Mikrotik connection failed: {e}")
             return False
 
