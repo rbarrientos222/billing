@@ -1021,10 +1021,17 @@ export default function SubscriberManagement() {
                             );
                           }}
                         >
-                          <Checkbox 
-                            checked={selectedMikrotiks.includes(router.router_id)}
-                            className="pointer-events-none"
-                          />
+                          <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
+                            selectedMikrotiks.includes(router.router_id)
+                              ? 'bg-primary border-primary text-white'
+                              : 'border-gray-300 dark:border-gray-600'
+                          }`}>
+                            {selectedMikrotiks.includes(router.router_id) && (
+                              <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
+                                <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{router.name}</p>
                             <p className="text-xs text-muted-foreground">{router.ip_address}:{router.port || 8728}</p>
