@@ -2306,36 +2306,69 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     # Check if PPPoE activation is requested
     pppoe_created = False
     pppoe_error = None
+    pppoe_results = []  # Track results for each Mikrotik
     
     if subscriber.activate_pppoe and subscriber.pppoe_username and subscriber.pppoe_password and subscriber.pppoe_profile:
-        # Get Mikrotik config
-        mikrotik_config = await db.mikrotik_configs.find_one({})
-        
-        if mikrotik_config:
-            try:
-                # Create PPPoE account in Mikrotik
-                service = MikrotikService(mikrotik_config)
-                if service.connect():
-                    pppoe_account = PPPoEAccount(
-                        username=subscriber.pppoe_username,
-                        password=subscriber.pppoe_password,
-                        profile=subscriber.pppoe_profile,
-                        remote_address="",
-                        service="pppoe",
-                        disabled=False
-                    )
-                    pppoe_created = service.create_pppoe_account(pppoe_account)
-                    service.disconnect()
-                    
-                    if not pppoe_created:
-                        pppoe_error = "Failed to create PPPoE account in Mikrotik"
-                else:
-                    pppoe_error = "Failed to connect to Mikrotik"
-            except Exception as e:
-                pppoe_error = f"Mikrotik error: {str(e)}"
-                logger.error(f"Mikrotik PPPoE creation failed: {e}")
+        # Get target Mikrotik routers
+        if subscriber.mikrotik_ids and len(subscriber.mikrotik_ids) > 0:
+            # Use specified routers
+            routers = await db.mikrotik_routers.find({"router_id": {"$in": subscriber.mikrotik_ids}, "is_active": True}).to_list(100)
         else:
-            pppoe_error = "Mikrotik not configured"
+            # Use all active routers
+            routers = await db.mikrotik_routers.find({"is_active": True}).to_list(100)
+        
+        # Fallback to legacy config if no routers in new collection
+        if not routers:
+            mikrotik_config = await db.mikrotik_configs.find_one({})
+            if mikrotik_config:
+                routers = [mikrotik_config]
+        
+        if routers:
+            pppoe_account = PPPoEAccount(
+                username=subscriber.pppoe_username,
+                password=subscriber.pppoe_password,
+                profile=subscriber.pppoe_profile,
+                remote_address="",
+                service="pppoe",
+                disabled=False
+            )
+            
+            for router in routers:
+                router_name = router.get('name', router.get('ip_address', 'Unknown'))
+                try:
+                    service = MikrotikService(router)
+                    if service.connect():
+                        created = service.create_pppoe_account(pppoe_account)
+                        service.disconnect()
+                        pppoe_results.append({
+                            "router_id": router.get('router_id'),
+                            "router_name": router_name,
+                            "success": created,
+                            "error": None if created else "Failed to create account"
+                        })
+                        if created:
+                            pppoe_created = True
+                    else:
+                        pppoe_results.append({
+                            "router_id": router.get('router_id'),
+                            "router_name": router_name,
+                            "success": False,
+                            "error": "Failed to connect"
+                        })
+                except Exception as e:
+                    pppoe_results.append({
+                        "router_id": router.get('router_id'),
+                        "router_name": router_name,
+                        "success": False,
+                        "error": str(e)
+                    })
+                    logger.error(f"Mikrotik PPPoE creation failed on {router_name}: {e}")
+            
+            # Check if all failed
+            if not pppoe_created:
+                pppoe_error = "Failed to create PPPoE on all routers"
+        else:
+            pppoe_error = "No Mikrotik routers configured"
     
     # Save subscriber to database
     sub_dict = subscriber.model_dump()
@@ -2343,6 +2376,9 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     sub_dict.pop('generate_prorated_bill', None)  # Don't store this field, just use for invoice decision
     sub_dict.pop('assigned_unit_id', None)  # Don't store this field, handle separately
     sub_dict['pppoe_activated'] = pppoe_created  # Track PPPoE activation status
+    # Store which routers have the PPPoE account
+    if pppoe_results:
+        sub_dict['pppoe_status'] = {r['router_id']: {'created': r['success']} for r in pppoe_results if r.get('router_id')}
     result = await db.subscribers.insert_one(sub_dict)
     sub_id = str(result.inserted_id)
     
@@ -2484,6 +2520,9 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
     
     if pppoe_error:
         response_data["pppoe_error"] = pppoe_error
+    
+    if pppoe_results:
+        response_data["pppoe_results"] = pppoe_results
     
     return response_data
 

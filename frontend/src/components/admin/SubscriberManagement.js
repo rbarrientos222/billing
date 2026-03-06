@@ -14,7 +14,7 @@ import { TablePagination, useTablePagination } from '@/components/ui/table-pagin
 import { ExportButton, ImportButton } from '@/components/admin/ImportExport';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw, Wifi, Package, FileText, Receipt, ChevronDown, User, CreditCard } from 'lucide-react';
+import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw, Wifi, Package, FileText, Receipt, ChevronDown, User, CreditCard, Server } from 'lucide-react';
 
 export default function SubscriberManagement() {
   const [subscribers, setSubscribers] = useState([]);
@@ -56,6 +56,10 @@ export default function SubscriberManagement() {
   const [deleteForm, setDeleteForm] = useState({ admin_password: '' });
   const [chargeForm, setChargeForm] = useState({ description: '', amount: '', charge_type: 'Equipment' });
   
+  // Mikrotik selection states
+  const [mikrotikRouters, setMikrotikRouters] = useState([]);
+  const [selectedMikrotiks, setSelectedMikrotiks] = useState([]);
+  
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -83,7 +87,20 @@ export default function SubscriberManagement() {
     fetchPlans();
     fetchProfiles();
     fetchProvinces();
+    fetchMikrotikRouters();
   }, []);
+
+  const fetchMikrotikRouters = async () => {
+    try {
+      const response = await axios.get('/mikrotik/routers');
+      const activeRouters = response.data.filter(r => r.is_active !== false);
+      setMikrotikRouters(activeRouters);
+      // By default, select all active routers
+      setSelectedMikrotiks(activeRouters.map(r => r.router_id));
+    } catch (error) {
+      console.error('Failed to fetch Mikrotik routers');
+    }
+  };
 
   // Auto-generate PPPoE username when first/last name changes
   useEffect(() => {
@@ -265,7 +282,8 @@ export default function SubscriberManagement() {
         account_number: '',
         is_active: true,
         installation_date: new Date().toISOString(),
-        assigned_unit_id: selectedUnit?.unit_id || null
+        assigned_unit_id: selectedUnit?.unit_id || null,
+        mikrotik_ids: selectedMikrotiks.length > 0 ? selectedMikrotiks : null  // null = all active routers
       });
       
       let successMessage = `Subscriber created with account number: ${response.data.account_number}`;
@@ -275,7 +293,13 @@ export default function SubscriberManagement() {
       }
       
       if (response.data.pppoe_created) {
-        successMessage += ' | PPPoE account created in Mikrotik ✓';
+        if (response.data.pppoe_results) {
+          const successCount = response.data.pppoe_results.filter(r => r.success).length;
+          const totalCount = response.data.pppoe_results.length;
+          successMessage += ` | PPPoE created on ${successCount}/${totalCount} Mikrotik(s) ✓`;
+        } else {
+          successMessage += ' | PPPoE account created in Mikrotik ✓';
+        }
       } else if (response.data.pppoe_error) {
         successMessage += ` | PPPoE creation failed: ${response.data.pppoe_error}`;
       }
@@ -308,6 +332,8 @@ export default function SubscriberManagement() {
         activate_pppoe: false,
         generate_prorated_bill: true
       });
+      // Reset Mikrotik selection to all active routers
+      setSelectedMikrotiks(mikrotikRouters.map(r => r.router_id));
       setProratedPreview(null);
       setSelectedUnit(null);
       setMunicipalities([]);
@@ -948,6 +974,72 @@ export default function SubscriberManagement() {
                     )}
                   </div>
                 </div>
+                
+                {/* Mikrotik Router Selection */}
+                {mikrotikRouters.length > 0 && (
+                  <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border">
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="flex items-center gap-2">
+                        <Server className="h-4 w-4" />
+                        Target Mikrotik Router(s)
+                      </Label>
+                      <div className="flex gap-2">
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setSelectedMikrotiks(mikrotikRouters.map(r => r.router_id))}
+                          className="text-xs h-7"
+                        >
+                          Select All
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setSelectedMikrotiks([])}
+                          className="text-xs h-7"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      {mikrotikRouters.map((router) => (
+                        <div 
+                          key={router.router_id}
+                          className={`flex items-center gap-3 p-2 rounded-md border cursor-pointer transition-colors ${
+                            selectedMikrotiks.includes(router.router_id) 
+                              ? 'bg-primary/10 border-primary' 
+                              : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700'
+                          }`}
+                          onClick={() => {
+                            setSelectedMikrotiks(prev => 
+                              prev.includes(router.router_id)
+                                ? prev.filter(id => id !== router.router_id)
+                                : [...prev, router.router_id]
+                            );
+                          }}
+                        >
+                          <Checkbox 
+                            checked={selectedMikrotiks.includes(router.router_id)}
+                            className="pointer-events-none"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{router.name}</p>
+                            <p className="text-xs text-muted-foreground">{router.ip_address}:{router.port || 8728}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {selectedMikrotiks.length === 0 
+                        ? 'PPPoE account will be created on ALL active routers'
+                        : `PPPoE account will be created on ${selectedMikrotiks.length} router(s)`
+                      }
+                    </p>
+                  </div>
+                )}
                 
                 <div className="mt-4 flex items-center space-x-2 p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
                   <input

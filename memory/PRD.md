@@ -59,6 +59,18 @@
   - Updated Subscriber model to support `mikrotik_ids` for per-subscriber router assignment (future use)
   - Files modified: `/app/backend/server.py`, `/app/frontend/src/components/admin/MikrotikManagement.js`
 
+- **FEATURE:** Mikrotik Selection in Subscriber Registration
+  - Added multi-select Mikrotik router selection in subscriber registration form
+  - "Select All" and "Clear" buttons for quick selection
+  - By default, all active routers are selected
+  - When creating subscriber with PPPoE activation:
+    - Creates PPPoE account on all selected Mikrotik routers
+    - If no routers selected, creates on ALL active routers
+    - Returns detailed results per router (success/failure)
+    - Stores `pppoe_status` per router in subscriber record
+  - Mobile-friendly card-based UI for router selection
+  - Files modified: `/app/frontend/src/components/admin/SubscriberManagement.js`, `/app/backend/server.py`
+
 ### Previous Bug Fix (Feb 28, 2026)
 - **FIXED:** Cashier Receivables `TypeError: '<' not supported between 'datetime' and 'str'`
   - Root cause: Mixed date types (datetime objects and strings) in invoice `due_date` field
