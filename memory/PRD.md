@@ -43,6 +43,22 @@
   - File modified: `/app/backend/server.py` (PUT /users/{username}/password endpoint)
   - Tested: Password change and login with new password now works correctly
 
+- **FEATURE:** Multiple Mikrotik Router Management
+  - New collection `mikrotik_routers` for storing multiple router configs
+  - Backend endpoints:
+    - `GET /api/mikrotik/routers` - List all routers
+    - `POST /api/mikrotik/routers` - Add new router
+    - `PUT /api/mikrotik/routers/{router_id}` - Update router
+    - `DELETE /api/mikrotik/routers/{router_id}` - Delete router
+    - `POST /api/mikrotik/routers/{router_id}/test` - Test connection
+    - `GET /api/mikrotik/routers/{router_id}/stats` - Get router stats
+    - `GET /api/mikrotik/all-profiles` - Get profiles from all routers
+  - Frontend redesigned with mobile-friendly card-based layout
+  - Stats cards: Total Routers, Online, Offline, Active Clients
+  - Router list with status badges, connection test, edit/delete actions
+  - Updated Subscriber model to support `mikrotik_ids` for per-subscriber router assignment (future use)
+  - Files modified: `/app/backend/server.py`, `/app/frontend/src/components/admin/MikrotikManagement.js`
+
 ### Previous Bug Fix (Feb 28, 2026)
 - **FIXED:** Cashier Receivables `TypeError: '<' not supported between 'datetime' and 'str'`
   - Root cause: Mixed date types (datetime objects and strings) in invoice `due_date` field

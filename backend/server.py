@@ -357,12 +357,14 @@ class Subscriber(BaseModel):
     pppoe_profile: str   # Required
     activate_pppoe: bool = False
     pppoe_activated: bool = False  # Track if PPPoE is actually activated in Mikrotik
+    mikrotik_ids: Optional[List[str]] = None  # List of Mikrotik router IDs (None = all active routers)
+    pppoe_status: Optional[dict] = None  # Track PPPoE status per router {router_id: {created: bool, activated: bool}}
     plan_id: str  # Required - Subscription Plan
     billing_day: int = 30  # Day of month (1-31)
     installation_date: Optional[str] = None  # ISO date string
     is_active: bool = True
     modem_mac: Optional[str] = None
-    assigned_unit_id: str  # Required - Modem/Equipment
+    assigned_unit_id: Optional[str] = None  # Modem/Equipment - Now optional
     generate_prorated_bill: bool = True  # If False, wait for next billing cycle
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -1537,6 +1539,161 @@ async def change_user_password(username: str, data: dict, current_user: dict = D
     return {"message": "Password changed successfully"}
 
 # ========== MIKROTIK MANAGEMENT ==========
+# Multiple Mikrotik router support
+
+@api_router.get("/mikrotik/routers")
+async def get_mikrotik_routers(current_user: dict = Depends(get_current_user)):
+    """Get all configured Mikrotik routers"""
+    if current_user['role'] not in ['admin', 'tech', 'billing']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    routers = await db.mikrotik_routers.find({}, {"_id": 0, "password": 0}).to_list(100)
+    return routers
+
+@api_router.post("/mikrotik/routers")
+async def add_mikrotik_router(config: MikrotikConfig, current_user: dict = Depends(get_current_user)):
+    """Add a new Mikrotik router"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Generate router ID
+    router_id = f"MK{str(uuid.uuid4())[:8].upper()}"
+    
+    config_dict = config.model_dump()
+    config_dict['router_id'] = router_id
+    config_dict['password'] = encrypt_password(config.password)
+    config_dict['created_at'] = datetime.now(timezone.utc)
+    config_dict['is_active'] = True
+    
+    await db.mikrotik_routers.insert_one(config_dict)
+    
+    # Also update legacy single config for backward compatibility
+    legacy_config = config_dict.copy()
+    legacy_config.pop('router_id', None)
+    await db.mikrotik_configs.delete_many({})
+    await db.mikrotik_configs.insert_one(legacy_config)
+    
+    return {"message": "Mikrotik router added successfully", "router_id": router_id}
+
+@api_router.put("/mikrotik/routers/{router_id}")
+async def update_mikrotik_router(router_id: str, updates: dict, current_user: dict = Depends(get_current_user)):
+    """Update a Mikrotik router configuration"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    router = await db.mikrotik_routers.find_one({"router_id": router_id})
+    if not router:
+        raise HTTPException(status_code=404, detail="Router not found")
+    
+    # Handle password update
+    if 'password' in updates and updates['password']:
+        updates['password'] = encrypt_password(updates['password'])
+    else:
+        updates.pop('password', None)  # Don't update if empty
+    
+    updates['updated_at'] = datetime.now(timezone.utc)
+    
+    await db.mikrotik_routers.update_one(
+        {"router_id": router_id},
+        {"$set": updates}
+    )
+    return {"message": "Router updated successfully"}
+
+@api_router.delete("/mikrotik/routers/{router_id}")
+async def delete_mikrotik_router(router_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a Mikrotik router"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    result = await db.mikrotik_routers.delete_one({"router_id": router_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Router not found")
+    
+    return {"message": "Router deleted successfully"}
+
+@api_router.post("/mikrotik/routers/{router_id}/test")
+async def test_single_router(router_id: str, current_user: dict = Depends(get_current_user)):
+    """Test connection to a specific Mikrotik router"""
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    router = await db.mikrotik_routers.find_one({"router_id": router_id})
+    if not router:
+        raise HTTPException(status_code=404, detail="Router not found")
+    
+    service = MikrotikService(router)
+    if service.connect():
+        try:
+            stats = service.get_resource_stats()
+            active_clients = service.get_active_clients()
+            service.disconnect()
+            return {
+                "success": True,
+                "router_id": router_id,
+                "stats": stats,
+                "active_clients": active_clients
+            }
+        except Exception as e:
+            service.disconnect()
+            return {"success": False, "error": str(e)}
+    return {"success": False, "error": "Failed to connect"}
+
+@api_router.get("/mikrotik/routers/{router_id}/stats")
+async def get_router_stats(router_id: str, current_user: dict = Depends(get_current_user)):
+    """Get stats for a specific Mikrotik router"""
+    if current_user['role'] not in ['admin', 'tech']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    router = await db.mikrotik_routers.find_one({"router_id": router_id})
+    if not router:
+        raise HTTPException(status_code=404, detail="Router not found")
+    
+    service = MikrotikService(router)
+    if service.connect():
+        try:
+            stats = service.get_resource_stats()
+            active_clients = service.get_active_clients()
+            profiles = service.get_pppoe_profiles()
+            service.disconnect()
+            return {
+                "connected": True,
+                **stats,
+                "active_clients": active_clients,
+                "profiles": profiles
+            }
+        except Exception as e:
+            service.disconnect()
+            return {"connected": False, "error": str(e)}
+    return {"connected": False, "error": "Failed to connect"}
+
+@api_router.get("/mikrotik/all-profiles")
+async def get_all_mikrotik_profiles(current_user: dict = Depends(get_current_user)):
+    """Get PPPoE profiles from all active Mikrotik routers"""
+    if current_user['role'] not in ['admin', 'tech', 'billing', 'cashier']:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    routers = await db.mikrotik_routers.find({"is_active": True}).to_list(100)
+    
+    # If no routers in new collection, try legacy config
+    if not routers:
+        legacy = await db.mikrotik_configs.find_one({})
+        if legacy:
+            routers = [legacy]
+    
+    all_profiles = set()
+    for router in routers:
+        try:
+            service = MikrotikService(router)
+            if service.connect():
+                profiles = service.get_pppoe_profiles()
+                all_profiles.update(profiles)
+                service.disconnect()
+        except Exception as e:
+            logger.error(f"Failed to get profiles from {router.get('name', 'unknown')}: {e}")
+    
+    return list(all_profiles)
+
+# Legacy endpoint - keep for backward compatibility
 @api_router.post("/mikrotik/config")
 async def save_mikrotik_config(config: MikrotikConfig, current_user: dict = Depends(get_current_user)):
     if current_user['role'] != 'admin':

@@ -5,308 +5,589 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Wifi, RefreshCw, Server, Loader2, CheckCircle, XCircle, AlertCircle, Zap } from 'lucide-react';
+import { 
+  Wifi, RefreshCw, Server, Loader2, CheckCircle, XCircle, Plus, 
+  Edit2, Trash2, Zap, MoreVertical, Signal, Users, Activity
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function MikrotikManagement() {
-  const [config, setConfig] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [testResults, setTestResults] = useState(null);
+  const [routers, setRouters] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [testing, setTesting] = useState({});
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedRouter, setSelectedRouter] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  
   const [formData, setFormData] = useState({
     name: '',
     ip_address: '',
     port: 8728,
     username: '',
     password: '',
-    version: 'v7'
+    version: 'v7',
+    is_active: true
   });
 
   useEffect(() => {
-    fetchConfig();
-    fetchStats();
+    fetchRouters();
   }, []);
 
-  const fetchConfig = async () => {
+  const fetchRouters = async () => {
+    setLoading(true);
     try {
-      const response = await axios.get('/mikrotik/config');
-      if (response.data && response.data.name) {
-        setConfig(response.data);
-        setFormData({ ...response.data, password: '' });
+      const response = await axios.get('/mikrotik/routers');
+      // First, set routers without stats (fast load)
+      const routersData = response.data.map(router => ({ 
+        ...router, 
+        stats: { connected: false, loading: true } 
+      }));
+      setRouters(routersData);
+      setLoading(false);
+      
+      // Then fetch stats in background (non-blocking)
+      for (const router of response.data) {
+        try {
+          const statsRes = await axios.get(`/mikrotik/routers/${router.router_id}/stats`, {
+            timeout: 5000 // 5 second timeout per router
+          });
+          setRouters(prev => prev.map(r => 
+            r.router_id === router.router_id 
+              ? { ...r, stats: { ...statsRes.data, loading: false } }
+              : r
+          ));
+        } catch {
+          setRouters(prev => prev.map(r => 
+            r.router_id === router.router_id 
+              ? { ...r, stats: { connected: false, loading: false } }
+              : r
+          ));
+        }
       }
     } catch (error) {
-      console.error('Failed to fetch config');
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const response = await axios.get('/mikrotik/stats');
-      setStats(response.data);
-    } catch (error) {
-      console.error('Failed to fetch stats');
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await axios.post('/mikrotik/config', formData);
-      toast.success('Mikrotik configuration saved');
-      fetchConfig();
-      fetchStats();
-    } catch (error) {
-      toast.error('Failed to save configuration');
+      // Try legacy config if new endpoint fails
+      try {
+        const legacyRes = await axios.get('/mikrotik/config');
+        if (legacyRes.data && legacyRes.data.name) {
+          setRouters([{ ...legacyRes.data, router_id: 'legacy', stats: { connected: false } }]);
+        }
+      } catch {
+        console.error('Failed to fetch routers');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSync = async () => {
-    setLoading(true);
+  const handleAddRouter = async () => {
+    if (!formData.name || !formData.ip_address || !formData.username || !formData.password) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+    
+    setSubmitting(true);
     try {
-      const response = await axios.post('/mikrotik/sync');
-      toast.success(response.data.message);
+      await axios.post('/mikrotik/routers', formData);
+      toast.success('Mikrotik router added successfully');
+      setShowAddDialog(false);
+      resetForm();
+      fetchRouters();
     } catch (error) {
-      toast.error('Failed to sync accounts');
+      toast.error(error.response?.data?.detail || 'Failed to add router');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const handleTestConnection = async () => {
-    setTesting(true);
-    setTestResults(null);
+  const handleUpdateRouter = async () => {
+    if (!formData.name || !formData.ip_address || !formData.username) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+    
+    setSubmitting(true);
     try {
-      const response = await axios.post('/mikrotik/test-connection', {
-        ip_address: formData.ip_address,
-        port: formData.port,
-        username: formData.username,
-        password: formData.password || undefined
-      });
-      setTestResults(response.data);
+      await axios.put(`/mikrotik/routers/${selectedRouter.router_id}`, formData);
+      toast.success('Router updated successfully');
+      setShowEditDialog(false);
+      resetForm();
+      fetchRouters();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update router');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteRouter = async (router) => {
+    if (!window.confirm(`Delete router "${router.name}"? This cannot be undone.`)) return;
+    
+    try {
+      await axios.delete(`/mikrotik/routers/${router.router_id}`);
+      toast.success('Router deleted');
+      fetchRouters();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete router');
+    }
+  };
+
+  const handleTestConnection = async (router) => {
+    setTesting({ ...testing, [router.router_id]: true });
+    try {
+      const response = await axios.post(`/mikrotik/routers/${router.router_id}/test`);
       if (response.data.success) {
-        toast.success('Connection successful!');
+        toast.success(`${router.name}: Connection successful!`);
+        fetchRouters();
       } else {
-        toast.error('Connection failed. Check the details below.');
+        toast.error(`${router.name}: ${response.data.error || 'Connection failed'}`);
       }
     } catch (error) {
-      toast.error('Test failed: ' + (error.response?.data?.detail || 'Unknown error'));
-      setTestResults({
-        success: false,
-        steps: [{
-          step: 'Request',
-          status: 'failed',
-          message: 'Failed to execute test',
-          error: error.response?.data?.detail || error.message
-        }]
-      });
+      toast.error(`${router.name}: Test failed`);
     } finally {
-      setTesting(false);
+      setTesting({ ...testing, [router.router_id]: false });
     }
   };
 
-  const getStepIcon = (status) => {
-    switch (status) {
-      case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'failed':
-        return <XCircle className="h-4 w-4 text-red-600" />;
-      case 'warning':
-        return <AlertCircle className="h-4 w-4 text-amber-600" />;
-      default:
-        return <Loader2 className="h-4 w-4 animate-spin" />;
+  const openEditDialog = (router) => {
+    setSelectedRouter(router);
+    setFormData({
+      name: router.name,
+      ip_address: router.ip_address,
+      port: router.port || 8728,
+      username: router.username,
+      password: '',
+      version: router.version || 'v7',
+      is_active: router.is_active !== false
+    });
+    setShowEditDialog(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      ip_address: '',
+      port: 8728,
+      username: '',
+      password: '',
+      version: 'v7',
+      is_active: true
+    });
+    setSelectedRouter(null);
+  };
+
+  const getStatusBadge = (router) => {
+    if (router.stats?.loading) {
+      return <Badge variant="outline" className="text-muted-foreground">
+        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+        Checking...
+      </Badge>;
     }
+    if (router.stats?.connected) {
+      return <Badge className="bg-green-600">Online</Badge>;
+    }
+    return <Badge variant="destructive">Offline</Badge>;
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-heading font-bold" data-testid="mikrotik-management-title">Mikrotik Management</h2>
-        <p className="text-muted-foreground mt-1">Configure and manage Mikrotik router integration</p>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-heading font-bold" data-testid="mikrotik-management-title">
+            Mikrotik Management
+          </h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Configure and manage multiple Mikrotik routers
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={fetchRouters} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+          <Button size="sm" onClick={() => { resetForm(); setShowAddDialog(true); }} data-testid="add-router-btn">
+            <Plus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Add Router</span>
+            <span className="sm:hidden">Add</span>
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Server className="h-5 w-5" />
-              Router Configuration
-            </CardTitle>
-            <CardDescription>Enter your Mikrotik router credentials</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label>Router Name</Label>
-                <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Main Router" required />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>IP Address</Label>
-                  <Input value={formData.ip_address} onChange={(e) => setFormData({ ...formData, ip_address: e.target.value })} placeholder="192.168.1.1" required />
-                </div>
-                <div>
-                  <Label>Port</Label>
-                  <Input type="number" value={formData.port} onChange={(e) => setFormData({ ...formData, port: parseInt(e.target.value) })} required />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Username</Label>
-                  <Input value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} placeholder="admin" required />
-                </div>
-                <div>
-                  <Label>Password</Label>
-                  <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Enter password" required={!config} />
-                </div>
+      {/* Stats Summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <Server className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <Label>RouterOS Version</Label>
-                <Select value={formData.version} onValueChange={(value) => setFormData({ ...formData, version: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="v6">RouterOS v6</SelectItem>
-                    <SelectItem value="v7">RouterOS v7</SelectItem>
-                  </SelectContent>
-                </Select>
+                <p className="text-xs text-muted-foreground">Total Routers</p>
+                <p className="text-xl font-bold">{routers.length}</p>
               </div>
-              
-              <div className="flex gap-3 pt-2">
-                <Button type="submit" disabled={loading} data-testid="save-mikrotik-config-button">
-                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Save Configuration
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={handleTestConnection} 
-                  disabled={testing || !formData.ip_address || !formData.username}
-                  data-testid="test-connection-button"
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                <Signal className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Online</p>
+                <p className="text-xl font-bold text-green-600">
+                  {routers.filter(r => r.stats?.connected).length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg">
+                <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Offline</p>
+                <p className="text-xl font-bold text-red-600">
+                  {routers.filter(r => !r.stats?.connected).length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Active Clients</p>
+                <p className="text-xl font-bold">
+                  {routers.reduce((sum, r) => sum + (r.stats?.active_clients || 0), 0)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Routers List */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Wifi className="h-5 w-5" />
+            Configured Routers ({routers.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 sm:px-6">
+          {loading ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+              <p className="text-muted-foreground mt-2">Loading routers...</p>
+            </div>
+          ) : routers.length === 0 ? (
+            <div className="text-center py-8">
+              <Server className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+              <p className="text-muted-foreground">No Mikrotik routers configured yet.</p>
+              <Button className="mt-4" onClick={() => setShowAddDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Router
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {routers.map((router) => (
+                <div 
+                  key={router.router_id} 
+                  className="border rounded-lg p-3 sm:p-4 bg-card hover:bg-muted/50 transition-colors"
                 >
-                  {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                  Test Connection
-                </Button>
-              </div>
-            </form>
-            
-            {/* Test Results - Outside form */}
-            {testResults && (
-              <div className="mt-4 border rounded-lg p-4 space-y-3" data-testid="test-results">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Connection Test Results</h4>
-                  <Badge variant={testResults.success ? "default" : "destructive"}>
-                    {testResults.success ? "Success" : "Failed"}
-                  </Badge>
-                </div>
-                
-                <div className="space-y-2">
-                  {testResults.steps?.map((step, idx) => (
-                    <div key={idx} className={`flex items-start gap-3 p-2 rounded ${
-                      step.status === 'success' ? 'bg-green-50 dark:bg-green-950/30' :
-                      step.status === 'failed' ? 'bg-red-50 dark:bg-red-950/30' :
-                      'bg-amber-50 dark:bg-amber-950/30'
-                    }`}>
-                      {getStepIcon(step.status)}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-sm">{step.step}</span>
-                          {step.time_ms && (
-                            <span className="text-xs text-muted-foreground">{step.time_ms}ms</span>
+                  {/* Mobile & Desktop Layout */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      {/* Status Icon */}
+                      <div className={`p-2 rounded-lg shrink-0 ${
+                        router.stats?.connected 
+                          ? 'bg-green-100 dark:bg-green-900' 
+                          : 'bg-red-100 dark:bg-red-900'
+                      }`}>
+                        {router.stats?.connected 
+                          ? <CheckCircle className="h-5 w-5 text-green-600" />
+                          : <XCircle className="h-5 w-5 text-red-600" />
+                        }
+                      </div>
+                      
+                      {/* Router Info */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-semibold truncate">{router.name}</h4>
+                          {getStatusBadge(router)}
+                          {!router.is_active && (
+                            <Badge variant="outline" className="text-muted-foreground">Disabled</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{step.message}</p>
-                        {step.error && (
-                          <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-mono">{step.error}</p>
+                        <p className="text-sm text-muted-foreground font-mono">
+                          {router.ip_address}:{router.port || 8728}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          RouterOS {router.version?.toUpperCase() || 'v7'} • User: {router.username}
+                        </p>
+                        
+                        {/* Stats - Show on connected */}
+                        {router.stats?.connected && (
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs">
+                            <span className="text-muted-foreground">
+                              CPU: <span className="font-medium text-foreground">{router.stats.cpu_load}%</span>
+                            </span>
+                            <span className="text-muted-foreground">
+                              Clients: <span className="font-medium text-foreground">{router.stats.active_clients || 0}</span>
+                            </span>
+                            <span className="text-muted-foreground hidden sm:inline">
+                              Uptime: <span className="font-medium text-foreground">{router.stats.uptime || 'N/A'}</span>
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
-                
-                {testResults.router_info && (
-                  <div className="mt-3 pt-3 border-t">
-                    <h5 className="text-sm font-medium mb-2">Router Information</h5>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Version:</span>
-                        <span className="font-mono">{testResults.router_info.version || 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Board:</span>
-                        <span className="font-mono">{testResults.router_info.board_name || 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">CPU Load:</span>
-                        <span className="font-mono">{testResults.router_info.cpu_load || 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Active Clients:</span>
-                        <span className="font-mono">{testResults.router_info.active_clients ?? 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between col-span-2">
-                        <span className="text-muted-foreground">Uptime:</span>
-                        <span className="font-mono text-xs">{testResults.router_info.uptime || 'N/A'}</span>
-                      </div>
+                    
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 hidden sm:flex"
+                        onClick={() => handleTestConnection(router)}
+                        disabled={testing[router.router_id]}
+                      >
+                        {testing[router.router_id] 
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <Zap className="h-4 w-4" />
+                        }
+                      </Button>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleTestConnection(router)}>
+                            <Zap className="mr-2 h-4 w-4" />
+                            Test Connection
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openEditDialog(router)}>
+                            <Edit2 className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteRouter(router)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          {stats && (
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-green-900 dark:text-green-100">
-                  <Wifi className="h-5 w-5" />
-                  Router Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm text-green-800 dark:text-green-200">
-                  <span>CPU Load:</span>
-                  <span className="font-mono font-medium">{stats.cpu_load}</span>
                 </div>
-                <div className="flex justify-between text-sm text-green-800 dark:text-green-200">
-                  <span>Free Memory:</span>
-                  <span className="font-mono font-medium">{stats.free_memory}</span>
-                </div>
-                <div className="flex justify-between text-sm text-green-800 dark:text-green-200">
-                  <span>Total Memory:</span>
-                  <span className="font-mono font-medium">{stats.total_memory}</span>
-                </div>
-                <div className="flex justify-between text-sm text-green-800 dark:text-green-200">
-                  <span>Uptime:</span>
-                  <span className="font-mono font-medium text-xs">{stats.uptime}</span>
-                </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
           )}
+        </CardContent>
+      </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button className="w-full" onClick={handleSync} disabled={loading || !config} data-testid="sync-accounts-button">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Sync PPPoE Accounts
-              </Button>
-              <Button className="w-full" variant="outline" onClick={fetchStats} disabled={!config}>
-                Refresh Stats
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      {/* Add Router Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Mikrotik Router</DialogTitle>
+            <DialogDescription>Configure a new Mikrotik router for PPPoE management</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Router Name *</Label>
+              <Input 
+                value={formData.name} 
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                placeholder="e.g., Main Office Router"
+                data-testid="router-name-input"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>IP Address *</Label>
+                <Input 
+                  value={formData.ip_address} 
+                  onChange={(e) => setFormData({ ...formData, ip_address: e.target.value })} 
+                  placeholder="192.168.1.1"
+                />
+              </div>
+              <div>
+                <Label>Port</Label>
+                <Input 
+                  type="number" 
+                  value={formData.port} 
+                  onChange={(e) => setFormData({ ...formData, port: parseInt(e.target.value) || 8728 })} 
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Username *</Label>
+                <Input 
+                  value={formData.username} 
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })} 
+                  placeholder="admin"
+                />
+              </div>
+              <div>
+                <Label>Password *</Label>
+                <Input 
+                  type="password" 
+                  value={formData.password} 
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
+                  placeholder="Enter password"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label>RouterOS Version</Label>
+              <Select value={formData.version} onValueChange={(v) => setFormData({ ...formData, version: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="v6">RouterOS v6</SelectItem>
+                  <SelectItem value="v7">RouterOS v7</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label>Active</Label>
+              <Switch 
+                checked={formData.is_active} 
+                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+            <Button onClick={handleAddRouter} disabled={submitting} data-testid="save-router-btn">
+              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Add Router
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Router Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Router</DialogTitle>
+            <DialogDescription>Update router configuration. Leave password blank to keep current.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Router Name *</Label>
+              <Input 
+                value={formData.name} 
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                placeholder="e.g., Main Office Router"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>IP Address *</Label>
+                <Input 
+                  value={formData.ip_address} 
+                  onChange={(e) => setFormData({ ...formData, ip_address: e.target.value })} 
+                  placeholder="192.168.1.1"
+                />
+              </div>
+              <div>
+                <Label>Port</Label>
+                <Input 
+                  type="number" 
+                  value={formData.port} 
+                  onChange={(e) => setFormData({ ...formData, port: parseInt(e.target.value) || 8728 })} 
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Username *</Label>
+                <Input 
+                  value={formData.username} 
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })} 
+                  placeholder="admin"
+                />
+              </div>
+              <div>
+                <Label>Password</Label>
+                <Input 
+                  type="password" 
+                  value={formData.password} 
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
+                  placeholder="Leave blank to keep"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label>RouterOS Version</Label>
+              <Select value={formData.version} onValueChange={(v) => setFormData({ ...formData, version: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="v6">RouterOS v6</SelectItem>
+                  <SelectItem value="v7">RouterOS v7</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <Label>Active</Label>
+              <Switch 
+                checked={formData.is_active} 
+                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+            <Button onClick={handleUpdateRouter} disabled={submitting}>
+              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
