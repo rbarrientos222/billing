@@ -61,6 +61,24 @@ export default function SubscriberManagement() {
   const [deleteForm, setDeleteForm] = useState({ admin_password: '' });
   const [chargeForm, setChargeForm] = useState({ description: '', amount: '', charge_type: 'Equipment' });
   
+  // Edit subscriber states
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    street: '',
+    barangay: '',
+    municipality: '',
+    province: '',
+    modem_mac: '',
+    mikrotik_ids: []
+  });
+  const [editProvinces, setEditProvinces] = useState([]);
+  const [editMunicipalities, setEditMunicipalities] = useState([]);
+  const [editBarangays, setEditBarangays] = useState([]);
+  
   // Mikrotik selection states
   const [mikrotikRouters, setMikrotikRouters] = useState([]);
   const [selectedMikrotiks, setSelectedMikrotiks] = useState([]);
@@ -498,6 +516,81 @@ export default function SubscriberManagement() {
     } catch (error) {
       toast.error('Failed to generate SOA');
       console.error('SOA generation error:', error);
+    }
+  };
+
+  // Edit subscriber handlers
+  const openEditDialog = async (subscriber) => {
+    setSelectedSubscriber(subscriber);
+    setEditForm({
+      first_name: subscriber.first_name || '',
+      last_name: subscriber.last_name || '',
+      email: subscriber.email || '',
+      phone: subscriber.phone || '',
+      street: subscriber.street || '',
+      barangay: subscriber.barangay || '',
+      municipality: subscriber.municipality || '',
+      province: subscriber.province || '',
+      modem_mac: subscriber.modem_mac || '',
+      mikrotik_ids: subscriber.mikrotik_ids || []
+    });
+    
+    // Load provinces
+    try {
+      const provRes = await axios.get('/addresses/provinces');
+      setEditProvinces(provRes.data.provinces || []);
+      
+      // If province exists, load municipalities
+      if (subscriber.province) {
+        const muniRes = await axios.get(`/addresses/municipalities/${subscriber.province}`);
+        setEditMunicipalities(muniRes.data.municipalities || []);
+        
+        // If municipality exists, load barangays
+        if (subscriber.municipality) {
+          const brgyRes = await axios.get(`/addresses/barangays/${subscriber.province}/${subscriber.municipality}`);
+          setEditBarangays(brgyRes.data.barangays || []);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load address data');
+    }
+    
+    setEditDialogOpen(true);
+  };
+
+  const handleEditProvinceChange = async (province) => {
+    setEditForm({ ...editForm, province, municipality: '', barangay: '' });
+    setEditBarangays([]);
+    try {
+      const res = await axios.get(`/addresses/municipalities/${province}`);
+      setEditMunicipalities(res.data.municipalities || []);
+    } catch (error) {
+      setEditMunicipalities([]);
+    }
+  };
+
+  const handleEditMunicipalityChange = async (municipality) => {
+    setEditForm({ ...editForm, municipality, barangay: '' });
+    try {
+      const res = await axios.get(`/addresses/barangays/${editForm.province}/${municipality}`);
+      setEditBarangays(res.data.barangays || []);
+    } catch (error) {
+      setEditBarangays([]);
+    }
+  };
+
+  const handleUpdateSubscriber = async () => {
+    if (!selectedSubscriber) return;
+    setActionLoading(true);
+    try {
+      const response = await axios.put(`/subscribers/${selectedSubscriber.account_number}/details`, editForm);
+      toast.success(response.data.message || 'Subscriber updated successfully');
+      setEditDialogOpen(false);
+      fetchSubscribers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update subscriber');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -1198,6 +1291,10 @@ export default function SubscriberManagement() {
                                     <User className="mr-2 h-4 w-4" />
                                     View Records
                                   </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openEditDialog(sub)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit Details
+                                  </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => openChangePlanDialog(sub)}>
                                     <RefreshCw className="mr-2 h-4 w-4" />
                                     Change Plan
@@ -1357,8 +1454,12 @@ export default function SubscriberManagement() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={() => openChangePlanDialog(sub)}>
+                                <DropdownMenuItem onClick={() => openEditDialog(sub)}>
                                   <Edit className="mr-2 h-4 w-4" />
+                                  Edit Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openChangePlanDialog(sub)}>
+                                  <RefreshCw className="mr-2 h-4 w-4" />
                                   Change Plan
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => openChargeDialog(sub)}>
@@ -2122,6 +2223,206 @@ export default function SubscriberManagement() {
             <Button onClick={handleAddCharge} disabled={actionLoading || !chargeForm.description || !chargeForm.amount}>
               {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Add Charge
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Subscriber Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Subscriber Details</DialogTitle>
+            <DialogDescription>
+              {selectedSubscriber && `Update information for ${selectedSubscriber.account_number}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Name */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>First Name *</Label>
+                <Input 
+                  value={editForm.first_name} 
+                  onChange={(e) => setEditForm({...editForm, first_name: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Last Name *</Label>
+                <Input 
+                  value={editForm.last_name} 
+                  onChange={(e) => setEditForm({...editForm, last_name: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            {/* Contact */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Email</Label>
+                <Input 
+                  type="email"
+                  value={editForm.email} 
+                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Phone</Label>
+                <Input 
+                  value={editForm.phone} 
+                  onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            {/* Address */}
+            <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border">
+              <Label className="font-semibold">Address</Label>
+              
+              <div>
+                <Label className="text-xs text-muted-foreground">Street Address</Label>
+                <Input 
+                  value={editForm.street} 
+                  onChange={(e) => setEditForm({...editForm, street: e.target.value})}
+                  placeholder="House/Unit No., Street Name"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Province</Label>
+                  <Select value={editForm.province} onValueChange={handleEditProvinceChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Province" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {editProvinces.map((prov) => (
+                        <SelectItem key={prov} value={prov}>{prov}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Municipality</Label>
+                  <Select 
+                    value={editForm.municipality} 
+                    onValueChange={handleEditMunicipalityChange}
+                    disabled={!editForm.province}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Municipality" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {editMunicipalities.map((muni) => (
+                        <SelectItem key={muni} value={muni}>{muni}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-xs text-muted-foreground">Barangay</Label>
+                <Select 
+                  value={editForm.barangay} 
+                  onValueChange={(v) => setEditForm({...editForm, barangay: v})}
+                  disabled={!editForm.municipality}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Barangay" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {editBarangays.map((brgy) => (
+                      <SelectItem key={brgy} value={brgy}>{brgy}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {/* Modem MAC Address */}
+            <div>
+              <Label>Modem MAC Address</Label>
+              <Input 
+                value={editForm.modem_mac} 
+                onChange={(e) => setEditForm({...editForm, modem_mac: e.target.value})}
+                placeholder="XX:XX:XX:XX:XX:XX"
+              />
+            </div>
+            
+            {/* Mikrotik Selection */}
+            {mikrotikRouters.length > 0 && (
+              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="flex items-center gap-2">
+                    <Server className="h-4 w-4" />
+                    Target Mikrotik Router(s)
+                  </Label>
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setEditForm({...editForm, mikrotik_ids: mikrotikRouters.map(r => r.router_id)})}
+                      className="text-xs h-7"
+                    >
+                      All
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setEditForm({...editForm, mikrotik_ids: []})}
+                      className="text-xs h-7"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {mikrotikRouters.map((router) => (
+                    <div 
+                      key={router.router_id}
+                      className={`flex items-center gap-3 p-2 rounded-md border cursor-pointer transition-colors ${
+                        editForm.mikrotik_ids.includes(router.router_id) 
+                          ? 'bg-primary/10 border-primary' 
+                          : 'bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      }`}
+                      onClick={() => {
+                        setEditForm(prev => ({
+                          ...prev,
+                          mikrotik_ids: prev.mikrotik_ids.includes(router.router_id)
+                            ? prev.mikrotik_ids.filter(id => id !== router.router_id)
+                            : [...prev.mikrotik_ids, router.router_id]
+                        }));
+                      }}
+                    >
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
+                        editForm.mikrotik_ids.includes(router.router_id)
+                          ? 'bg-primary border-primary text-white'
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}>
+                        {editForm.mikrotik_ids.includes(router.router_id) && (
+                          <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
+                            <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{router.name}</p>
+                        <p className="text-xs text-muted-foreground">{router.ip_address}:{router.port || 8728}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateSubscriber} disabled={actionLoading || !editForm.first_name || !editForm.last_name}>
+              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>

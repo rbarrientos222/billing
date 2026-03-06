@@ -2706,6 +2706,113 @@ async def get_subscriber_equipment(account_number: str, current_user: dict = Dep
     
     return items_list
 
+@api_router.put("/subscribers/{account_number}/details")
+async def update_subscriber_details(account_number: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Update subscriber personal details (name, email, address, modem MAC, Mikrotik selection).
+    Creates an audit log entry for tracking changes.
+    """
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Admin or billing access required")
+    
+    subscriber = await db.subscribers.find_one({"account_number": account_number})
+    if not subscriber:
+        raise HTTPException(status_code=404, detail="Subscriber not found")
+    
+    # Fields that can be updated
+    allowed_fields = ['first_name', 'last_name', 'email', 'phone', 'street', 'barangay', 'municipality', 'province', 'modem_mac', 'mikrotik_ids']
+    
+    # Track changes for audit log
+    changes = []
+    update_data = {}
+    
+    for field in allowed_fields:
+        if field in data:
+            old_value = subscriber.get(field)
+            new_value = data[field]
+            
+            # Handle mikrotik_ids comparison (list)
+            if field == 'mikrotik_ids':
+                old_value = old_value or []
+                new_value = new_value or []
+                if set(old_value) != set(new_value):
+                    changes.append({
+                        "field": field,
+                        "old_value": old_value,
+                        "new_value": new_value
+                    })
+                    update_data[field] = new_value
+            elif old_value != new_value:
+                changes.append({
+                    "field": field,
+                    "old_value": old_value,
+                    "new_value": new_value
+                })
+                update_data[field] = new_value
+    
+    if not update_data:
+        return {"message": "No changes detected", "changes": []}
+    
+    # Update subscriber
+    update_data['updated_at'] = datetime.now(timezone.utc)
+    await db.subscribers.update_one(
+        {"account_number": account_number},
+        {"$set": update_data}
+    )
+    
+    # Create audit log entry
+    audit_log = {
+        "type": "subscriber_update",
+        "subscriber_id": account_number,
+        "subscriber_name": f"{subscriber.get('first_name', '')} {subscriber.get('last_name', '')}".strip(),
+        "changes": changes,
+        "updated_by": current_user['username'],
+        "updated_at": datetime.now(timezone.utc),
+        "ip_address": None  # Can be captured from request if needed
+    }
+    await db.audit_logs.insert_one(audit_log)
+    
+    return {
+        "message": "Subscriber updated successfully",
+        "changes": changes,
+        "updated_fields": list(update_data.keys())
+    }
+
+@api_router.get("/subscribers/{account_number}/audit-logs")
+async def get_subscriber_audit_logs(account_number: str, current_user: dict = Depends(get_current_user)):
+    """
+    Get audit logs for a specific subscriber.
+    """
+    if current_user['role'] not in ['admin', 'billing']:
+        raise HTTPException(status_code=403, detail="Admin or billing access required")
+    
+    logs = await db.audit_logs.find(
+        {"subscriber_id": account_number},
+        {"_id": 0}
+    ).sort("updated_at", -1).to_list(100)
+    
+    return logs
+
+@api_router.get("/audit-logs")
+async def get_all_audit_logs(
+    limit: int = 50,
+    offset: int = 0,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get all audit logs for admin review.
+    """
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    total = await db.audit_logs.count_documents({})
+    logs = await db.audit_logs.find({}, {"_id": 0}).sort("updated_at", -1).skip(offset).limit(limit).to_list(limit)
+    
+    return {
+        "total": total,
+        "logs": logs
+    }
+
 @api_router.get("/payments/today-stats")
 async def get_today_payment_stats(current_user: dict = Depends(get_current_user)):
     """
