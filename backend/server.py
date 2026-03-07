@@ -188,7 +188,7 @@ async def auto_generate_billing():
                             "plan_name": plan['name'],
                             "amount": prorate_amount,
                             "paid_amount": 0,
-                            "description": f"Prorated bill for period {installation_date.strftime('%B %d, %Y')} - {today.strftime('%B %d, %Y')} ({days} days)",
+                            "description": f"Bill: {installation_date.strftime('%b %d')} - {today.strftime('%b %d, %Y')} ({days} days)",
                             "billing_day": billing_day,
                             "billing_start": installation_date,
                             "billing_end": today,
@@ -751,7 +751,7 @@ def get_billing_period_description(billing_day: int, reference_date: datetime = 
     # Format the description
     start_str = start_date.strftime("%B %d, %Y")
     end_str = end_date.strftime("%B %d, %Y")
-    description = f"Bill for billing period {start_str} - {end_str}"
+    description = f"Bill: {start_str} - {end_str}"
     
     return {
         "start_date": start_date,
@@ -2558,7 +2558,7 @@ async def create_subscriber(subscriber: Subscriber, current_user: dict = Depends
                 # Generate description for prorated bill
                 start_date_str = installation_date.strftime("%B %d, %Y")
                 end_date_str = due_date.strftime("%B %d, %Y")
-                description = f"Prorated bill for period {start_date_str} - {end_date_str}"
+                description = f"Bill: {start_date_str} - {end_date_str}"
                 
                 prorated_invoice = {
                     "invoice_number": generate_invoice_number(),
@@ -3104,7 +3104,7 @@ async def deactivate_subscriber(account_number: str, data: dict, current_user: d
                 period_info = get_billing_period_description(billing_day, now)
                 start_str = period_info['start_date'].strftime("%B %d, %Y")
                 end_str = now.strftime("%B %d, %Y")
-                description = f"Final bill for period {start_str} - {end_str} (Disconnection)"
+                description = f"Deactivation: {start_str} - {end_str}"
                 
                 invoice = {
                     "invoice_number": generate_invoice_number(),
@@ -3253,7 +3253,7 @@ async def reactivate_subscriber(account_number: str, data: dict, current_user: d
                 period_info = get_billing_period_description(billing_day, now)
                 start_str = now.strftime("%B %d, %Y")
                 end_str = period_info['end_date'].strftime("%B %d, %Y")
-                description = f"Reactivation bill for period {start_str} - {end_str}"
+                description = f"Reactivation: {start_str} - {end_str}"
                 
                 invoice = {
                     "invoice_number": generate_invoice_number(),
@@ -3442,8 +3442,8 @@ async def add_manual_charge(account_number: str, data: dict, current_user: dict 
     now = datetime.now(timezone.utc)
     
     # Generate full description with date
-    date_str = now.strftime("%B %d, %Y")
-    full_description = f"{charge_type}: {description} - Charged on {date_str}"
+    date_str = now.strftime("%m/%d/%y")
+    full_description = f"{charge_type}: {description} - {date_str}"
     
     invoice = {
         "invoice_number": generate_invoice_number(),

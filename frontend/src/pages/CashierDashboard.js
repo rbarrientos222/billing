@@ -145,23 +145,27 @@ export default function CashierDashboard({ user, onLogout }) {
             width: ${widthMM}; 
             padding: 2mm;
             line-height: 1.1;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: none;
           }
           .center { text-align: center; }
           .bold { font-weight: bold; }
           .divider { border-top: 1px dashed #000; margin: 2px 0; }
           .row { display: flex; justify-content: space-between; margin: 1px 0; }
           .logo { max-width: ${logoMaxWidth}; max-height: 10mm; margin: 0 auto 2mm; display: block; }
-          .company-name { font-size: 10px; font-weight: bold; }
-          .branch { font-size: 7px; }
-          .address { font-size: 6px; }
+          .company-name { font-size: 10px; font-weight: bold; word-wrap: break-word; }
+          .branch { font-size: 7px; word-wrap: break-word; }
+          .address { font-size: 6px; word-wrap: break-word; }
           .contact { font-size: 7px; }
           .title { font-size: 9px; font-weight: bold; }
           .or-number { font-size: 7px; }
           .section-header { font-size: 7px; font-weight: bold; }
-          .subscriber-info { font-size: 6px; }
-          .details { font-size: 6px; }
+          .subscriber-info { font-size: 6px; word-wrap: break-word; }
+          .details { font-size: 6px; word-wrap: break-word; }
           .amount { font-size: 10px; font-weight: bold; }
-          .small { font-size: 6px; }
+          .small { font-size: 6px; word-wrap: break-word; }
+          .footer-text { font-size: 6px; word-wrap: break-word; white-space: pre-wrap; }
         </style>
       </head>
       <body>
@@ -265,8 +269,8 @@ export default function CashierDashboard({ user, onLogout }) {
         
         <div class="divider"></div>
         
-        <div class="center small" style="white-space: pre-line;">
-          ${(settings?.footer_text || 'Thank you for your payment!').replace(/\n/g, '<br>')}
+        <div class="center footer-text">
+          ${(settings?.receipt_footer || settings?.footer_text || 'Thank you for your payment!').replace(/\n/g, '<br>')}
         </div>
       </body>
       </html>
