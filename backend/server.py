@@ -6079,9 +6079,25 @@ async def save_company_settings(settings: CompanySettings, current_user: dict = 
 # ========== RECEIPT SETTINGS ==========
 @api_router.get("/settings/receipt")
 async def get_receipt_settings(current_user: dict = Depends(get_current_user)):
-    """Get receipt settings for printing"""
-    settings = await db.receipt_settings.find_one({}, {"_id": 0})
-    return settings or {}
+    """Get receipt settings for printing, merged with company settings"""
+    settings = await db.receipt_settings.find_one({}, {"_id": 0}) or {}
+    
+    # Merge company settings for receipt printing
+    company = await db.company_settings.find_one({}, {"_id": 0})
+    if company:
+        # Prioritize company settings for these fields
+        settings['company_name'] = company.get('company_name') or settings.get('company_name')
+        settings['company_branch'] = company.get('branch_name') or settings.get('company_branch')
+        settings['company_address'] = company.get('address') or settings.get('company_address')
+        settings['company_mobile'] = company.get('contact_number') or settings.get('company_mobile')
+        settings['company_logo'] = company.get('logo_url') or settings.get('company_logo')
+        settings['tin_number'] = company.get('tin_number') or settings.get('tin_number')
+        # Use receipt_footer from company settings if set
+        if company.get('receipt_footer'):
+            settings['receipt_footer'] = company.get('receipt_footer')
+            settings['footer_text'] = company.get('receipt_footer')  # Also set footer_text for compatibility
+    
+    return settings
 
 @api_router.post("/settings/receipt")
 async def save_receipt_settings(settings: ReceiptSettings, current_user: dict = Depends(get_current_user)):
