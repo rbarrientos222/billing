@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { Download, Upload, FileSpreadsheet, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = process.env.NODE_ENV === 'production' ? window.location.origin : process.env.REACT_APP_BACKEND_URL;
 
 export function ExportButton({ endpoint, filename, label = "Export CSV", filters = {}, variant = "outline", size = "sm" }) {
   const [loading, setLoading] = useState(false);

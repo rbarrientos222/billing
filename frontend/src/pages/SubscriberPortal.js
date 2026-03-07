@@ -18,7 +18,7 @@ import JobOrders from '@/components/subscriber/JobOrders';
 import AccountInfo from '@/components/subscriber/AccountInfo';
 import Notifications from '@/components/subscriber/Notifications';
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = process.env.NODE_ENV === 'production' ? window.location.origin : process.env.REACT_APP_BACKEND_URL;
 
 export default function SubscriberPortal({ user, onLogout }) {
   const navigate = useNavigate();

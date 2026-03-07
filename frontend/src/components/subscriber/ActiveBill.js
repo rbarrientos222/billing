@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from 'sonner';
 import { FileText, Calendar, AlertCircle, CreditCard, Loader2, ExternalLink, CheckCircle } from 'lucide-react';
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = process.env.NODE_ENV === 'production' ? window.location.origin : process.env.REACT_APP_BACKEND_URL;
 
 export default function ActiveBill({ invoices, totalPayables, onPaymentSuccess }) {
   const [unpaidInvoices, setUnpaidInvoices] = useState([]);

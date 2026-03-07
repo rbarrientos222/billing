@@ -9,7 +9,7 @@ import { User, Mail, Phone, MapPin, Calendar, CreditCard, Wifi, Key, Loader2, Wa
 import { toast } from 'sonner';
 import axios from 'axios';
 
-const API = process.env.REACT_APP_BACKEND_URL;
+const API = process.env.NODE_ENV === 'production' ? window.location.origin : process.env.REACT_APP_BACKEND_URL;
 
 export default function AccountInfo({ subscriber, token }) {
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);

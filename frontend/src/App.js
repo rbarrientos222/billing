@@ -14,7 +14,10 @@ import TechnicianDashboard from '@/pages/TechnicianDashboard';
 import SubscriberPortal from '@/pages/SubscriberPortal';
 import BillingDashboard from '@/pages/BillingDashboard';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+// Use current origin for API calls in production, env variable for development
+const BACKEND_URL = process.env.NODE_ENV === 'production' 
+  ? window.location.origin 
+  : process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 // Setup axios defaults
