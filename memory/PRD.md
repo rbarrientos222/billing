@@ -1,8 +1,23 @@
 # Billing System - Product Requirements Document
 
-## Last Updated: March 4, 2026
+## Last Updated: March 7, 2026
 
-### Latest Bug Fix (March 4, 2026)
+### Latest Bug Fix (March 7, 2026)
+- **FIXED:** Receipt printing - footer text not appearing
+  - Root cause: `/api/receipt/data/{or_number}` endpoint was not merging `company_settings` data
+  - The endpoint fetched from `receipt_settings` but `receipt_footer` was stored in `company_settings`
+  - Solution: Added company_settings merge logic (same as `/settings/receipt` endpoint)
+  - File modified: `/app/backend/server.py` (get_receipt_data function, lines 6140-6195)
+  - Result: Custom footer from Company Settings now appears on printed receipts
+
+- **FIXED:** Receipt printing - long text cut off mid-word
+  - Root cause: CSS `word-wrap: break-word` alone insufficient for narrow thermal receipt widths
+  - Solution: Enhanced CSS with `overflow-wrap: anywhere` and `word-break: break-word`
+  - Added `max-width` constraint to body and `flex-wrap: wrap` to row elements
+  - File modified: `/app/frontend/src/pages/CashierDashboard.js` (generateReceiptHTML function)
+  - Result: Long text (addresses, descriptions, footer) now wraps properly without mid-word cuts
+
+### Previous Bug Fix (March 4, 2026)
 - **FIXED:** Expenses module crash on mobile - `handleFilter is not defined`
   - Root cause: Function called `handleFilter` but defined as `handleApplyFilters`
   - Solution: Changed `onClick={handleFilter}` to `onClick={handleApplyFilters}` on line 445

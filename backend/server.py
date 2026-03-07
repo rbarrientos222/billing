@@ -6150,6 +6150,20 @@ async def get_receipt_data(or_number: str, current_user: dict = Depends(get_curr
     subscriber = await db.subscribers.find_one({"account_number": payment['subscriber_id']}, {"_id": 0})
     settings = await db.receipt_settings.find_one({}, {"_id": 0}) or {}
     
+    # Merge company settings for receipt printing (same as /settings/receipt)
+    company = await db.company_settings.find_one({}, {"_id": 0})
+    if company:
+        settings['company_name'] = company.get('company_name') or settings.get('company_name')
+        settings['company_branch'] = company.get('branch_name') or settings.get('company_branch')
+        settings['company_address'] = company.get('address') or settings.get('company_address')
+        settings['company_mobile'] = company.get('contact_number') or settings.get('company_mobile')
+        settings['company_logo'] = company.get('logo_url') or settings.get('company_logo')
+        settings['tin_number'] = company.get('tin_number') or settings.get('tin_number')
+        # Use receipt_footer from company settings if set
+        if company.get('receipt_footer'):
+            settings['receipt_footer'] = company.get('receipt_footer')
+            settings['footer_text'] = company.get('receipt_footer')
+    
     # Build address
     address = ""
     if subscriber:
@@ -6945,7 +6959,7 @@ async def create_subscriber_checkout(
         reference_id = f"PAY{uuid.uuid4().hex[:12].upper()}"
         
         # Get frontend URL for redirects
-        frontend_url = os.environ.get('FRONTEND_URL', 'https://subscriber-checkout.preview.emergentagent.com')
+        frontend_url = os.environ.get('FRONTEND_URL', 'https://cashier-payment-flow.preview.emergentagent.com')
         
         # Build line items - invoice amount + service fee (if any)
         line_items = [{

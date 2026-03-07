@@ -143,29 +143,30 @@ export default function CashierDashboard({ user, onLogout }) {
             font-family: 'Courier New', monospace; 
             font-size: 8px; 
             width: ${widthMM}; 
+            max-width: ${widthMM};
             padding: 2mm;
-            line-height: 1.1;
+            line-height: 1.2;
             word-wrap: break-word;
-            overflow-wrap: break-word;
-            hyphens: none;
+            overflow-wrap: anywhere;
+            word-break: break-word;
           }
           .center { text-align: center; }
           .bold { font-weight: bold; }
           .divider { border-top: 1px dashed #000; margin: 2px 0; }
-          .row { display: flex; justify-content: space-between; margin: 1px 0; }
+          .row { display: flex; justify-content: space-between; margin: 1px 0; flex-wrap: wrap; }
           .logo { max-width: ${logoMaxWidth}; max-height: 10mm; margin: 0 auto 2mm; display: block; }
-          .company-name { font-size: 10px; font-weight: bold; word-wrap: break-word; }
-          .branch { font-size: 7px; word-wrap: break-word; }
-          .address { font-size: 6px; word-wrap: break-word; }
+          .company-name { font-size: 10px; font-weight: bold; overflow-wrap: anywhere; word-break: break-word; }
+          .branch { font-size: 7px; overflow-wrap: anywhere; word-break: break-word; }
+          .address { font-size: 6px; overflow-wrap: anywhere; word-break: break-word; }
           .contact { font-size: 7px; }
           .title { font-size: 9px; font-weight: bold; }
           .or-number { font-size: 7px; }
           .section-header { font-size: 7px; font-weight: bold; }
-          .subscriber-info { font-size: 6px; word-wrap: break-word; }
-          .details { font-size: 6px; word-wrap: break-word; }
+          .subscriber-info { font-size: 6px; overflow-wrap: anywhere; word-break: break-word; }
+          .details { font-size: 6px; overflow-wrap: anywhere; word-break: break-word; }
           .amount { font-size: 10px; font-weight: bold; }
-          .small { font-size: 6px; word-wrap: break-word; }
-          .footer-text { font-size: 6px; word-wrap: break-word; white-space: pre-wrap; }
+          .small { font-size: 6px; overflow-wrap: anywhere; word-break: break-word; }
+          .footer-text { font-size: 6px; overflow-wrap: anywhere; word-break: break-word; white-space: pre-wrap; }
         </style>
       </head>
       <body>

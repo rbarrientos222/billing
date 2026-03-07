@@ -10,105 +10,96 @@ Key features requested include:
 -   **Wallet System:** Display advance payments (wallet credits) to the subscriber.
 -   **Reporting:** Generate reports for receivables, collections, and collections by collector.
 -   **Data Management:** Implement CSV import/export for subscribers, payments, invoices, and expenses.
+-   **Multi-Tenancy:** A new request to create a management portal to spin up and manage separate branch instances of the billing system under the same domain.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A comprehensive full-stack billing application with a FastAPI backend, React frontend, and MongoDB. The application has undergone a significant mobile-responsiveness overhaul, with card-based layouts implemented across nearly all modules, including Subscriber Management, Job Orders, Inventory, Purchasing, Expenses, and various sections of the Admin and Cashier dashboards. Key bugs related to Cashier receivables and PDF Statement of Account (SOA) generation have been fixed. The Made with Emergent branding has also been removed.
+A full-stack ISP billing system with a FastAPI backend and React frontend. The application features extensive admin, cashier, and subscriber functionalities. Recent major updates include a complete multi-Mikrotik router management system (CRUD, status checks, selection on subscriber creation), fixes for wallet credit application, user password updates, and the addition of subscriber editing with audit logs. Pagination was added to the Expenses module and subscriber history tabs. The user is now focused on fixing bugs and refining existing features before tackling a large multi-tenancy architecture proposal.
 
 **Last working item**:
--   **Last item agent was working:** Making the Expenses module mobile-friendly. The user had initially requested fixes for Inventory and then corrected it to Expenses.
--   **Reasoning:** This was the final task in a large batch of user requests to improve the mobile UI/UX across the entire application. The agent implemented a responsive header, 2-column stats cards, and a mobile-friendly card-based layout for the expenses list.
+-   **Last item agent was working:** Fixing receipt printing issues. The user reported two problems: 1) Long lines of text are being cut off mid-word instead of wrapping to the next line. 2) The custom receipt footer message set in Company Settings is not appearing on the printed receipt.
+-   **Reasoning:** This is a critical bug fix requested by the user, who provided images demonstrating the formatting errors. It impacts a core business function. The agent's previous attempts to fix it by modifying CSS and backend endpoints were unsuccessful.
 -   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** screenshot tool. The agent needs to take a screenshot of the Expenses page on a mobile viewport to visually confirm that the new layout is correct and no elements are misplaced or broken.
+-   **Which testing method agent to use?** screenshot tool. After implementing a fix, the agent needs to perform a payment in the Cashier module and then use the screenshot tool to capture the generated receipt from the browser's print preview to verify both the word wrapping and the custom footer text.
 -   **User Testing Done:** N
 
 **All Pending/In progress Issue list**:
--   **Issue 1:** (P0) Verify the mobile UI fixes for the Expenses module.
--   **Issue 2:** (P1) SOA download crashes browser or creates an unreadable file.
--   **Issue 3:** (P2) Babel Plugin Failure for .
--   **Issue 4:** (P3) User verification needed for the CSV export download mechanism.
+-   **Issue 1:** (P0) Receipt printing formatting is broken.
+-   **Issue 2:** (P1) SOA download crashes the browser or creates an unreadable file.
+-   **Issue 3:** (P2) Shortened billing/invoice descriptions need verification.
+-   **Issue 4:** (P3) Babel Plugin Failure for .
+-   **Issue 5:** (P4) User verification is needed for the CSV export download mechanism.
 
 **Issues Detail:**
--   **Issue 1:** Verify the mobile UI fixes for the Expenses module.
-    -   **Attempted fixes:** The agent has applied a series of  commands to  to introduce responsive classes (e.g., ), create a mobile-first card layout for the expense list, and reorganize the header/filter sections.
+-   **Issue 1:** Receipt printing formatting is broken.
+    -   **Description:** When printing a receipt from the Cashier module, long lines of text are cut off instead of wrapping. Additionally, the footer text configured in  is not displayed on the receipt.
+    -   **Attempted fixes:** The agent identified that the frontend was calling  for print data. An attempt was made to modify this endpoint in  to merge settings from the  collection. Another attempt was made to add  style in the frontend's HTML generation logic (). These fixes were not successful.
     -   **Next debug checklist:**
-        1.  Use the  with a mobile viewport size.
-        2.  Navigate to the Expenses page within the admin dashboard.
-        3.  Verify that the header, stats cards, filters, and expense list render correctly in a card-based format without overlapping or broken elements.
-    -   **Why fix this issue and what will be achieved with the fix?** This is the last pending item from a large user request to make the entire application mobile-friendly. Completing this will finalize the UI overhaul.
+        1.  Re-examine the  function in . Verify that the  from  is correctly fetched and included in the final dictionary returned by the endpoint.
+        2.  Inspect the  function in .
+        3.  Confirm the frontend code is looking for the correct key (e.g., ) in the data returned from the API.
+        4.  For the word-wrapping issue, carefully check the CSS being applied in the generated HTML string. Ensure  and  are applied to the correct container elements. It's possible the styles are being applied to an inline element or being overridden.
+    -   **Why fix this issue and what will be achieved with the fix?** Printed receipts are a crucial part of the business workflow and must be professional and legible.
     -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** N
+    -   **Is recurring issue?** Y
     -   **Should Test frontend/backend/both after fix?** Frontend
-    -   **Blocked on other issue:** None
 
 -   **Issue 2:** SOA download crashes browser or creates an unreadable file.
-    -   **Description:** The user reports that attempting to download a Statement of Account (SOA) either crashes the browser or results in a corrupted/unreadable PDF file.
-    -   **Attempted fixes:** The agent identified and fixed a backend  in the PDF generation logic in  caused by improper handling of  values from date parsing. The agent confirmed the PDF generates correctly on the backend and suggested browser-side workarounds to the user (e.g., Save Link As, trying a different browser).
-    -   **Next debug checklist:**
-        1.  Ask the user to confirm if the browser-side workarounds solved their problem.
-        2.  If the issue persists, investigate the frontend download mechanism. The current approach might be timing out.
-        3.  Consider refactoring the download to use a Blob URL created on the client-side to improve reliability.
-    -   **Why fix this issue and what will be achieved with the fix?** Downloading SOAs is a critical business function that is currently unusable for the user.
+    -   **Description:** User reported that downloading a Statement of Account (SOA) either crashes the browser or results in a corrupted file.
+    -   **Attempted fixes:** A backend  was fixed, but the user reported the issue persisted. The agent suggested browser-side workarounds.
     -   **Status:** USER VERIFICATION PENDING
     -   **Is recurring issue?** Y
     -   **Should Test frontend/backend/both after fix?** Both
-    -   **Blocked on other issue:** None
 
--   **Issue 3:** Babel Plugin Failure for .
-    -   **Description:** A babel plugin for visual edits causes a Maximum call stack size exceeded error.
-    -   **Attempted fixes:** The plugin was disabled in  as a temporary workaround.
-    -   **Why fix this issue and what will be achieved with the fix?** Resolves technical debt.
-    -   **Status:** BLOCKED (Workaround in place)
+-   **Issue 3:** Shortened billing/invoice descriptions need verification.
+    -   **Description:** The agent implemented backend logic to shorten descriptions for automatic bills, reactivations, and manual charges as requested by the user. However, this has not been tested.
+    -   **Next debug checklist:**
+        1.  Trigger an automatic billing cycle or perform a manual charge.
+        2.  View the generated invoice in the UI (e.g., Subscriber Details).
+        3.  Confirm the description matches the new, shorter format (e.g., Bill for Jan 31 - Feb 28, 2026).
+    -   **Why fix this issue and what will be achieved with the fix?** To ensure the implemented feature works as the user requested, providing cleaner invoice descriptions.
+    -   **Status:** TESTING PENDING
     -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Frontend
-    -   **Blocked on other issue:** None
+    -   **Should Test frontend/backend/both after fix?** Backend (logic) & Frontend (display)
 
--   **Issue 4:** User verification needed for the CSV export download mechanism.
-    -   **Description:** The user previously reported that exported CSV files were not downloading.
-    -   **Attempted fixes:** The download logic was refactored, but user confirmation is pending.
-    -   **Why fix this issue and what will be achieved with the fix?** Ensures the data export feature is fully usable.
-    -   **Status:** USER VERIFICATION PENDING
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** Frontend
-    -   **Blocked on other issue:** None
+-   **Issue 4:** Babel Plugin Failure for .
+    -   **Status:** BLOCKED (Workaround in place).
+
+-   **Issue 5:** User verification needed for the CSV export download mechanism.
+    -   **Status:** USER VERIFICATION PENDING.
 
 **In progress Task List**:
 -   None.
 
 **Upcoming and Future Tasks**
 **Upcoming Tasks:**
--   **Subscriber Portal - Chat Support (P1):** Implement a real-time chat feature.
+-   **Multi-Tenant Architecture (P1):** The user has requested a management menu to create and manage separate, isolated branches of the entire billing system under a single domain (e.g., , ). The user has agreed to defer this large task until current bugs are fixed.
 
 **Future Tasks:**
--   **Admin - Refactor Backend (DEFERRED):** Propose refactoring the monolithic . The user has reviewed the pros/cons and decided to postpone this task.
--   **Subscriber Portal - Knowledge Base:** Add a section for FAQs and help articles.
--   **Billing Automations:** Implement automatic emailing of SOAs and SMS notifications.
--   **Admin - Wallet Management:** Create a UI for admins to manually add/deduct subscriber wallet credits.
+-   Subscriber Portal - Chat Support
+-   Admin - Refactor Backend () (DEFERRED by user)
+-   Subscriber Portal - Knowledge Base
+-   Billing Automations: Automatic emailing of SOAs and SMS notifications.
+-   Admin - Wallet Management: UI for admins to manually add/deduct subscriber wallet credits.
+-   Add a limit to how many Mikrotik routers can be added.
 
 **Completed work in this session**
--   **Bug Fix (P0):** Resolved Failed to load receivables error in the Cashier module by implementing a  helper in  to handle mixed date types.
--   **Mobile UI/UX Overhaul:** Made the following modules and pages fully mobile-responsive using card-based layouts and adaptive headers:
-    -   Technician Dashboard ()
-    -   Subscriber Management ()
-    -   Cashier Dashboard (Invoices & Payment History in )
-    -   Admin Reports (Tabs, Graphs, Tables in )
-    -   Job Orders ()
-    -   Purchasing (, )
-    -   Inventory ()
--   **Feature Enhancement:** Updated the Cashier Payment History to show only the 3 latest transactions by default, with a Show More/Less button.
--   **Bug Fix (SOA Generation):**
-    -   Corrected logic in  to show the single most recent payment instead of a total sum.
-    -   Fixed text truncation for long item descriptions in the generated PDF.
-    -   Resolved a backend crash caused by a date comparison logic error.
--   **Bug Fix (Job Order):** Set the default Scheduled Date to the current date in the edit job order form () to prevent crashes on save.
--   **Feature Removal:** Removed Made with Emergent branding, analytics, and tracking scripts from .
--   **Feature Removal:** Removed the Staff Login link from the subscriber login page ().
--   **Troubleshooting:** Provided the user with guidance on resolving a custom domain . Restarted services to fix a temporary preview environment outage.
+-   **Bug Fix:** Resolved a rendering crash on the Expenses page and added pagination.
+-   **Bug Fix:** Fixed a  on the Subscriber Management page.
+-   **Bug Fix:** Corrected backend logic to ensure manual charges properly deduct from a subscriber's wallet credit.
+-   **Bug Fix:** Fixed user password updates, which were failing due to inconsistent database field names ( vs ).
+-   **Feature:** Implemented a complete multi-Mikrotik router management system, including a new UI, status checks with optimized timeouts, and backend CRUD.
+-   **Feature:** Updated the subscriber registration form to allow selecting one or more target Mikrotik routers for PPPoE account creation.
+-   **Feature:** Updated deactivation/reactivation logic to apply changes across all relevant Mikrotik routers for a subscriber.
+-   **Feature:** Implemented an Edit Subscriber feature in Subscriber Management, allowing updates to personal details, address, and equipment, with changes recorded in a new audit log.
+-   **UX/UI:** Added pagination and latest-first sorting to the Invoices and Payments tabs within the subscriber details dialog.
+-   **Data:** Added several new barangays to the Cauayan City municipality in the address database.
+-   **Feature:** Made the Modem MAC Address field optional during subscriber registration.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1:** Address data for municipalities and barangays is incomplete sample data.
+-   **Issue 1:** Address data (provinces, municipalities, barangays) is still largely sample data, although the user has requested specific additions.
 
 **Known issue recurrence from previous fork**
 -   None.
@@ -117,67 +108,79 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
 
 
 **Key Technical Concepts**
--   **Backend:** FastAPI, Pydantic, pymongo, JWT,  (for PDF).
+-   **Backend:** FastAPI, Pydantic, pymongo, JWT, .
 -   **Frontend:** React, React Router, Axios, TailwindCSS, Shadcn/UI.
--   **Responsive Design:** Heavy use of TailwindCSS responsive prefixes (, , ) to create different layouts for mobile and desktop, converting tables into card-based lists on smaller screens.
--   **Defensive Programming:** Implementation of helper functions () to handle inconsistent data types from the database gracefully.
+-   **Responsive Design:** Mobile-first card layouts.
+-   **API Timeout Handling:** Implemented backend timeouts for external API calls (Mikrotik) using Python's  library to prevent long-running requests from blocking the system.
+-   **Concurrent Frontend Requests:** Used  and  to fetch data from multiple sources in parallel without one failure blocking the others.
+-   **Audit Logging:** Created a new  collection to track important changes made by admins.
 
 **key DB schema**
--   No schema changes were made. Logic was adapted to handle existing data inconsistencies.
+-   **mikrotik_routers (new):**  - Stores configuration for multiple routers.
+-   **audit_logs (new):**  - Logs modifications to key data like subscribers.
+-   **subscribers (modified):** The schema now supports linking to multiple Mikrotik routers.
+-   **company_settings (existing):** Contains .
+-   **receipt_settings (existing):** Contains receipt display settings. The two need to be reconciled for printing.
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   : The file currently being worked on.
--   : Contains critical fixes for SOA generation and cashier receivables.
--   : Modified to remove branding.
--   All files in  have been recently modified for mobile-responsiveness.
--   : A child component updated for mobile UI.
+-   : Contains the  function that needs to be fixed for the receipt issue.
+-   : Contains the  endpoint that needs debugging, along with all the recently added business logic.
+-   : Contains the subscriber edit dialog and history tabs.
+-   : The new UI for managing routers.
+-   : The form where Mikrotik routers are selected.
 
 **Areas that need refactoring**:
--   **CRITICAL (DEFERRED):** The  file remains a monolithic technical debt. The user has acknowledged this but has chosen to prioritize frontend features and fixes for now. Do not propose refactoring unless it becomes a blocker.
+-   **CRITICAL (DEFERRED):**  is a large monolith. The user has deferred refactoring.
+-   The receipt generation in  uses raw HTML string concatenation, which is brittle and hard to maintain. It would be better to use a dedicated React component with a library like .
 
 **key api endpoints**
--   : Fixed a  related to date comparison.
--   : Logic was heavily modified to fix content and a backend crash.
+-   : **(NEEDS DEBUGGING)** Endpoint that provides data for printing receipts.
+-   : New endpoint to update subscriber details and create an audit log entry.
+-   : Modified to correctly apply wallet credits.
+-   : Fixed to update the correct password field in the database.
+-   : New CRUD endpoints for managing multiple Mikrotik routers.
+-    & : Modified to support multiple Mikrotiks.
 
 **Critical Info for New Agent**
--   Your immediate priority is to verify the mobile UI fixes for the **Expenses** module by taking a screenshot. This was the last task the previous agent was working on.
--   Be prepared to address the **SOA download issue**. The user reported browser crashes even after a backend fix. You may need to ask the user for an update and potentially implement a more robust client-side download mechanism (e.g., using a Blob).
--   The user has explicitly decided to **defer the  refactoring**. Focus on the pending issues and any new user requests. Do not bring up refactoring again.
--   The application has just undergone a major mobile UI overhaul. Be mindful of the new card-based layouts when making any future frontend changes.
+-   Your immediate and highest priority is to **fix the receipt printing bug**. The user is blocked on this. Focus your investigation on the  endpoint in  and the  function in . The issue involves both incorrect data (footer) and CSS (word wrap).
+-   After fixing the receipt, you should **verify the shortened billing descriptions**. This is a completed but untested feature.
+-   The user is very interested in the **multi-tenant architecture** but has explicitly asked to **wait until bugs are fixed**. Do not start this task without explicit confirmation.
+-   Check in with the user about the long-pending **SOA download issue**.
 
 **documents and test reports created in this job**
 -    (Updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  : User corrects the module needing mobile UI fixes. **(Last working item)**
-2.  : User requested mobile UI fix for Inventory. (Completed)
-3.  : User requested mobile UI fixes for 3 modules. (Completed)
-4.  : User requested mobile UI fix. (Completed)
-5.  : User requested a feature enhancement. (Completed)
-6.  : User reported 3 separate issues/requests for Job Orders and Cashier UI. (Completed)
-7.  : User reported the preview environment was down. (Resolved)
-8.  : User reported a critical bug with PDF downloads. **(Pending user verification)**
-9.  : User reported content issues in the SOA PDF. (Completed)
-10. : User requested a UI change. (Completed)
+1.  : **(UNRESOLVED)** User reports the receipt printing bug is not fixed and provided images.
+2.  : **(UNRESOLVED)** User's initial report that the receipt footer fix didn't work.
+3.  : (Completed) User requested a name change in the address data.
+4.  : (Completed) User requested the Edit Subscriber feature with audit logs.
+5.  : (Completed) User requested adding specific barangays to the address data.
+6.  : (Clarified) User asked for clarification on deployment pricing.
+7.  : (Clarified) User asked for clarification on deployment billing vs. subscription.
+8.  : (Clarified) User asked if they can deploy the same app twice under different domains.
+9.  : (Clarified) User asked about deployment options and costs.
+10. : (Completed) User requested pagination and sorting for subscriber history.
 
 **Project Health Check:**
 -   **Broken:**
-    -   The SOA download functionality is potentially still broken for the user, causing browser crashes or corrupted files.
+    -   Receipt printing is functionally broken due to severe formatting issues (word wrapping, missing footer).
 -   **Mocked:**
-    -   Address data (provinces, municipalities, barangays) remains sample data.
+    -   Address data remains largely sample data, requiring manual additions by the user.
 -   **Technical Debt:**
     -   CRITICAL (DEFERRED): The  monolith.
-    -   A babel plugin for  remains disabled as a workaround.
+    -   Receipt generation uses fragile HTML string concatenation instead of a modern component-based approach.
+    -   A babel plugin for  is disabled as a workaround.
 
 **3rd Party Integrations**
 -   **Mikrotik RouterOS API:** Using .
 -   **PayMongo:** Using  for REST API interaction.
 -   **Pandas:** Used in the backend for CSV import/export.
 -   **Recharts:** Used in the frontend for report visualizations.
--   **ReportLab:** Used for PDF generation.
+-   **ReportLab:** Used for PDF generation (for SOAs).
 
 **Testing status**
 -   **Testing agent used after significant changes:** NO
@@ -189,7 +192,8 @@ A comprehensive full-stack billing application with a FastAPI backend, React fro
 -   **Admin:**  / 
 -   **Cashier:**  / 
 -   **Technician:**  / 
--   **Subscriber:**  /  (or use the Subscriber Portal Settings page to manage other accounts).
+-   **Subscriber:**  / 
 
 **What agent forgot to execute**
--   The agent was about to execute the verification step (taking a screenshot) for the Expenses module mobile UI fixes before the session ended. This is the immediate next action to take.</analysis>
+-   The agent failed to fully debug and resolve the receipt printing issue after multiple attempts. The last attempt was to investigate the backend endpoint, but the session ended before a solution was found and tested.
+-   The agent implemented the logic for shortening billing descriptions but never verified with a test or a screenshot that it was working as expected.</analysis>
