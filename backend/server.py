@@ -342,6 +342,13 @@ class PPPoEAccount(BaseModel):
     service: str = "pppoe"
     disabled: bool = False
 
+class PPPoEProfile(BaseModel):
+    """PPPoE Profile stored in database for subscriber assignment"""
+    name: str
+    rate_limit: Optional[str] = None  # e.g., "10M/10M" for 10Mbps up/down
+    description: Optional[str] = None
+    is_active: bool = True
+
 class Subscriber(BaseModel):
     account_number: str
     first_name: str
@@ -1910,38 +1917,78 @@ async def test_mikrotik_connection(test_config: dict, current_user: dict = Depen
 
 @api_router.get("/mikrotik/stats")
 async def get_mikrotik_stats(current_user: dict = Depends(get_current_user)):
-    config = await db.mikrotik_configs.find_one({})
-    if not config:
-        # Return empty stats if not configured (graceful for production)
-        return {
-            "cpu_load": 0,
-            "memory_used": 0,
-            "memory_free": 0,
-            "uptime": "N/A",
-            "active_clients": [],
-            "connection_status": "not_configured"
+    """Get aggregated Mikrotik stats from all active routers"""
+    routers = await db.mikrotik_routers.find({"is_active": True}, {"_id": 0}).to_list(100)
+    
+    if not routers:
+        # Check legacy single config
+        config = await db.mikrotik_configs.find_one({})
+        if not config:
+            return {
+                "total_active_clients": 0,
+                "total_routers": 0,
+                "online_routers": 0,
+                "offline_routers": 0,
+                "routers": [],
+                "connection_status": "not_configured"
+            }
+        # Convert legacy config to router format
+        routers = [{
+            "router_id": "legacy",
+            "name": config.get("name", "Primary Router"),
+            "ip_address": config.get("ip_address"),
+            "port": config.get("port", 8728),
+            "username": config.get("username"),
+            "password": config.get("password"),
+            "version": config.get("version", "v7")
+        }]
+    
+    total_active_clients = 0
+    online_routers = 0
+    offline_routers = 0
+    router_stats = []
+    
+    for router in routers:
+        router_info = {
+            "router_id": router.get("router_id", "unknown"),
+            "name": router.get("name", "Unknown"),
+            "status": "offline",
+            "active_clients": 0,
+            "cpu_load": "N/A",
+            "memory": "N/A",
+            "uptime": "N/A"
         }
+        
+        try:
+            service = MikrotikService(router)
+            if service.connect():
+                stats = service.get_resource_stats()
+                active_clients = service.get_active_clients()
+                service.disconnect()
+                
+                router_info["status"] = "online"
+                router_info["active_clients"] = active_clients
+                router_info["cpu_load"] = stats.get("cpu_load", "N/A")
+                router_info["memory"] = stats.get("free_memory", "N/A")
+                router_info["uptime"] = stats.get("uptime", "N/A")
+                
+                total_active_clients += active_clients
+                online_routers += 1
+            else:
+                offline_routers += 1
+        except Exception as e:
+            logger.error(f"Failed to get stats from {router.get('name', 'unknown')}: {e}")
+            offline_routers += 1
+        
+        router_stats.append(router_info)
     
-    try:
-        service = MikrotikService(config)
-        if service.connect():
-            stats = service.get_resource_stats()
-            active_clients = service.get_active_clients()
-            service.disconnect()
-            stats['active_clients'] = active_clients
-            stats['connection_status'] = "connected"
-            return stats
-    except Exception as e:
-        logger.error(f"Mikrotik connection failed: {str(e)}")
-    
-    # Return empty stats on connection failure (graceful for production)
     return {
-        "cpu_load": 0,
-        "memory_used": 0,
-        "memory_free": 0,
-        "uptime": "N/A",
-        "active_clients": [],
-        "connection_status": "disconnected"
+        "total_active_clients": total_active_clients,
+        "total_routers": len(routers),
+        "online_routers": online_routers,
+        "offline_routers": offline_routers,
+        "routers": router_stats,
+        "connection_status": "connected" if online_routers > 0 else "disconnected"
     }
 
 @api_router.post("/mikrotik/pppoe")
@@ -2324,6 +2371,77 @@ async def get_monthly_sales(current_user: dict = Depends(get_current_user)):
     
     return months
 
+# ========== PPPOE PROFILES ==========
+@api_router.get("/pppoe-profiles")
+async def list_pppoe_profiles(current_user: dict = Depends(get_current_user)):
+    """Get all PPPoE profiles from database"""
+    profiles = await db.pppoe_profiles.find({}, {"_id": 0}).to_list(1000)
+    return profiles
+
+@api_router.get("/pppoe-profiles/active")
+async def list_active_pppoe_profiles():
+    """Get active PPPoE profiles (for subscriber registration dropdown)"""
+    profiles = await db.pppoe_profiles.find({"is_active": True}, {"_id": 0}).to_list(1000)
+    return [p["name"] for p in profiles]
+
+@api_router.post("/pppoe-profiles")
+async def create_pppoe_profile(profile: PPPoEProfile, current_user: dict = Depends(get_current_user)):
+    """Create a new PPPoE profile"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Check if profile name already exists
+    existing = await db.pppoe_profiles.find_one({"name": profile.name})
+    if existing:
+        raise HTTPException(status_code=400, detail="Profile name already exists")
+    
+    profile_doc = profile.model_dump()
+    profile_doc["created_at"] = get_ph_now().isoformat()
+    profile_doc["created_by"] = current_user['username']
+    
+    await db.pppoe_profiles.insert_one(profile_doc)
+    return {"message": "PPPoE profile created successfully", "profile": profile.name}
+
+@api_router.put("/pppoe-profiles/{profile_name}")
+async def update_pppoe_profile(profile_name: str, updates: dict, current_user: dict = Depends(get_current_user)):
+    """Update an existing PPPoE profile"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    existing = await db.pppoe_profiles.find_one({"name": profile_name})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    # Don't allow changing the profile name
+    if 'name' in updates:
+        del updates['name']
+    
+    updates["updated_at"] = get_ph_now().isoformat()
+    updates["updated_by"] = current_user['username']
+    
+    await db.pppoe_profiles.update_one({"name": profile_name}, {"$set": updates})
+    return {"message": "PPPoE profile updated successfully"}
+
+@api_router.delete("/pppoe-profiles/{profile_name}")
+async def delete_pppoe_profile(profile_name: str, current_user: dict = Depends(get_current_user)):
+    """Delete a PPPoE profile"""
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Check if any subscribers are using this profile
+    subscriber_count = await db.subscribers.count_documents({"pppoe_profile": profile_name})
+    if subscriber_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete profile. {subscriber_count} subscriber(s) are using this profile."
+        )
+    
+    result = await db.pppoe_profiles.delete_one({"name": profile_name})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    return {"message": "PPPoE profile deleted successfully"}
+
 # ========== SUBSCRIPTION PLANS ==========
 @api_router.get("/plans")
 async def list_plans():
@@ -2375,6 +2493,15 @@ async def delete_plan(plan_name: str, current_user: dict = Depends(get_current_u
     return {"message": "Plan deleted successfully"}
 
 # ========== SUBSCRIBER MANAGEMENT ==========
+@api_router.get("/subscribers/count")
+async def count_subscribers(pppoe_profile: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    """Get count of subscribers, optionally filtered by PPPoE profile"""
+    query = {}
+    if pppoe_profile:
+        query["pppoe_profile"] = pppoe_profile
+    count = await db.subscribers.count_documents(query)
+    return {"count": count}
+
 @api_router.get("/subscribers")
 async def list_subscribers(current_user: dict = Depends(get_current_user)):
     subscribers = await db.subscribers.find({}, {"_id": 0}).to_list(1000)

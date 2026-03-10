@@ -186,10 +186,11 @@ export default function SubscriberManagement() {
 
   const fetchProfiles = async () => {
     try {
-      const response = await axios.get('/mikrotik/profiles');
-      setProfiles(response.data.profiles || []);
+      // Fetch PPPoE profiles from database instead of Mikrotik
+      const response = await axios.get('/pppoe-profiles/active');
+      setProfiles(response.data || []);
     } catch (error) {
-      console.error('Failed to fetch Mikrotik profiles');
+      console.error('Failed to fetch PPPoE profiles');
     }
   };
 
@@ -1066,11 +1067,11 @@ export default function SubscriberManagement() {
                     />
                   </div>
                   <div className="col-span-2">
-                    <Label>PPPoE Profile (from Mikrotik) <span className="text-red-500">*</span></Label>
+                    <Label>PPPoE Profile <span className="text-red-500">*</span></Label>
                     {profiles.length > 0 ? (
                       <Select value={formData.pppoe_profile} onValueChange={(value) => setFormData({ ...formData, pppoe_profile: value })}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select profile from Mikrotik" />
+                          <SelectValue placeholder="Select PPPoE profile" />
                         </SelectTrigger>
                         <SelectContent>
                           {profiles.map((profile) => (
@@ -1083,10 +1084,10 @@ export default function SubscriberManagement() {
                         <Input 
                           value={formData.pppoe_profile} 
                           onChange={(e) => setFormData({ ...formData, pppoe_profile: e.target.value })} 
-                          placeholder="e.g., 50mbps, 100mbps"
+                          placeholder="e.g., 10Mbps, 20Mbps"
                         />
                         <p className="text-xs text-muted-foreground">
-                          Configure Mikrotik in settings to see available profiles
+                          Add PPPoE Profiles in Settings to see dropdown options
                         </p>
                       </div>
                     )}

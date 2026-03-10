@@ -1,8 +1,52 @@
 # Billing System - Product Requirements Document
 
-## Last Updated: March 7, 2026
+## Last Updated: March 10, 2026
 
-### Latest Bug Fix (March 7, 2026)
+### Latest Feature (March 10, 2026) - Multi-Mikrotik Improvements
+- **ADDED:** PPPoE Profile Management in Settings
+  - New UI component: `/app/frontend/src/components/admin/PPPoEProfileManagement.js`
+  - New backend endpoints:
+    - `GET /api/pppoe-profiles` - List all profiles
+    - `GET /api/pppoe-profiles/active` - List active profile names
+    - `POST /api/pppoe-profiles` - Create new profile
+    - `PUT /api/pppoe-profiles/{name}` - Update profile
+    - `DELETE /api/pppoe-profiles/{name}` - Delete profile (prevented if subscribers using it)
+  - Fields: name, rate_limit, description, is_active
+  - Profiles stored in database (`pppoe_profiles` collection) instead of fetching from Mikrotik
+  - Shows subscriber count per profile
+
+- **UPDATED:** Subscriber Registration now uses database profiles
+  - Modified `fetchProfiles()` in SubscriberManagement.js
+  - Now calls `/api/pppoe-profiles/active` instead of `/api/mikrotik/profiles`
+  - Profiles are consistent across all Mikrotik routers
+
+- **UPDATED:** Dashboard Mikrotik Stats (Option C - Summary + Breakdown)
+  - Aggregated view showing total active clients across ALL routers
+  - Shows online/offline router count
+  - Per-router breakdown with individual client counts
+  - Handles graceful failure for unreachable routers
+
+- **ADDED:** Subscriber count endpoint
+  - `GET /api/subscribers/count?pppoe_profile={name}` - Get subscriber count by profile
+
+### Production Deployment Fix (March 10, 2026)
+- **FIXED:** Frontend not serving production build
+  - Changed `yarn start` to use `serve -s build` for production
+  - Added `start:dev` script for development (`craco start`)
+  - Installed `serve` package
+
+- **FIXED:** Login failing on production (apl-billing.net)
+  - Issue: API URL was hardcoded at build time using REACT_APP_BACKEND_URL
+  - Solution: Updated all components to use dynamic URL detection:
+    ```javascript
+    const API = process.env.NODE_ENV === 'production' 
+      ? window.location.origin 
+      : process.env.REACT_APP_BACKEND_URL;
+    ```
+  - Files updated: App.js, ImportExport.js, PaymongoSettings.js, Reports.js, 
+    AccountInfo.js, ActiveBill.js, SubscriberLogin.js, SubscriberPortal.js
+
+### Previous Bug Fix (March 7, 2026)
 - **FIXED:** Receipt printing - footer text not appearing
   - Root cause: `/api/receipt/data/{or_number}` endpoint was not merging `company_settings` data
   - The endpoint fetched from `receipt_settings` but `receipt_footer` was stored in `company_settings`

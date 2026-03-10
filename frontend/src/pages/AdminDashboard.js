@@ -24,6 +24,7 @@ const PurchasingModule = React.lazy(() => import('@/components/admin/PurchasingM
 import ExpenseManagement from '@/components/admin/ExpenseManagement';
 import CompanySettings from '@/components/admin/CompanySettings';
 import SubscriptionPlans from '@/components/admin/SubscriptionPlans';
+import PPPoEProfileManagement from '@/components/admin/PPPoEProfileManagement';
 import BillingCalendar from '@/components/admin/BillingCalendar';
 import RebatesSettings from '@/components/admin/RebatesSettings';
 import PrinterSettings from '@/components/admin/PrinterSettings';
@@ -94,6 +95,7 @@ export default function AdminDashboard({ user, onLogout }) {
   const settingsSubMenu = [
     { name: 'Users', path: '/admin/settings/users', icon: Users },
     { name: 'Plans', path: '/admin/settings/plans', icon: CreditCard },
+    { name: 'PPPoE Profiles', path: '/admin/settings/pppoe-profiles', icon: Wifi },
     { name: 'Subscriber Portal', path: '/admin/settings/subscriber-portal', icon: UserCircle },
     { name: 'Receipt Setup', path: '/admin/settings/receipt', icon: Receipt },
     { name: 'Rebates', path: '/admin/settings/rebates', icon: Percent },
@@ -387,17 +389,17 @@ export default function AdminDashboard({ user, onLogout }) {
               </Card>
             ))}
 
-            {/* Mikrotik Status */}
+            {/* Mikrotik Status - Aggregated View */}
             {mikrotikStats && (
               <Card className="border-border bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium text-green-900 dark:text-green-100">Mikrotik Router</h3>
+                    <h3 className="font-medium text-green-900 dark:text-green-100">Mikrotik Routers</h3>
                     <Wifi className="h-5 w-5 text-green-600" />
                   </div>
-                  {mikrotikStats.not_configured ? (
+                  {mikrotikStats.connection_status === 'not_configured' ? (
                     <div className="text-sm text-green-700 dark:text-green-300 text-center py-4">
-                      <p>Router not configured</p>
+                      <p>No routers configured</p>
                       <button 
                         onClick={() => window.location.href = '/admin/mikrotik'}
                         className="text-green-600 dark:text-green-400 underline text-xs mt-2 inline-block hover:text-green-700"
@@ -406,23 +408,47 @@ export default function AdminDashboard({ user, onLogout }) {
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between text-green-800 dark:text-green-200">
-                        <span>Active Clients:</span>
-                        <span className="font-bold font-mono text-lg text-green-600">{mikrotikStats.active_clients || 0}</span>
+                    <div className="space-y-3 text-sm">
+                      {/* Total Active Clients - Highlighted */}
+                      <div className="bg-green-200/50 dark:bg-green-800/50 rounded-lg p-3 text-center">
+                        <span className="font-bold font-mono text-2xl text-green-700 dark:text-green-300">
+                          {mikrotikStats.total_active_clients || 0}
+                        </span>
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">Total Active Clients</p>
                       </div>
-                      <div className="flex justify-between text-green-800 dark:text-green-200">
-                        <span>CPU Load:</span>
-                        <span className="font-mono font-medium">{mikrotikStats.cpu_load}</span>
+                      
+                      {/* Router Summary */}
+                      <div className="flex justify-between items-center text-green-800 dark:text-green-200">
+                        <span>Routers:</span>
+                        <div className="flex gap-2">
+                          <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">
+                            {mikrotikStats.online_routers || 0} Online
+                          </span>
+                          {mikrotikStats.offline_routers > 0 && (
+                            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded">
+                              {mikrotikStats.offline_routers} Offline
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex justify-between text-green-800 dark:text-green-200">
-                        <span>Free Memory:</span>
-                        <span className="font-mono font-medium">{mikrotikStats.free_memory}</span>
-                      </div>
-                      <div className="flex justify-between text-green-800 dark:text-green-200">
-                        <span>Uptime:</span>
-                        <span className="font-mono font-medium text-xs">{mikrotikStats.uptime}</span>
-                      </div>
+                      
+                      {/* Per Router Breakdown */}
+                      {mikrotikStats.routers && mikrotikStats.routers.length > 0 && (
+                        <div className="border-t border-green-300 dark:border-green-700 pt-2 mt-2">
+                          <p className="text-xs text-green-600 dark:text-green-400 mb-2">Router Details:</p>
+                          <div className="space-y-1 max-h-32 overflow-y-auto">
+                            {mikrotikStats.routers.map((router, idx) => (
+                              <div key={idx} className="flex justify-between items-center text-xs bg-green-100 dark:bg-green-900/50 rounded px-2 py-1">
+                                <span className="flex items-center gap-1">
+                                  <span className={`w-2 h-2 rounded-full ${router.status === 'online' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                  <span className="truncate max-w-[100px]">{router.name}</span>
+                                </span>
+                                <span className="font-mono font-medium">{router.active_clients} clients</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -663,6 +689,7 @@ export default function AdminDashboard({ user, onLogout }) {
             {/* Settings Sub-routes */}
             <Route path="/settings/users" element={<UserManagement />} />
             <Route path="/settings/plans" element={<SubscriptionPlans />} />
+            <Route path="/settings/pppoe-profiles" element={<PPPoEProfileManagement />} />
             <Route path="/settings/subscriber-portal" element={<SubscriberPortalSettings />} />
             <Route path="/settings/receipt" element={<ReceiptSettings />} />
             <Route path="/settings/rebates" element={<RebatesSettings />} />
