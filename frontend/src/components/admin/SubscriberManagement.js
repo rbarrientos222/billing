@@ -14,7 +14,8 @@ import { TablePagination, useTablePagination } from '@/components/ui/table-pagin
 import { ExportButton, ImportButton } from '@/components/admin/ImportExport';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw, Wifi, Package, FileText, Receipt, ChevronDown, User, CreditCard, Server } from 'lucide-react';
+import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw, Wifi, Package, FileText, Receipt, ChevronDown, User, CreditCard, Server, Edit2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function SubscriberManagement() {
   const [subscribers, setSubscribers] = useState([]);
@@ -60,6 +61,12 @@ export default function SubscriberManagement() {
   const [reactivateForm, setReactivateForm] = useState({ pppoe_profile: '', plan_id: '', generate_prorated_bill: true });
   const [deleteForm, setDeleteForm] = useState({ admin_password: '' });
   const [chargeForm, setChargeForm] = useState({ description: '', amount: '', charge_type: 'Equipment' });
+  
+  // Invoice adjustment states
+  const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
+  const [adjustingInvoice, setAdjustingInvoice] = useState(null);
+  const [adjustForm, setAdjustForm] = useState({ new_amount: '', remark: '' });
+  const [adjustLoading, setAdjustLoading] = useState(false);
   
   // Edit subscriber states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -730,6 +737,52 @@ export default function SubscriberManagement() {
       toast.error(error.response?.data?.detail || 'Failed to add charge');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // Invoice adjustment functions
+  const openAdjustDialog = (invoice) => {
+    setAdjustingInvoice(invoice);
+    setAdjustForm({ new_amount: invoice.amount?.toString() || '', remark: '' });
+    setAdjustDialogOpen(true);
+  };
+
+  const handleAdjustInvoice = async () => {
+    if (!adjustingInvoice || !adjustForm.new_amount || !adjustForm.remark.trim()) {
+      toast.error('Please enter new amount and remark');
+      return;
+    }
+    
+    const newAmount = parseFloat(adjustForm.new_amount);
+    if (isNaN(newAmount) || newAmount < 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+    
+    setAdjustLoading(true);
+    try {
+      const response = await axios.put(`/invoices/${adjustingInvoice.invoice_number}/adjust`, {
+        new_amount: newAmount,
+        remark: adjustForm.remark.trim()
+      });
+      
+      const adjustment = response.data.adjustment;
+      toast.success(`Invoice adjusted: ₱${adjustment.old_amount.toLocaleString()} → ₱${adjustment.new_amount.toLocaleString()}`);
+      setAdjustDialogOpen(false);
+      
+      // Refresh invoice history
+      if (selectedSubscriberHistory) {
+        const invoicesRes = await axios.get(`/invoices/subscriber/${selectedSubscriberHistory.account_number}`);
+        // Sort invoices by date (latest first)
+        const sortedInvoices = (invoicesRes.data || []).sort((a, b) => 
+          new Date(b.created_at || b.due_date) - new Date(a.created_at || a.due_date)
+        );
+        setInvoiceHistory(sortedInvoices);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to adjust invoice');
+    } finally {
+      setAdjustLoading(false);
     }
   };
 
@@ -1653,9 +1706,22 @@ export default function SubscriberManagement() {
                           <div key={invoice.invoice_number} className="p-3 border rounded-lg bg-card shadow-sm">
                             <div className="flex items-start justify-between gap-2 mb-2">
                               <p className="font-mono text-xs text-muted-foreground">{invoice.invoice_number}</p>
-                              <Badge variant={invoice.paid ? "default" : "destructive"} className={invoice.paid ? "bg-green-600 shrink-0" : "shrink-0"}>
-                                {invoice.paid ? 'Paid' : 'Unpaid'}
-                              </Badge>
+                              <div className="flex items-center gap-1">
+                                {!invoice.paid && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={() => openAdjustDialog(invoice)}
+                                    title="Adjust bill amount"
+                                  >
+                                    <Edit2 className="h-3 w-3" />
+                                  </Button>
+                                )}
+                                <Badge variant={invoice.paid ? "default" : "destructive"} className={invoice.paid ? "bg-green-600 shrink-0" : "shrink-0"}>
+                                  {invoice.paid ? 'Paid' : 'Unpaid'}
+                                </Badge>
+                              </div>
                             </div>
                             <p className="text-sm font-medium line-clamp-2" title={invoice.description || invoice.plan_name}>
                               {invoice.description || `${invoice.plan_name || 'Monthly'} Bill`}
@@ -1684,12 +1750,13 @@ export default function SubscriberManagement() {
                             <TableHead>Amount</TableHead>
                             <TableHead>Due Date</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {paginatedInvoices.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                                 <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                                 No invoices found
                               </TableCell>
@@ -1714,6 +1781,18 @@ export default function SubscriberManagement() {
                                   <Badge variant={invoice.paid ? "default" : "destructive"} className={invoice.paid ? "bg-green-600" : ""}>
                                     {invoice.paid ? 'Paid' : 'Unpaid'}
                                   </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openAdjustDialog(invoice)}
+                                    disabled={invoice.paid}
+                                    title={invoice.paid ? "Cannot adjust paid invoice" : "Adjust bill amount"}
+                                    data-testid={`adjust-invoice-${invoice.invoice_number}`}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
                                 </TableCell>
                               </TableRow>
                             ))
@@ -2224,6 +2303,72 @@ export default function SubscriberManagement() {
             <Button onClick={handleAddCharge} disabled={actionLoading || !chargeForm.description || !chargeForm.amount}>
               {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Add Charge
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invoice Adjustment Dialog */}
+      <Dialog open={adjustDialogOpen} onOpenChange={setAdjustDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adjust Invoice Amount</DialogTitle>
+            <DialogDescription>
+              {adjustingInvoice && `Adjusting invoice ${adjustingInvoice.invoice_number}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {adjustingInvoice && (
+              <div className="bg-muted/50 p-3 rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Current Amount:</span>
+                  <span className="font-bold">₱{adjustingInvoice.amount?.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Description:</span>
+                  <span className="truncate max-w-[200px]" title={adjustingInvoice.description}>
+                    {adjustingInvoice.description || adjustingInvoice.plan_name || 'Invoice'}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Due Date:</span>
+                  <span>{adjustingInvoice.due_date && new Date(adjustingInvoice.due_date).toLocaleDateString()}</span>
+                </div>
+              </div>
+            )}
+            <div>
+              <Label>New Amount (₱) *</Label>
+              <Input 
+                type="number"
+                step="0.01"
+                min="0"
+                value={adjustForm.new_amount} 
+                onChange={(e) => setAdjustForm({...adjustForm, new_amount: e.target.value})}
+                placeholder="Enter new amount"
+                data-testid="adjust-amount-input"
+              />
+            </div>
+            <div>
+              <Label>Remark / Reason *</Label>
+              <Textarea 
+                value={adjustForm.remark} 
+                onChange={(e) => setAdjustForm({...adjustForm, remark: e.target.value})}
+                placeholder="Enter reason for adjustment (e.g., Promotional discount, Billing error correction)"
+                rows={3}
+                data-testid="adjust-remark-input"
+              />
+              <p className="text-xs text-muted-foreground mt-1">This will be logged for audit trail</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAdjustDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleAdjustInvoice} 
+              disabled={adjustLoading || !adjustForm.new_amount || !adjustForm.remark.trim()}
+              data-testid="confirm-adjust-btn"
+            >
+              {adjustLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Adjust Invoice
             </Button>
           </DialogFooter>
         </DialogContent>

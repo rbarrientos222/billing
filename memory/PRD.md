@@ -2,7 +2,24 @@
 
 ## Last Updated: March 10, 2026
 
-### Latest Feature (March 10, 2026) - Multi-Mikrotik Improvements
+### Latest Feature (March 10, 2026) - Invoice Adjustment
+- **ADDED:** Invoice Amount Adjustment with Audit Trail
+  - New "Adjust" button (pencil icon) in Invoices tab for unpaid invoices
+  - Adjustment dialog with:
+    - Current invoice details display
+    - New amount input
+    - Required remark/reason field
+  - Backend endpoint: `PUT /api/invoices/{invoice_number}/adjust`
+  - Audit logging:
+    - Logged in `audit_logs` collection with full change details
+    - Dedicated `invoice_adjustments` collection for easy querying
+  - Security: Only admin role can adjust invoices
+  - Restriction: Cannot adjust already paid invoices
+  - Files modified:
+    - `/app/frontend/src/components/admin/SubscriberManagement.js`
+    - `/app/backend/server.py`
+
+### Previous Feature (March 10, 2026) - Multi-Mikrotik Improvements
 - **ADDED:** PPPoE Profile Management in Settings
   - New UI component: `/app/frontend/src/components/admin/PPPoEProfileManagement.js`
   - New backend endpoints:

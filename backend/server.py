@@ -3688,6 +3688,93 @@ async def get_subscriber_invoices(account_number: str):
         inv['remaining_balance'] = inv.get('amount', 0) - inv.get('paid_amount', 0)
     return invoices
 
+@api_router.put("/invoices/{invoice_number}/adjust")
+async def adjust_invoice_amount(invoice_number: str, adjustment: dict, current_user: dict = Depends(get_current_user)):
+    """
+    Adjust the amount of an unpaid invoice.
+    Requires admin role and logs the adjustment for audit trail.
+    """
+    if current_user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Only admin can adjust invoice amounts")
+    
+    new_amount = adjustment.get('new_amount')
+    remark = adjustment.get('remark', '').strip()
+    
+    if new_amount is None or new_amount < 0:
+        raise HTTPException(status_code=400, detail="Invalid new amount")
+    
+    if not remark:
+        raise HTTPException(status_code=400, detail="Remark is required for audit trail")
+    
+    # Find the invoice
+    invoice = await db.invoices.find_one({"invoice_number": invoice_number})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    # Check if invoice is already paid
+    if invoice.get('paid', False):
+        raise HTTPException(status_code=400, detail="Cannot adjust a paid invoice")
+    
+    old_amount = invoice.get('amount', 0)
+    difference = new_amount - old_amount
+    
+    # Update the invoice
+    update_data = {
+        "amount": new_amount,
+        "adjusted_at": get_ph_now().isoformat(),
+        "adjusted_by": current_user['username'],
+        "adjustment_remark": remark,
+        "original_amount": invoice.get('original_amount', old_amount)  # Preserve first original amount
+    }
+    
+    await db.invoices.update_one(
+        {"invoice_number": invoice_number},
+        {"$set": update_data}
+    )
+    
+    # Log the adjustment in audit_logs
+    audit_log = {
+        "user": current_user['username'],
+        "action": "invoice_adjustment",
+        "target_type": "invoice",
+        "target_id": invoice_number,
+        "changes": {
+            "old_amount": old_amount,
+            "new_amount": new_amount,
+            "difference": difference,
+            "remark": remark
+        },
+        "subscriber_id": invoice.get('subscriber_id'),
+        "timestamp": get_ph_now().isoformat()
+    }
+    await db.audit_logs.insert_one(audit_log)
+    
+    # Also log in a dedicated invoice_adjustments collection for easy querying
+    adjustment_record = {
+        "invoice_number": invoice_number,
+        "subscriber_id": invoice.get('subscriber_id'),
+        "old_amount": old_amount,
+        "new_amount": new_amount,
+        "difference": difference,
+        "remark": remark,
+        "adjusted_by": current_user['username'],
+        "adjusted_at": get_ph_now().isoformat()
+    }
+    await db.invoice_adjustments.insert_one(adjustment_record)
+    
+    logger.info(f"Invoice {invoice_number} adjusted: ₱{old_amount} -> ₱{new_amount} by {current_user['username']}. Remark: {remark}")
+    
+    return {
+        "message": "Invoice adjusted successfully",
+        "adjustment": {
+            "invoice_number": invoice_number,
+            "old_amount": old_amount,
+            "new_amount": new_amount,
+            "difference": difference,
+            "remark": remark
+        }
+    }
+
 # ========== PAYMENTS & CASHIER ==========
 @api_router.post("/payments")
 async def process_payment(payment: Payment, current_user: dict = Depends(get_current_user)):
