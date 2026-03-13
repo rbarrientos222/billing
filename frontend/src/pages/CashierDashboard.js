@@ -130,7 +130,10 @@ export default function CashierDashboard({ user, onLogout }) {
     const logoMaxWidth = paperWidth === 48 ? '30mm' : '35mm';
     const orPrefix = settings?.or_prefix || 'OR';
     
+    // Format date in Philippine timezone
     const paymentDate = payment?.payment_date ? new Date(payment.payment_date) : new Date();
+    const phDateStr = paymentDate.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' });
+    const phTimeStr = paymentDate.toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' });
     
     return `
       <!DOCTYPE html>
@@ -265,7 +268,7 @@ export default function CashierDashboard({ user, onLogout }) {
         ` : ''}
         
         <div class="small">
-          <div>Date: ${paymentDate.toLocaleDateString('en-PH')} ${paymentDate.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}</div>
+          <div>Date: ${phDateStr} ${phTimeStr}</div>
           <div>Processed by: ${payment?.received_by || user.username}</div>
         </div>
         
@@ -461,9 +464,11 @@ export default function CashierDashboard({ user, onLogout }) {
     commands.push(encoder.encode('------------------------'));
     commands.push(new Uint8Array([LF]));
     
-    // Date and processor
+    // Date and processor - use Philippine timezone
     const paymentDate = payment?.payment_date ? new Date(payment.payment_date) : new Date();
-    commands.push(encoder.encode(`Date: ${paymentDate.toLocaleDateString('en-PH')}`));
+    const phDateStr = paymentDate.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' });
+    const phTimeStr = paymentDate.toLocaleTimeString('en-PH', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit' });
+    commands.push(encoder.encode(`Date: ${phDateStr} ${phTimeStr}`));
     commands.push(new Uint8Array([LF]));
     commands.push(encoder.encode(`Processed by: ${payment?.received_by || ''}`));
     commands.push(new Uint8Array([LF]));
