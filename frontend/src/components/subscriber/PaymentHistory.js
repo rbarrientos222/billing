@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Receipt, Calendar, CreditCard, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
+import { formatPHDateTime } from '@/lib/utils';
 
 export default function PaymentHistory({ payments }) {
   const [showAll, setShowAll] = useState(false);
@@ -11,13 +12,7 @@ export default function PaymentHistory({ payments }) {
   
   const formatDate = (dateStr) => {
     if (!dateStr) return 'N/A';
-    return new Date(dateStr).toLocaleDateString('en-PH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatPHDateTime(dateStr);
   };
 
   const formatCurrency = (amount) => {

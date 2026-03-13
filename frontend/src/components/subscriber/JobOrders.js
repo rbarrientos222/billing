@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ClipboardList, Calendar, User, ChevronDown, ChevronUp, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { formatPHDate } from '@/lib/utils';
 
 export default function JobOrders({ jobOrders }) {
   const [showAll, setShowAll] = useState(false);
@@ -11,11 +12,7 @@ export default function JobOrders({ jobOrders }) {
   
   const formatDate = (dateStr) => {
     if (!dateStr) return 'N/A';
-    return new Date(dateStr).toLocaleDateString('en-PH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return formatPHDate(dateStr);
   };
 
   const getStatusBadge = (status) => {

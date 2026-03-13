@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { LogOut, Search, Receipt, DollarSign, Wallet, CreditCard, Check, AlertCircle, History, Calendar, ChevronDown, ChevronUp, Plus, Filter, X, Printer, Bluetooth, Percent, FileText, Users, Loader2 } from 'lucide-react';
 import { TablePagination } from '@/components/ui/table-pagination';
+import { formatPHDate, formatPHDateTime } from '@/lib/utils';
 
 export default function CashierDashboard({ user, onLogout }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -1349,7 +1350,7 @@ export default function CashierDashboard({ user, onLogout }) {
                                 </div>
                                 <div className="flex items-center justify-between mt-2 pt-2 border-t">
                                   <span className="text-xs text-muted-foreground">
-                                    {new Date(payment.payment_date).toLocaleDateString()}
+                                    {formatPHDate(payment.payment_date)}
                                   </span>
                                   <span className="font-bold text-green-600">
                                     ₱{(payment.total_amount || payment.amount || 0).toLocaleString()}
@@ -1400,7 +1401,7 @@ export default function CashierDashboard({ user, onLogout }) {
                                       </td>
                                       <td className="p-2 font-bold text-green-600">₱{(payment.total_amount || payment.amount || 0).toLocaleString()}</td>
                                       <td className="p-2 capitalize">{payment.mode}</td>
-                                      <td className="p-2 text-xs">{new Date(payment.payment_date).toLocaleDateString()}</td>
+                                      <td className="p-2 text-xs">{formatPHDate(payment.payment_date)}</td>
                                       <td className="p-2 text-center">
                                         <Button
                                           variant="ghost"

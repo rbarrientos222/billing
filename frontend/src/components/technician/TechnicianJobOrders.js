@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { toast } from 'sonner';
+import { formatPHDate, formatPHDateTime } from '@/lib/utils';
 import { 
   Search, ClipboardList, Play, Pause, CheckCircle, XCircle, 
   Eye, Loader2, Package, Plus, Trash2, AlertTriangle, Timer,
@@ -397,7 +398,7 @@ export default function TechnicianJobOrders({ user }) {
                           {jo.scheduled_date && (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <Calendar className="h-4 w-4 shrink-0" />
-                              <span>{new Date(jo.scheduled_date).toLocaleDateString()}</span>
+                              <span>{formatPHDate(jo.scheduled_date)}</span>
                               {jo.scheduled_time_slot && <span>@ {jo.scheduled_time_slot}</span>}
                             </div>
                           )}
@@ -515,15 +516,15 @@ export default function TechnicianJobOrders({ user }) {
               <div className="grid grid-cols-3 gap-4 p-3 bg-muted rounded-lg">
                 <div>
                   <Label className="text-muted-foreground text-xs">Created</Label>
-                  <p className="text-sm">{new Date(selectedJobOrder.created_at).toLocaleString()}</p>
+                  <p className="text-sm">{formatPHDateTime(selectedJobOrder.created_at)}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground text-xs">Started</Label>
-                  <p className="text-sm">{selectedJobOrder.started_at ? new Date(selectedJobOrder.started_at).toLocaleString() : '-'}</p>
+                  <p className="text-sm">{selectedJobOrder.started_at ? formatPHDateTime(selectedJobOrder.started_at) : '-'}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground text-xs">Completed</Label>
-                  <p className="text-sm">{selectedJobOrder.completed_at ? new Date(selectedJobOrder.completed_at).toLocaleString() : '-'}</p>
+                  <p className="text-sm">{selectedJobOrder.completed_at ? formatPHDateTime(selectedJobOrder.completed_at) : '-'}</p>
                 </div>
               </div>
               

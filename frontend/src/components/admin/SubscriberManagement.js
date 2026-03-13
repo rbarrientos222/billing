@@ -16,6 +16,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { Plus, Search, Loader2, Calculator, Calendar, MoreHorizontal, Edit, Power, PowerOff, Trash2, DollarSign, RefreshCw, Wifi, Package, FileText, Receipt, ChevronDown, User, CreditCard, Server, Edit2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { formatPHDate, formatPHDateTime } from '@/lib/utils';
 
 export default function SubscriberManagement() {
   const [subscribers, setSubscribers] = useState([]);
@@ -1880,7 +1881,7 @@ export default function SubscriberManagement() {
                                     </div>
                                     {/* Show date on mobile */}
                                     <div className="text-xs text-muted-foreground md:hidden">
-                                      {new Date(payment.payment_date).toLocaleDateString()}
+                                      {formatPHDate(payment.payment_date)}
                                     </div>
                                   </div>
                                 </TableCell>
@@ -1901,7 +1902,7 @@ export default function SubscriberManagement() {
                                 </TableCell>
                                 {/* Date - hidden on mobile */}
                                 <TableCell className="hidden md:table-cell text-sm">
-                                  {new Date(payment.payment_date).toLocaleString()}
+                                  {formatPHDateTime(payment.payment_date)}
                                 </TableCell>
                                 {/* Received By - hidden on mobile/tablet */}
                                 <TableCell className="hidden lg:table-cell text-sm">

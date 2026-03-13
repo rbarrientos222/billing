@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { toast } from 'sonner';
+import { formatPHDate, formatPHDateTime } from '@/lib/utils';
 import { 
   Plus, Search, ClipboardList, Clock, AlertTriangle, CheckCircle, 
   XCircle, Pause, Play, Edit, Trash2, Eye, Loader2, Users, Calendar,
@@ -639,7 +640,7 @@ export default function JobOrderManagement() {
                       </div>
                       <div className="flex items-center justify-between pt-2 border-t">
                         <span className="text-xs text-muted-foreground">
-                          {new Date(jo.created_at).toLocaleDateString()}
+                          {formatPHDate(jo.created_at)}
                         </span>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openViewDialog(jo)}>
@@ -719,7 +720,7 @@ export default function JobOrderManagement() {
                             </div>
                           </TableCell>
                           <TableCell className="text-xs">
-                            {new Date(jo.created_at).toLocaleDateString()}
+                            {formatPHDate(jo.created_at)}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
@@ -949,7 +950,7 @@ export default function JobOrderManagement() {
                 <div>
                   <Label className="text-muted-foreground">Schedule</Label>
                   <p className="text-sm">
-                    {selectedJobOrder.scheduled_date ? new Date(selectedJobOrder.scheduled_date).toLocaleDateString() : '-'}
+                    {selectedJobOrder.scheduled_date ? formatPHDate(selectedJobOrder.scheduled_date) : '-'}
                     {selectedJobOrder.scheduled_time_slot && ` @ ${selectedJobOrder.scheduled_time_slot}`}
                   </p>
                 </div>
@@ -958,15 +959,15 @@ export default function JobOrderManagement() {
               <div className="grid grid-cols-3 gap-4 p-3 bg-muted rounded-lg">
                 <div>
                   <Label className="text-muted-foreground text-xs">Created</Label>
-                  <p className="text-sm">{new Date(selectedJobOrder.created_at).toLocaleString()}</p>
+                  <p className="text-sm">{formatPHDateTime(selectedJobOrder.created_at)}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground text-xs">Started</Label>
-                  <p className="text-sm">{selectedJobOrder.started_at ? new Date(selectedJobOrder.started_at).toLocaleString() : '-'}</p>
+                  <p className="text-sm">{selectedJobOrder.started_at ? formatPHDateTime(selectedJobOrder.started_at) : '-'}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground text-xs">Completed</Label>
-                  <p className="text-sm">{selectedJobOrder.completed_at ? new Date(selectedJobOrder.completed_at).toLocaleString() : '-'}</p>
+                  <p className="text-sm">{selectedJobOrder.completed_at ? formatPHDateTime(selectedJobOrder.completed_at) : '-'}</p>
                 </div>
               </div>
               
