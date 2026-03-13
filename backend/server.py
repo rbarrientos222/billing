@@ -2331,7 +2331,7 @@ async def get_monthly_sales(current_user: dict = Depends(get_current_user)):
     if current_user['role'] not in ['admin', 'billing']:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     months = []
     
     for i in range(11, -1, -1):
@@ -3082,7 +3082,7 @@ async def change_subscriber_plan(account_number: str, data: dict, current_user: 
     old_plan_id = subscriber.get('plan_id')
     old_plan = await db.subscription_plans.find_one({"name": old_plan_id}) if old_plan_id else None
     
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     response = {
         "message": "Plan changed successfully",
         "old_plan": old_plan_id,
@@ -3199,7 +3199,7 @@ async def deactivate_subscriber(account_number: str, data: dict, current_user: d
     reason = data.get('reason', 'Deactivated by admin')
     generate_final_bill = data.get('generate_final_bill', True)
     
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     response = {
         "message": "Subscriber deactivated successfully",
         "account_number": account_number,
@@ -3353,7 +3353,7 @@ async def reactivate_subscriber(account_number: str, data: dict, current_user: d
     if not new_profile:
         raise HTTPException(status_code=400, detail="PPPoE profile required")
     
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     response = {
         "message": "Subscriber reactivated successfully",
         "account_number": account_number,
@@ -3566,7 +3566,7 @@ async def add_manual_charge(account_number: str, data: dict, current_user: dict 
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid amount")
     
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     
     # Generate full description with date
     date_str = now.strftime("%m/%d/%y")
@@ -3820,7 +3820,7 @@ async def process_centralized_payment(data: dict, current_user: dict = Depends(g
     if not subscriber:
         raise HTTPException(status_code=404, detail="Subscriber not found")
     
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     or_number = f"OR{now.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
     
     # Calculate total discount amount
@@ -4105,7 +4105,7 @@ async def admin_apply_wallet_credits(
     total_applied = 0
     invoices_fully_paid = 0
     invoices_partially_paid = 0
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     
     remaining_wallet = wallet_balance
     
@@ -4263,7 +4263,7 @@ async def add_wallet_credit(account_number: str, data: dict, current_user: dict 
     if not subscriber:
         raise HTTPException(status_code=404, detail="Subscriber not found")
     
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     or_number = f"OR{now.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}"
     
     # Update subscriber wallet
@@ -4693,7 +4693,7 @@ async def list_job_orders(
     
     # Check SLA breach for each job order
     sla_settings = await db.settings.find_one({"type": "sla"}, {"_id": 0}) or {}
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     
     for jo in job_orders:
         if jo.get("status") not in ["Completed", "Cancelled"]:
@@ -4724,7 +4724,7 @@ async def get_job_order_stats(current_user: dict = Depends(get_current_user)):
     completed_count = 0
     
     sla_settings = await db.settings.find_one({"type": "sla"}, {"_id": 0}) or {}
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     
     for jo in job_orders:
         status = jo.get("status", "Open")
@@ -4781,7 +4781,7 @@ async def get_technician_job_orders(username: str, current_user: dict = Depends(
     ).sort("created_at", -1).to_list(1000)
     
     sla_settings = await db.settings.find_one({"type": "sla"}, {"_id": 0}) or {}
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     
     for jo in job_orders:
         if jo.get("status") not in ["Completed", "Cancelled"]:
@@ -5857,7 +5857,7 @@ async def add_purchase_payment(purchase_id: str, payment: PurchasePayment, curre
     
     payment_dict = payment.model_dump()
     payment_dict['payment_id'] = generate_payment_id()
-    payment_dict['payment_date'] = datetime.now(timezone.utc)
+    payment_dict['payment_date'] = get_ph_now()
     
     # Calculate new totals
     new_amount_paid = purchase.get('amount_paid', 0) + payment_dict['amount']
@@ -6032,7 +6032,7 @@ async def get_expense_stats(current_user: dict = Depends(get_current_user)):
     if current_user['role'] not in ['admin', 'billing']:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     
     # Total expenses
@@ -6073,7 +6073,7 @@ async def get_expense_analytics(current_user: dict = Depends(get_current_user)):
     if current_user['role'] not in ['admin', 'billing']:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     
     # Get all expenses
     all_expenses = await db.expenses.find({}, {"_id": 0}).to_list(10000)
@@ -6398,7 +6398,7 @@ async def get_receipt_data(or_number: str, current_user: dict = Depends(get_curr
             "address": address,
             "total_amount": payment.get('total_amount', payment.get('amount', 0)),
             "mode": payment.get('mode', 'Cash'),
-            "payment_date": payment.get('payment_date').isoformat() if payment.get('payment_date') else None,
+            "payment_date": to_ph_time(payment.get('payment_date')).isoformat() if payment.get('payment_date') else None,
             "received_by": payment.get('received_by', 'Cashier'),
             "invoices_settled": payment.get('invoices_settled', []),
             "invoices_partial": payment.get('invoices_partial', []),
@@ -6563,7 +6563,7 @@ async def get_dashboard_stats(
     """Get dashboard statistics with optional time period filter"""
     
     # Calculate date range based on period
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     date_filter = None
     
     if period == "daily":
@@ -6699,7 +6699,7 @@ async def get_billing_overview(
     if current_user['role'] not in ['admin', 'billing']:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    now = datetime.now(timezone.utc)
+    now = get_ph_now()
     date_filter = None
     
     if period == "daily":
