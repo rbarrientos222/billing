@@ -538,7 +538,7 @@ export default function TechnicianJobOrders({ user }) {
                       <div key={idx} className="p-3 border rounded-lg bg-muted/30">
                         <p className="font-medium text-sm">{mat.name}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                          <span className="font-semibold text-foreground">{mat.quantity} {mat.unit}</span>
+                          <span className="font-semibold text-foreground">{mat.quantity} {mat.unit || 'pcs'}</span>
                           {(mat.mac_address || mat.serial_number) && (
                             <span className="font-mono truncate">• {mat.mac_address || mat.serial_number}</span>
                           )}
@@ -696,7 +696,7 @@ export default function TechnicianJobOrders({ user }) {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{mat.name}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                          <span className="font-semibold text-foreground">{mat.quantity} {mat.unit}</span>
+                          <span className="font-semibold text-foreground">{mat.quantity} {mat.unit || 'pcs'}</span>
                           {(mat.mac_address || mat.serial_number) && (
                             <span className="font-mono truncate">• {mat.mac_address || mat.serial_number}</span>
                           )}

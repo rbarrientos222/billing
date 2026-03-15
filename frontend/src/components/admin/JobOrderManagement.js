@@ -985,7 +985,7 @@ export default function JobOrderManagement() {
                     {selectedJobOrder.materials_used.map((mat, idx) => (
                       <div key={idx} className="flex items-center justify-between p-2 bg-muted rounded">
                         <span className="text-sm">{mat.name}</span>
-                        <span className="text-sm font-medium">{mat.quantity} {mat.unit}</span>
+                        <span className="text-sm font-medium">{mat.quantity} {mat.unit || 'pcs'}</span>
                       </div>
                     ))}
                   </div>

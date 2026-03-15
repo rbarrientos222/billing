@@ -41,9 +41,26 @@ def get_ph_now():
 
 def to_ph_time(dt: datetime) -> datetime:
     """Convert a datetime to Philippine Standard Time"""
+    if dt is None:
+        return None
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(PH_TIMEZONE)
+
+def convert_job_order_times(jo: dict) -> dict:
+    """Convert all datetime fields in a job order to Philippine time ISO format"""
+    datetime_fields = ['created_at', 'started_at', 'completed_at', 'scheduled_date', 'updated_at']
+    for field in datetime_fields:
+        value = jo.get(field)
+        if value:
+            if isinstance(value, str):
+                try:
+                    value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+                except:
+                    continue
+            if isinstance(value, datetime):
+                jo[field] = to_ph_time(value).isoformat()
+    return jo
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -1364,6 +1381,11 @@ async def get_subscriber_job_orders(current_subscriber: dict = Depends(get_curre
     job_orders = await db.job_orders.find({
         "subscriber_id": current_subscriber['account_number']
     }, {"_id": 0}).sort("created_at", -1).to_list(50)
+    
+    # Convert datetime fields to Philippine time
+    for jo in job_orders:
+        convert_job_order_times(jo)
+    
     return job_orders
 
 # ========== SUBSCRIBER CHAT SUPPORT ==========
@@ -4691,6 +4713,10 @@ async def list_job_orders(
     
     job_orders = await db.job_orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     
+    # Convert all datetime fields to Philippine time
+    for jo in job_orders:
+        convert_job_order_times(jo)
+    
     # Check SLA breach for each job order
     sla_settings = await db.settings.find_one({"type": "sla"}, {"_id": 0}) or {}
     now = get_ph_now()
@@ -4780,6 +4806,10 @@ async def get_technician_job_orders(username: str, current_user: dict = Depends(
         {"_id": 0}
     ).sort("created_at", -1).to_list(1000)
     
+    # Convert all datetime fields to Philippine time
+    for jo in job_orders:
+        convert_job_order_times(jo)
+    
     sla_settings = await db.settings.find_one({"type": "sla"}, {"_id": 0}) or {}
     now = get_ph_now()
     
@@ -4805,6 +4835,8 @@ async def get_job_order(job_order_id: str, current_user: dict = Depends(get_curr
     job_order = await db.job_orders.find_one({"job_order_id": job_order_id}, {"_id": 0})
     if not job_order:
         raise HTTPException(status_code=404, detail="Job order not found")
+    # Convert datetime fields to Philippine time
+    convert_job_order_times(job_order)
     return job_order
 
 @api_router.post("/joborders")
@@ -4837,7 +4869,7 @@ async def create_job_order(job_data: JobOrderCreate, current_user: dict = Depend
         "notes": job_data.notes,
         "materials_used": [],
         "created_by": current_user['username'],
-        "created_at": datetime.now(timezone.utc),
+        "created_at": get_ph_now(),
         "started_at": None,
         "completed_at": None,
         "time_rendered_minutes": None,
@@ -4911,7 +4943,7 @@ async def start_job_order(job_order_id: str, current_user: dict = Depends(get_cu
         {"job_order_id": job_order_id},
         {"$set": {
             "status": "In Progress",
-            "started_at": datetime.now(timezone.utc)
+            "started_at": get_ph_now()
         }}
     )
     
@@ -4934,7 +4966,7 @@ async def complete_job_order(
     if job_order.get("status") not in ["Open", "In Progress"]:
         raise HTTPException(status_code=400, detail="Job order cannot be completed from current status")
     
-    completed_at = datetime.now(timezone.utc)
+    completed_at = get_ph_now()
     started_at = job_order.get("started_at") or job_order.get("created_at")
     
     if isinstance(started_at, str):
