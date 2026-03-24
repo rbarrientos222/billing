@@ -306,8 +306,9 @@ export default function TechnicianJobOrders({ user }) {
 
   const formatTime = (minutes) => {
     if (!minutes) return '-';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+    const totalMins = Math.round(minutes); // Round to avoid floating point precision issues
+    const hours = Math.floor(totalMins / 60);
+    const mins = totalMins % 60;
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
