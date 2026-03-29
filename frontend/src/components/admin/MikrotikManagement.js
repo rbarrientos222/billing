@@ -28,6 +28,9 @@ export default function MikrotikManagement() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedRouter, setSelectedRouter] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [testResultDialog, setTestResultDialog] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const [testingDetailed, setTestingDetailed] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -147,15 +150,37 @@ export default function MikrotikManagement() {
     }
   };
 
-  const handleTestConnection = async (router) => {
+  const handleTestConnection = async (router, showDetailedDialog = false) => {
+    if (showDetailedDialog) {
+      setTestingDetailed(true);
+      setTestResult(null);
+      setSelectedRouter(router);
+      setTestResultDialog(true);
+    }
+    
     setTesting({ ...testing, [router.router_id]: true });
     try {
-      const response = await axios.post(`/mikrotik/routers/${router.router_id}/test`, {}, {
-        timeout: 10000
+      // Use the detailed test-connection endpoint
+      const response = await axios.post('/mikrotik/test-connection', {
+        ip_address: router.ip_address,
+        port: router.port || 8728,
+        username: router.username,
+        password: router.password, // Will use saved password if empty
+        version: router.version || 'v7'
+      }, {
+        timeout: 30000
       });
+      
+      if (showDetailedDialog) {
+        setTestResult(response.data);
+        setTestingDetailed(false);
+      }
+      
       if (response.data.success) {
-        toast.success(`${router.name}: Connection successful! (${response.data.active_clients || 0} clients)`);
-        // Update just this router's stats directly instead of refetching all
+        if (!showDetailedDialog) {
+          toast.success(`${router.name}: Connection successful! (${response.data.router_info?.active_clients || 0} clients)`);
+        }
+        // Update this router's stats
         setRouters(prev => prev.map(r => 
           r.router_id === router.router_id 
             ? { 
@@ -163,25 +188,38 @@ export default function MikrotikManagement() {
                 stats: { 
                   connected: true, 
                   loading: false,
-                  ...response.data.stats,
-                  active_clients: response.data.active_clients
+                  ...response.data.router_info,
+                  active_clients: response.data.router_info?.active_clients
                 } 
               }
             : r
         ));
       } else {
-        toast.error(`${router.name}: ${response.data.error || 'Connection failed'}`);
+        const lastStep = response.data.steps?.[response.data.steps.length - 1];
+        const errorMsg = lastStep?.error || lastStep?.message || 'Connection failed';
+        if (!showDetailedDialog) {
+          toast.error(`${router.name}: ${errorMsg}`);
+        }
         setRouters(prev => prev.map(r => 
           r.router_id === router.router_id 
-            ? { ...r, stats: { connected: false, loading: false, error: response.data.error } }
+            ? { ...r, stats: { connected: false, loading: false, error: errorMsg } }
             : r
         ));
       }
     } catch (error) {
-      toast.error(`${router.name}: Test failed - ${error.message}`);
+      const errorMsg = error.response?.data?.detail || error.message;
+      if (showDetailedDialog) {
+        setTestResult({ 
+          success: false, 
+          steps: [{ step: 'Connection', status: 'failed', message: 'Request failed', error: errorMsg }] 
+        });
+        setTestingDetailed(false);
+      } else {
+        toast.error(`${router.name}: Test failed - ${errorMsg}`);
+      }
       setRouters(prev => prev.map(r => 
         r.router_id === router.router_id 
-          ? { ...r, stats: { connected: false, loading: false } }
+          ? { ...r, stats: { connected: false, loading: false, error: errorMsg } }
           : r
       ));
     } finally {
@@ -403,7 +441,7 @@ export default function MikrotikManagement() {
                         variant="ghost" 
                         size="sm" 
                         className="h-8 w-8 p-0 hidden sm:flex"
-                        onClick={() => handleTestConnection(router)}
+                        onClick={() => handleTestConnection(router, false)}
                         disabled={testing[router.router_id]}
                       >
                         {testing[router.router_id] 
@@ -419,9 +457,13 @@ export default function MikrotikManagement() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleTestConnection(router)}>
+                          <DropdownMenuItem onClick={() => handleTestConnection(router, false)}>
                             <Zap className="mr-2 h-4 w-4" />
-                            Test Connection
+                            Quick Test
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleTestConnection(router, true)}>
+                            <Activity className="mr-2 h-4 w-4" />
+                            Detailed Test
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => openEditDialog(router)}>
                             <Edit2 className="mr-2 h-4 w-4" />
@@ -615,6 +657,120 @@ export default function MikrotikManagement() {
             <Button onClick={handleUpdateRouter} disabled={submitting}>
               {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Test Connection Result Dialog */}
+      <Dialog open={testResultDialog} onOpenChange={setTestResultDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Connection Test: {selectedRouter?.name}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedRouter?.ip_address}:{selectedRouter?.port || 8728}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            {testingDetailed ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-3">Testing connection...</span>
+              </div>
+            ) : testResult ? (
+              <div className="space-y-4">
+                {/* Overall Status */}
+                <div className={`p-3 rounded-lg flex items-center gap-3 ${testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                  {testResult.success ? (
+                    <CheckCircle className="h-6 w-6 text-green-600" />
+                  ) : (
+                    <XCircle className="h-6 w-6 text-red-600" />
+                  )}
+                  <div>
+                    <p className={`font-semibold ${testResult.success ? 'text-green-700' : 'text-red-700'}`}>
+                      {testResult.success ? 'Connection Successful' : 'Connection Failed'}
+                    </p>
+                    {testResult.router_info && (
+                      <p className="text-sm text-green-600">
+                        {testResult.router_info.active_clients} active clients
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Step by Step Results */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">Connection Steps:</p>
+                  {testResult.steps?.map((step, idx) => (
+                    <div key={idx} className={`p-3 rounded border ${step.status === 'success' ? 'bg-green-50/50 border-green-200' : 'bg-red-50/50 border-red-200'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {step.status === 'success' ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-red-600" />
+                          )}
+                          <span className="font-medium text-sm">{step.step}</span>
+                        </div>
+                        {step.time_ms && (
+                          <span className="text-xs text-muted-foreground">{step.time_ms}ms</span>
+                        )}
+                      </div>
+                      <p className="text-sm mt-1 ml-6">{step.message}</p>
+                      {step.error && (
+                        <p className="text-sm mt-1 ml-6 text-red-600 font-mono bg-red-100 p-2 rounded text-xs">
+                          Error: {step.error}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Router Info if successful */}
+                {testResult.router_info && (
+                  <div className="border rounded-lg p-3 bg-muted/30">
+                    <p className="text-sm font-medium mb-2">Router Information:</p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Version:</span>
+                        <span className="ml-2 font-mono">{testResult.router_info.version || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Board:</span>
+                        <span className="ml-2 font-mono">{testResult.router_info.board_name || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">CPU Load:</span>
+                        <span className="ml-2 font-mono">{testResult.router_info.cpu_load || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Memory:</span>
+                        <span className="ml-2 font-mono">{testResult.router_info.free_memory || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Uptime:</span>
+                        <span className="ml-2 font-mono">{testResult.router_info.uptime || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Active Clients:</span>
+                        <span className="ml-2 font-mono font-bold text-green-600">{testResult.router_info.active_clients || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTestResultDialog(false)}>Close</Button>
+            <Button onClick={() => handleTestConnection(selectedRouter, true)} disabled={testingDetailed}>
+              {testingDetailed ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+              Retest
             </Button>
           </DialogFooter>
         </DialogContent>
