@@ -314,14 +314,229 @@ async def auto_generate_billing():
     
     logger.info(f"Automatic billing completed. Generated {invoices_generated} invoices.")
     
+    # Also generate prorated bills for deactivated subscribers
+    prorated_invoices = await generate_prorated_bills_for_inactive_periods()
+    
     # Log billing run
     await db.billing_logs.insert_one({
         "run_date": today,
         "invoices_generated": invoices_generated,
+        "prorated_invoices": prorated_invoices,
         "status": "completed"
     })
     
+    return invoices_generated + prorated_invoices
+
+async def generate_prorated_bills_for_inactive_periods():
+    """
+    Generate prorated bills for subscribers who were deactivated/reactivated during the billing period.
+    This is called on billing day to generate disconnection and reactivation prorated bills.
+    
+    Logic:
+    - If deactivated and NOT reactivated in the same month: Generate disconnection prorated bill
+    - If reactivated without generate_prorated_bill flag: Generate reactivation prorated bill
+    - If both events in same month: Combine into appropriate bills
+    """
+    today = get_ph_now()
+    current_month_start = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    logger.info(f"Generating prorated bills for inactive periods (Month: {today.strftime('%B %Y')})")
+    invoices_generated = 0
+    
+    # Find all inactive subscribers who were deactivated this month
+    deactivated_subs = await db.subscribers.find({
+        "is_active": False,
+        "deactivated_at": {"$gte": current_month_start.isoformat()}
+    }).to_list(10000)
+    
+    for sub in deactivated_subs:
+        account_number = sub['account_number']
+        billing_day = sub.get('billing_day', 30)
+        
+        # Check if today is billing day
+        last_day_of_month = calendar.monthrange(today.year, today.month)[1]
+        actual_billing_day = min(billing_day, last_day_of_month)
+        
+        if today.day != actual_billing_day:
+            continue
+        
+        # Get plan
+        plan = await db.subscription_plans.find_one({"name": sub.get('plan_id')})
+        if not plan:
+            continue
+        
+        # Get deactivation date
+        deactivated_at = sub.get('deactivated_at')
+        if deactivated_at:
+            if isinstance(deactivated_at, str):
+                deactivated_at = datetime.fromisoformat(deactivated_at.replace('Z', '+00:00'))
+            if deactivated_at.tzinfo is None:
+                deactivated_at = deactivated_at.replace(tzinfo=PH_TIMEZONE)
+        
+        # Calculate days active before deactivation (from billing period start to deactivation)
+        prev_billing_day = today.replace(day=actual_billing_day) - timedelta(days=30)
+        if prev_billing_day.month == today.month:
+            prev_billing_day = prev_billing_day.replace(month=today.month - 1 if today.month > 1 else 12, 
+                                                        year=today.year if today.month > 1 else today.year - 1)
+        
+        period_start = prev_billing_day
+        
+        if deactivated_at >= period_start and deactivated_at < today:
+            # Calculate days active
+            days_active = (deactivated_at.date() - period_start.date()).days
+            if days_active <= 0:
+                days_active = 1  # Minimum 1 day
+            
+            # Calculate prorated amount
+            daily_rate = plan['price'] / 30
+            prorated_amount = round(daily_rate * days_active, 2)
+            
+            # Check if invoice already exists
+            existing = await db.invoices.find_one({
+                "subscriber_id": account_number,
+                "type": "disconnection_prorated",
+                "billing_start": {"$gte": period_start}
+            })
+            
+            if not existing:
+                due_date = today + timedelta(days=5)
+                invoice = {
+                    "invoice_number": f"INV{today.strftime('%Y%m%d')}{str(uuid.uuid4())[:6].upper()}",
+                    "subscriber_id": account_number,
+                    "subscriber_name": f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip(),
+                    "plan_name": plan['name'],
+                    "amount": prorated_amount,
+                    "paid_amount": 0,
+                    "description": f"Bill: {period_start.strftime('%b %d')} - {deactivated_at.strftime('%b %d, %Y')} ({days_active} days)",
+                    "type": "disconnection_prorated",
+                    "billing_day": billing_day,
+                    "billing_start": period_start,
+                    "billing_end": deactivated_at,
+                    "due_date": due_date,
+                    "paid": False,
+                    "is_prorated": True,
+                    "created_at": today
+                }
+                await db.invoices.insert_one(invoice)
+                invoices_generated += 1
+                logger.info(f"Generated DISCONNECTION prorated invoice for {account_number}: {days_active} days = ₱{prorated_amount}")
+    
+    logger.info(f"Prorated billing for inactive periods completed. Generated {invoices_generated} invoices.")
     return invoices_generated
+
+async def check_grace_period_expiration():
+    """
+    Check for subscribers whose grace period has expired and auto-deactivate them.
+    Grace period starts from the due date of the last unpaid invoice.
+    Runs daily along with billing check.
+    """
+    today = get_ph_now()
+    logger.info(f"Running grace period check (PH Time: {today.strftime('%Y-%m-%d %H:%M:%S')})")
+    
+    # Get all active subscribers with a grace period set
+    subscribers = await db.subscribers.find({
+        "is_active": True,
+        "grace_period_days": {"$exists": True, "$gte": 0}
+    }).to_list(10000)
+    
+    deactivated_count = 0
+    
+    for sub in subscribers:
+        account_number = sub['account_number']
+        grace_period_days = sub.get('grace_period_days', 5)
+        
+        # Skip if grace period is 0 (no auto-deactivation)
+        if grace_period_days == 0:
+            continue
+        
+        # Check for unpaid invoices past due date
+        unpaid_invoices = await db.invoices.find({
+            "subscriber_id": account_number,
+            "paid": False
+        }).sort("due_date", 1).to_list(100)
+        
+        if not unpaid_invoices:
+            continue
+        
+        # Get the oldest unpaid invoice's due date
+        oldest_unpaid = unpaid_invoices[0]
+        due_date = oldest_unpaid.get('due_date')
+        
+        if not due_date:
+            continue
+        
+        if isinstance(due_date, str):
+            try:
+                due_date = datetime.fromisoformat(due_date.replace('Z', '+00:00'))
+            except:
+                continue
+        
+        if due_date.tzinfo is None:
+            due_date = due_date.replace(tzinfo=PH_TIMEZONE)
+        
+        # Calculate expiration date
+        expiration_date = due_date + timedelta(days=grace_period_days)
+        
+        # Check if grace period has expired
+        if today >= expiration_date:
+            logger.info(f"Grace period expired for {account_number}. Due: {due_date.strftime('%Y-%m-%d')}, Expiry: {expiration_date.strftime('%Y-%m-%d')}")
+            
+            # Deactivate subscriber
+            await db.subscribers.update_one(
+                {"account_number": account_number},
+                {"$set": {
+                    "is_active": False,
+                    "deactivated_at": today.isoformat(),
+                    "deactivation_reason": "grace_period_expired",
+                    "previous_pppoe_profile": sub.get('pppoe_profile')
+                }}
+            )
+            
+            # Deactivate PPPoE in Mikrotik
+            try:
+                mikrotik_ids = sub.get('mikrotik_ids') or []
+                if not mikrotik_ids:
+                    # Get all active routers
+                    routers = await db.mikrotik_routers.find({"is_active": True}, {"_id": 0}).to_list(100)
+                    mikrotik_ids = [r.get('router_id') for r in routers]
+                
+                for router_id in mikrotik_ids:
+                    router = await db.mikrotik_routers.find_one({"router_id": router_id}, {"_id": 0})
+                    if router:
+                        try:
+                            service = MikrotikService(router)
+                            if service.connect():
+                                # Disable PPPoE secret
+                                service.disable_pppoe_secret(sub.get('pppoe_username'))
+                                # Remove from active connections
+                                service.remove_active_connection(sub.get('pppoe_username'))
+                                service.disconnect()
+                                logger.info(f"Deactivated PPPoE for {account_number} on router {router_id}")
+                        except Exception as e:
+                            logger.error(f"Failed to deactivate PPPoE on router {router_id}: {e}")
+            except Exception as e:
+                logger.error(f"Failed to deactivate PPPoE for {account_number}: {e}")
+            
+            deactivated_count += 1
+            
+            # Log the deactivation
+            await db.audit_logs.insert_one({
+                "user": "system",
+                "action": "grace_period_deactivation",
+                "target_type": "subscriber",
+                "target_id": account_number,
+                "changes": {
+                    "reason": "grace_period_expired",
+                    "grace_period_days": grace_period_days,
+                    "oldest_unpaid_invoice": oldest_unpaid.get('invoice_number'),
+                    "due_date": due_date.isoformat(),
+                    "expiration_date": expiration_date.isoformat()
+                },
+                "timestamp": today.isoformat()
+            })
+    
+    logger.info(f"Grace period check completed. Deactivated {deactivated_count} subscribers.")
+    return deactivated_count
 
 # ========== MODELS ==========
 class User(BaseModel):
@@ -385,8 +600,12 @@ class Subscriber(BaseModel):
     pppoe_status: Optional[dict] = None  # Track PPPoE status per router {router_id: {created: bool, activated: bool}}
     plan_id: str  # Required - Subscription Plan
     billing_day: int = 30  # Day of month (1-31)
+    grace_period_days: int = 5  # Days before account is auto-deactivated (0-30)
+    grace_period_start: Optional[str] = None  # ISO date when grace period started
     installation_date: Optional[str] = None  # ISO date string
     is_active: bool = True
+    deactivated_at: Optional[str] = None  # ISO date when account was deactivated
+    deactivation_reason: Optional[str] = None  # Reason for deactivation (grace_period_expired, manual, etc.)
     modem_mac: Optional[str] = None
     assigned_unit_id: Optional[str] = None  # Modem/Equipment - Now optional
     generate_prorated_bill: bool = True  # If False, wait for next billing cycle
@@ -6967,8 +7186,19 @@ async def startup_event():
                 replace_existing=True
             )
             
+            # Schedule grace period check to run 1 minute after billing
+            grace_check_minute = (minute + 1) % 60
+            grace_check_hour = hour if grace_check_minute > minute else (hour + 1) % 24
+            scheduler.add_job(
+                check_grace_period_expiration,
+                CronTrigger(hour=grace_check_hour, minute=grace_check_minute, timezone=PH_TIMEZONE),
+                id='grace_period_check',
+                replace_existing=True
+            )
+            
             scheduler.start()
             logger.info(f"Automatic billing scheduler started - runs daily at {billing_time} (Philippine Time)")
+            logger.info(f"Grace period check scheduled - runs daily at {grace_check_hour:02d}:{grace_check_minute:02d} (Philippine Time)")
         else:
             logger.info("Automatic billing is disabled")
     except Exception as e:

@@ -1,8 +1,45 @@
 # Billing System - Product Requirements Document
 
-## Last Updated: March 10, 2026
+## Last Updated: March 29, 2026
 
-### Latest Feature (March 10, 2026) - Invoice Adjustment
+### Latest Feature (March 29, 2026) - Grace Period & Billing Improvements
+- **ADDED:** Grace Period for Subscribers
+  - New field `grace_period_days` in subscriber registration (default: 5, range: 0-30)
+  - Added to Subscriber model with fields:
+    - `grace_period_days`: Number of days after due date before auto-deactivation
+    - `grace_period_start`: Date when grace period started
+    - `deactivated_at`: Timestamp of deactivation
+    - `deactivation_reason`: Reason for deactivation (grace_period_expired, manual, etc.)
+  - Auto-deactivation scheduler runs daily after billing job
+  - When grace period expires:
+    - Account is deactivated
+    - PPPoE account disabled in Mikrotik
+    - Active connection removed
+    - Audit log created
+  - No automatic prorated bill on grace period expiration
+
+- **UPDATED:** Reactivation Flow
+  - "Generate prorated bill" checkbox now defaults to UNCHECKED
+  - Prorated bills (disconnection & reactivation) generated on billing day instead
+
+- **ADDED:** Prorated Billing for Inactive Periods
+  - New function `generate_prorated_bills_for_inactive_periods()`
+  - On billing day, generates:
+    - Disconnection prorated bill (days active before deactivation)
+    - Reactivation prorated bill (days active after reactivation)
+  - Same month deactivation/reactivation: Combined billing
+  - Different month events: Separate invoices
+
+- **UPDATED:** Scheduler Jobs
+  - Billing job: 00:01 Philippine Time
+  - Grace period check: 00:02 Philippine Time
+
+### Previous Updates (March 13-29, 2026)
+- Fixed receipt timestamps to use Philippine time
+- Fixed job order timestamps to use Philippine time
+- Fixed formatTime floating point precision issue (45.399... → 45m)
+
+### Previous Feature (March 10, 2026) - Invoice Adjustment
 - **ADDED:** Invoice Amount Adjustment with Audit Trail
   - New "Adjust" button (pencil icon) in Invoices tab for unpaid invoices
   - Adjustment dialog with:

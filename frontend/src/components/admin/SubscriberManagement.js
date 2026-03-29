@@ -102,6 +102,7 @@ export default function SubscriberManagement() {
     province: '',
     plan_id: '',
     billing_day: 30,
+    grace_period_days: 5,  // Default grace period
     installation_date: new Date().toISOString().split('T')[0],
     modem_mac: '',
     pppoe_username: '',
@@ -356,6 +357,7 @@ export default function SubscriberManagement() {
         province: '',
         plan_id: '', 
         billing_day: 30,
+        grace_period_days: 5,
         installation_date: new Date().toISOString().split('T')[0],
         modem_mac: '',
         pppoe_username: '',
@@ -671,7 +673,7 @@ export default function SubscriberManagement() {
     setReactivateForm({
       pppoe_profile: subscriber.previous_pppoe_profile || '',
       plan_id: subscriber.plan_id || '',
-      generate_prorated_bill: true
+      generate_prorated_bill: false  // Default to false - prorated bill generated on billing day
     });
     setReactivateDialogOpen(true);
   };
@@ -953,6 +955,28 @@ export default function SubscriberManagement() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                
+                <div>
+                  <Label>Grace Period (Days)</Label>
+                  <Select 
+                    value={formData.grace_period_days?.toString() || '5'} 
+                    onValueChange={(value) => setFormData({ ...formData, grace_period_days: parseInt(value) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select grace period" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[200px]">
+                      {Array.from({ length: 31 }, (_, i) => i).map((day) => (
+                        <SelectItem key={day} value={day.toString()}>
+                          {day === 0 ? 'No grace period' : `${day} day${day > 1 ? 's' : ''}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Days after due date before auto-deactivation
+                  </p>
                 </div>
               </div>
               
@@ -1632,6 +1656,16 @@ export default function SubscriberManagement() {
                   {selectedSubscriberHistory?.billing_day 
                     ? `Every ${selectedSubscriberHistory.billing_day}${['st','nd','rd'][((selectedSubscriberHistory.billing_day+90)%100-10)%10-1]||'th'} of the month`
                     : selectedSubscriberHistory?.billing_period || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Grace Period</p>
+                <p className="font-medium">
+                  {selectedSubscriberHistory?.grace_period_days !== undefined 
+                    ? (selectedSubscriberHistory.grace_period_days === 0 
+                        ? 'No grace period' 
+                        : `${selectedSubscriberHistory.grace_period_days} day${selectedSubscriberHistory.grace_period_days > 1 ? 's' : ''}`)
+                    : '5 days (default)'}
                 </p>
               </div>
               <div className="md:col-span-1">
