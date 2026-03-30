@@ -43,6 +43,7 @@ export default function AdminDashboard({ user, onLogout }) {
   const [monthlySales, setMonthlySales] = useState([]);
   const [billingOverview, setBillingOverview] = useState({});
   const [selectedPeriod, setSelectedPeriod] = useState('all');
+  const [expiringGracePeriods, setExpiringGracePeriods] = useState({ total: 0, subscribers: [] });
 
   // Period filter options
   const periodOptions = [
@@ -117,6 +118,7 @@ export default function AdminDashboard({ user, onLogout }) {
     fetchMikrotikStats();
     fetchMonthlySales();
     fetchBillingOverview();
+    fetchExpiringGracePeriods();
   }, [selectedPeriod]);
 
   const fetchDashboardStats = async () => {
@@ -156,6 +158,15 @@ export default function AdminDashboard({ user, onLogout }) {
       setMonthlySales(response.data);
     } catch (error) {
       console.error('Failed to fetch monthly sales:', error);
+    }
+  };
+
+  const fetchExpiringGracePeriods = async () => {
+    try {
+      const response = await axios.get('/subscribers/expiring-grace-periods');
+      setExpiringGracePeriods(response.data);
+    } catch (error) {
+      console.error('Failed to fetch expiring grace periods:', error);
     }
   };
 

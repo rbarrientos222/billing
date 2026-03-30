@@ -2743,6 +2743,82 @@ async def count_subscribers(pppoe_profile: Optional[str] = None, current_user: d
     count = await db.subscribers.count_documents(query)
     return {"count": count}
 
+@api_router.get("/subscribers/expiring-grace-periods")
+async def get_expiring_grace_periods(current_user: dict = Depends(get_current_user)):
+    """
+    Get subscribers whose grace periods are expiring soon (within 7 days).
+    Returns subscribers with unpaid invoices past due date where grace period is about to expire.
+    """
+    today = get_ph_now()
+    expiring_subscribers = []
+    
+    # Get all active subscribers with grace periods
+    subscribers = await db.subscribers.find({
+        "is_active": True,
+        "grace_period_days": {"$exists": True, "$gt": 0}
+    }, {"_id": 0}).to_list(10000)
+    
+    for sub in subscribers:
+        account_number = sub['account_number']
+        grace_period_days = sub.get('grace_period_days', 5)
+        
+        # Check for unpaid invoices
+        unpaid_invoices = await db.invoices.find({
+            "subscriber_id": account_number,
+            "paid": False
+        }).sort("due_date", 1).to_list(100)
+        
+        if not unpaid_invoices:
+            continue
+        
+        # Get the oldest unpaid invoice's due date
+        oldest_unpaid = unpaid_invoices[0]
+        due_date = oldest_unpaid.get('due_date')
+        
+        if not due_date:
+            continue
+        
+        if isinstance(due_date, str):
+            try:
+                due_date = datetime.fromisoformat(due_date.replace('Z', '+00:00'))
+            except:
+                continue
+        
+        if due_date.tzinfo is None:
+            due_date = due_date.replace(tzinfo=PH_TIMEZONE)
+        
+        # Calculate expiration date
+        expiration_date = due_date + timedelta(days=grace_period_days)
+        days_until_expiry = (expiration_date.date() - today.date()).days
+        
+        # Include if expiring within 7 days (including already expired but not yet processed)
+        if days_until_expiry <= 7:
+            total_unpaid = sum(inv.get('amount', 0) - inv.get('paid_amount', 0) for inv in unpaid_invoices)
+            
+            expiring_subscribers.append({
+                "account_number": account_number,
+                "subscriber_name": f"{sub.get('first_name', '')} {sub.get('last_name', '')}".strip(),
+                "phone": sub.get('phone'),
+                "email": sub.get('email'),
+                "plan_id": sub.get('plan_id'),
+                "grace_period_days": grace_period_days,
+                "due_date": due_date.isoformat(),
+                "expiration_date": expiration_date.isoformat(),
+                "days_until_expiry": days_until_expiry,
+                "total_unpaid": total_unpaid,
+                "unpaid_invoice_count": len(unpaid_invoices),
+                "oldest_invoice": oldest_unpaid.get('invoice_number'),
+                "status": "expired" if days_until_expiry < 0 else ("expiring_today" if days_until_expiry == 0 else "expiring_soon")
+            })
+    
+    # Sort by days until expiry (most urgent first)
+    expiring_subscribers.sort(key=lambda x: x['days_until_expiry'])
+    
+    return {
+        "total": len(expiring_subscribers),
+        "subscribers": expiring_subscribers
+    }
+
 @api_router.get("/subscribers")
 async def list_subscribers(current_user: dict = Depends(get_current_user)):
     subscribers = await db.subscribers.find({}, {"_id": 0}).to_list(1000)
@@ -3088,7 +3164,7 @@ async def update_subscriber_details(account_number: str, data: dict, current_use
         raise HTTPException(status_code=404, detail="Subscriber not found")
     
     # Fields that can be updated
-    allowed_fields = ['first_name', 'last_name', 'email', 'phone', 'street', 'barangay', 'municipality', 'province', 'modem_mac', 'mikrotik_ids']
+    allowed_fields = ['first_name', 'last_name', 'email', 'phone', 'street', 'barangay', 'municipality', 'province', 'modem_mac', 'mikrotik_ids', 'grace_period_days', 'billing_day']
     
     # Track changes for audit log
     changes = []

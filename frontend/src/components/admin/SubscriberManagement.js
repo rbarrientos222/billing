@@ -81,7 +81,9 @@ export default function SubscriberManagement() {
     municipality: '',
     province: '',
     modem_mac: '',
-    mikrotik_ids: []
+    mikrotik_ids: [],
+    grace_period_days: 5,
+    billing_day: 30
   });
   const [editProvinces, setEditProvinces] = useState([]);
   const [editMunicipalities, setEditMunicipalities] = useState([]);
@@ -543,7 +545,9 @@ export default function SubscriberManagement() {
       municipality: subscriber.municipality || '',
       province: subscriber.province || '',
       modem_mac: subscriber.modem_mac || '',
-      mikrotik_ids: subscriber.mikrotik_ids || []
+      mikrotik_ids: subscriber.mikrotik_ids || [],
+      grace_period_days: subscriber.grace_period_days ?? 5,
+      billing_day: subscriber.billing_day || 30
     });
     
     // Load provinces
@@ -2529,6 +2533,46 @@ export default function SubscriberManagement() {
                 onChange={(e) => setEditForm({...editForm, modem_mac: e.target.value})}
                 placeholder="XX:XX:XX:XX:XX:XX"
               />
+            </div>
+            
+            {/* Billing Settings */}
+            <div className="grid grid-cols-2 gap-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div>
+                <Label>Billing Day</Label>
+                <Select 
+                  value={editForm.billing_day?.toString() || '30'} 
+                  onValueChange={(value) => setEditForm({...editForm, billing_day: parseInt(value)})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                      <SelectItem key={day} value={day.toString()}>
+                        {day}{day === 1 ? 'st' : day === 2 ? 'nd' : day === 3 ? 'rd' : 'th'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Grace Period</Label>
+                <Select 
+                  value={editForm.grace_period_days?.toString() || '5'} 
+                  onValueChange={(value) => setEditForm({...editForm, grace_period_days: parseInt(value)})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {Array.from({ length: 31 }, (_, i) => i).map((day) => (
+                      <SelectItem key={day} value={day.toString()}>
+                        {day === 0 ? 'None' : `${day} day${day > 1 ? 's' : ''}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             {/* Mikrotik Selection */}
